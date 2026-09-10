@@ -1,5 +1,4 @@
-> 📎 **رابط المستند المنسق (Google Doc / PDF):** [اضغط هنا للفتح](agritech-business-data-analyst/week-01/خطة ومخرجات الأسبوع الأول - محلل الأعمال والبيانات (Business & Data Analyst - AgriTech).pdf)
-
+[📎 اضغط هنا لفتح وتحميل ملف الـ PDF الرسمي](./week1_brd_report.pdf)
 # 📄 Week 1 Deliverable: Business Requirements Document (BRD Draft)
 **Role:** Business & Data Analyst - AgriTech  
 **Status:** Completed (Week 1)
