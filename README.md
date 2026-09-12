@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Egyptian Agricultural Retrieval-Augmented Generation (RAG) System
 
 A modular, production-grade RAG pipeline tailored for Egyptian farmers and agricultural management platforms. The assistant answers farmer inquiries (disease treatment, fertilization, irrigation) in Egyptian farming Arabic (اللهجة الزراعية المصرية), grounded in curated agricultural guides and treatment protocols, while incorporating computer-vision model metadata (crop type, disease label, confidence score).
