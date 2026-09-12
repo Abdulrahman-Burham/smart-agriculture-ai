@@ -13,6 +13,7 @@ __pycache__/
 .env.*
 !.env.example
 apis.txt
+str(tmp_path / "requests.jsonl")
 
 # Runtime logs and generated artifacts
 logs/*.jsonl
