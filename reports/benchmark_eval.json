@@ -1,0 +1,7 @@
+{
+  "golden_test_count": 2,
+  "mean_reciprocal_rank_mrr": 1.0,
+  "intent_accuracy": 0.5,
+  "citation_groundedness_index": 1.0,
+  "status": "PASSED"
+}

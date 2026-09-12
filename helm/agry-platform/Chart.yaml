@@ -1,0 +1,11 @@
+apiVersion: v2
+name: agry-platform
+description: Helm chart for Egyptian Agricultural AI Platform Integration Gateway
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - agriculture
+  - rag
+  - computer-vision
+  - fast-api

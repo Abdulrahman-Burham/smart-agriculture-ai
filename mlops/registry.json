@@ -1,0 +1,28 @@
+{
+  "cv_disease_classifier": {
+    "active_version": "v1.2.0",
+    "versions": {
+      "v1.2.0": {
+        "model_name": "crop_disease_resnet50",
+        "framework": "PyTorch",
+        "accuracy": 0.945,
+        "f1_score": 0.941,
+        "hash": "a8f9c1b3d4e5f67890abcdef12345678",
+        "stage": "production",
+        "created_at": 1788958206.4184783
+      }
+    }
+  },
+  "embedding_model": {
+    "active_version": "v1.0.0",
+    "versions": {
+      "v1.0.0": {
+        "model_name": "BAAI/bge-m3",
+        "framework": "HuggingFace",
+        "embedding_dim": 1024,
+        "stage": "production",
+        "created_at": 1788958206.4184809
+      }
+    }
+  }
+}

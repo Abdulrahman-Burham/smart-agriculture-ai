@@ -1,0 +1,29 @@
+# Python environments and caches
+venv/
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+**/.pytest_cache/
+*.py[cod]
+
+# Local secrets and runtime configuration
+.env
+.env.*
+!.env.example
+apis.txt
+
+# Runtime logs and generated artifacts
+logs/*.jsonl
+**/logs/*.jsonl
+*.db
+*.sqlite
+*.sqlite3
+
+# Local model/index data
+chroma_db/
+**/chroma_db/
+data/chroma/
+**/data/chroma/
+

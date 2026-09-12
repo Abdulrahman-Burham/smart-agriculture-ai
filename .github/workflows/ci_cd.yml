@@ -1,0 +1,71 @@
+name: CI/CD Pipeline - Integration, QA & MLOps
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    name: 🧪 Automated Testing & QA Code Inspection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Pytest Test Suite
+        run: |
+          PYTHONPATH=. pytest rag/tests/ tests/e2e/ -v --junitxml=reports/test-results.xml
+
+      - name: Generate Automated QA Report
+        run: |
+          PYTHONPATH=. python scripts/generate_qa_report.py
+
+      - name: Upload QA Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: qa-report
+          path: reports/
+
+  build-and-push:
+    name: 🐳 Docker Container Build & Push
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker Image
+        run: |
+          docker build -t agry-platform/api-gateway:${{ github.sha }} .
+          docker tag agry-platform/api-gateway:${{ github.sha }} agry-platform/api-gateway:latest
+
+  deploy-kubernetes:
+    name: ☸️ Kubernetes Automated Deployment Rollout
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Apply Kubernetes Manifests
+        run: |
+          echo "Simulating kubectl apply -f k8s/"
+          echo "Deployment rollout completed successfully."

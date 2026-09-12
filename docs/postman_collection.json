@@ -1,0 +1,66 @@
+{
+  "info": {
+    "name": "Egyptian Agricultural AI Platform Integration Gateway API",
+    "description": "Postman API testing collection for FastAPI Gateway (Computer Vision + Egyptian RAG + Dashboard UI)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "System Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Prometheus Metrics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/metrics",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["metrics"]
+        }
+      }
+    },
+    {
+      "name": "Diagnose Crop & Get Grounded Advice",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "farmer_query",
+              "value": "عندي ندوة متاخرة في البطاطس، ايه علاجها وايه جرعة الرشاش؟",
+              "type": "text"
+            },
+            {
+              "key": "region",
+              "value": "delta",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/diagnose-and-advise",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "diagnose-and-advise"]
+        }
+      }
+    }
+  ]
+}

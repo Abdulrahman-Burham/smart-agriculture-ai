@@ -1,0 +1,31 @@
+replicaCount: 3
+
+image:
+  repository: agry-platform/api-gateway
+  pullPolicy: IfNotPresent
+  tag: "v1.0.0"
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8000
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: 80
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+env:
+  environment: production
+  logLevel: info
+  vectorStoreProvider: chroma
