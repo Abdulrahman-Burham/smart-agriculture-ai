@@ -12,8 +12,8 @@ During Week 2, the focus shifted from high-level business requirements (BRD) to 
 
 ## 📁 Included Documents
 
-* 📄 **[Data Assessment & Evaluation Summary](./Week_02/AgriTech_Week2_Data_Assessment_Summary.pdf):** Documents the open-source data survey, gaps identified in prediction-only datasets, and the rationale for custom schema design.
-* 📄 **[Database Schema & Knowledge Base Specification](./Week_02/AgriTech_Week2_Database_Schema_KB.pdf):** Contains the relational schema across 6 core tables, synthetic data generation constraints, and required domain Knowledge Bases (KBs).
+* 📄 **[Data Assessment & Evaluation Summary](./Week_02/وثيقة ملخص استكشاف وتقييم البيانات التشغيلية لمشروع AgriTech.pdf):** Documents the open-source data survey, gaps identified in prediction-only datasets, and the rationale for custom schema design.
+* 📄 **[Database Schema & Knowledge Base Specification](./Week_02/وثيقة تصميم هيكل البيانات (Database Schema) وخريطة القواعد المعرفية - AgriTech Platform):** Contains the relational schema across 6 core tables, synthetic data generation constraints, and required domain Knowledge Bases (KBs).
 
 ---
 
