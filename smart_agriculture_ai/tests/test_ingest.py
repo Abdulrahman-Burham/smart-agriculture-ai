@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from rag.ingest import chunk_documents, load_documents
+from smart_agriculture_ai.rag.ingest import chunk_documents, load_documents
 
 
 def test_load_documents(tmp_path):

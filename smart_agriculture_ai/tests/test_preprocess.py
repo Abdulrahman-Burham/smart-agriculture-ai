@@ -1,6 +1,11 @@
 """Tests for the preprocessing module."""
 
-from rag.preprocess import canonicalize_terms, detect_query_intent, normalize_arabic_text, preprocess_query
+from smart_agriculture_ai.rag.preprocess import (
+    canonicalize_terms,
+    detect_query_intent,
+    normalize_arabic_text,
+    preprocess_query,
+)
 
 
 def test_normalize_arabic_text():

@@ -1,6 +1,6 @@
 """Tests for retrieval behavior."""
 
-from rag.retrieve import _rrf_score, hybrid_retrieval
+from smart_agriculture_ai.rag.retrieve import _rrf_score, hybrid_retrieval
 
 
 def test_rrf_score():

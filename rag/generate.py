@@ -50,15 +50,21 @@ class MockLLMProvider(LLMProviderInterface):
 class OpenAILLMProvider(LLMProviderInterface):
     """OpenAI API wrapper implementation."""
 
-    def __init__(self, api_key: str, model_name: str = "gpt-3.5-turbo"):
+    def __init__(
+        self,
+        api_key: str,
+        model_name: str = "gpt-3.5-turbo",
+        base_url: Optional[str] = None,
+    ):
         self.api_key = api_key
         self.model_name = model_name
+        self.base_url = base_url
 
     def generate_text(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         try:
             import openai
 
-            client = openai.OpenAI(api_key=self.api_key)
+            client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url)
             messages = []
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})

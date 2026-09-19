@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import yaml
 
-from rag.generate import MockLLMProvider, generate_grounded_answer
+from rag.generate import OpenAILLMProvider, MockLLMProvider, generate_grounded_answer
 from rag.ingest import ingest_text_documents
 from rag.pdf_ingest import load_pdfs_to_documents
 from rag.preprocess import fallback_llm_rewrite, load_lexicon, log_fallback_query, preprocess_query
@@ -33,7 +34,39 @@ class RAGPipeline:
             persist_directory=self.config.get("vector_store", {}).get("persist_directory", "./chroma_db"),
         )
 
-        self.llm_provider = MockLLMProvider()
+        provider = os.getenv("RAG_LLM_PROVIDER", "mock").lower()
+        if provider == "openai":
+            api_key = os.getenv("OPENAI_API_KEY")
+            if not api_key:
+                raise RuntimeError("RAG_LLM_PROVIDER=openai requires OPENAI_API_KEY.")
+            model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+            self.llm_provider = OpenAILLMProvider(api_key=api_key, model_name=model_name)
+        elif provider in {"groq", "openrouter"}:
+            env_prefix = provider.upper()
+            api_key = os.getenv(f"{env_prefix}_API_KEY")
+            if not api_key:
+                raise RuntimeError(f"RAG_LLM_PROVIDER={provider} requires {env_prefix}_API_KEY.")
+            default_model = (
+                "llama-3.3-70b-versatile"
+                if provider == "groq"
+                else "openai/gpt-4o-mini"
+            )
+            model_name = os.getenv(f"{env_prefix}_MODEL", default_model)
+            default_base_url = (
+                "https://api.groq.com/openai/v1"
+                if provider == "groq"
+                else "https://openrouter.ai/api/v1"
+            )
+            base_url = os.getenv(f"{env_prefix}_BASE_URL", default_base_url)
+            self.llm_provider = OpenAILLMProvider(
+                api_key=api_key,
+                model_name=model_name,
+                base_url=base_url,
+            )
+        elif provider == "mock":
+            self.llm_provider = MockLLMProvider()
+        else:
+            raise ValueError(f"Unsupported RAG_LLM_PROVIDER: {provider}")
         self.bm25_data: Dict[str, Any] = {}
 
     def _load_config(self, path: str) -> Dict[str, Any]:

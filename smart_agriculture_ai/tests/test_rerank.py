@@ -1,6 +1,6 @@
 """Tests for reranking logic."""
 
-from rag.rerank import metadata_filters, rerank_candidates
+from smart_agriculture_ai.rag.rerank import metadata_filters, rerank_candidates
 
 
 def test_metadata_filters():

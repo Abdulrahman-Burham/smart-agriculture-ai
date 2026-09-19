@@ -41,6 +41,7 @@ env/
 *.joblib
 data/raw/
 data/processed/
+data/uploaded_pdfs/
 chroma/
 vector_db/
 node_modules/

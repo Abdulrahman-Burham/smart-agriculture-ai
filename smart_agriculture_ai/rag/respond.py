@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from rag.generate import generate_answer
+from smart_agriculture_ai.rag.generate import generate_answer
 
 
 def evaluate_confidence(top_candidates: list[dict[str, Any]], threshold: float = 0.35) -> bool:

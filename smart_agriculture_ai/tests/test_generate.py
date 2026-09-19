@@ -1,6 +1,6 @@
 """Tests for prompt building and answer generation."""
 
-from rag.generate import build_prompt, generate_answer
+from smart_agriculture_ai.rag.generate import build_prompt, generate_answer
 
 
 class FakeLLM:

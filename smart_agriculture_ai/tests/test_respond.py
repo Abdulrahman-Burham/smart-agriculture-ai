@@ -1,6 +1,6 @@
 """Tests for final response gating."""
 
-from rag.respond import evaluate_confidence, produce_response
+from smart_agriculture_ai.rag.respond import evaluate_confidence, produce_response
 
 
 class FakeLLM:
