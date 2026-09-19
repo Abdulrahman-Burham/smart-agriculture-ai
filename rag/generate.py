@@ -75,6 +75,34 @@ class OpenAILLMProvider(LLMProviderInterface):
             return f"Error executing OpenAI LLM query: {err}"
 
 
+class GroqLLMProvider(LLMProviderInterface):
+    """Groq API wrapper implementation for extremely fast inference."""
+
+    def __init__(self, api_key: str, model_name: str = "openai/gpt-oss-120b"):
+        self.api_key = api_key
+        self.model_name = model_name
+
+    def generate_text(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        try:
+            import groq
+
+            client = groq.Groq(api_key=self.api_key)
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+
+            response = client.chat.completions.create(
+                model=self.model_name,
+                messages=messages,
+                temperature=0.1,
+            )
+            return response.choices[0].message.content or ""
+        except Exception as err:
+            logger.error(f"GroqLLMProvider error: {err}")
+            return f"Error executing Groq LLM query: {err}"
+
+
 def build_grounded_prompt(query: str, context_chunks: List[Dict[str, Any]]) -> tuple[str, str]:
     """Assemble strict grounded prompt requiring Egyptian farming Arabic and chunk citations."""
     system_prompt = (

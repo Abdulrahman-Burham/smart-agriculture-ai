@@ -27,10 +27,20 @@ def chunk_agricultural_guide(
 
     chunks: List[Dict[str, Any]] = []
     current_chunk = ""
-    source_doc = doc.get("source_doc", "guide.txt")
-    crop_type = doc.get("crop_type", "unknown")
-    disease_name = doc.get("disease_name", "unknown")
-    region = doc.get("region", "egypt_general")
+    # Base metadata that should propagate to chunks
+    base_metadata = {
+        "crop_type": doc.get("crop_type", "unknown"),
+        "disease_name": doc.get("disease_name", "unknown"),
+        "region": doc.get("region", "egypt_general"),
+        "source_doc": doc.get("source_doc", "guide.txt"),
+        "doc_type": doc.get("doc_type", "guide"),
+    }
+    if "page_start" in doc:
+        base_metadata["page_start"] = doc["page_start"]
+    if "page_end" in doc:
+        base_metadata["page_end"] = doc["page_end"]
+    if "section_header" in doc:
+        base_metadata["section_header"] = doc["section_header"]
 
     for paragraph in paragraphs:
         # If single paragraph exceeds chunk limit, split by sentences
@@ -44,13 +54,7 @@ def chunk_agricultural_guide(
                         chunks.append({
                             "chunk_id": str(uuid.uuid4()),
                             "content": current_chunk.strip(),
-                            "metadata": {
-                                "crop_type": crop_type,
-                                "disease_name": disease_name,
-                                "region": region,
-                                "source_doc": source_doc,
-                                "doc_type": "guide",
-                            },
+                            "metadata": base_metadata.copy(),
                         })
                     # Add overlap from tail of current_chunk
                     overlap_words = current_chunk.split()[-overlap:] if current_chunk else []
@@ -63,13 +67,7 @@ def chunk_agricultural_guide(
                     chunks.append({
                         "chunk_id": str(uuid.uuid4()),
                         "content": current_chunk.strip(),
-                        "metadata": {
-                            "crop_type": crop_type,
-                            "disease_name": disease_name,
-                            "region": region,
-                            "source_doc": source_doc,
-                            "doc_type": "guide",
-                        },
+                        "metadata": base_metadata.copy(),
                     })
                 overlap_words = current_chunk.split()[-overlap:] if current_chunk else []
                 current_chunk = (" ".join(overlap_words) + "\n\n" if overlap_words else "") + paragraph
@@ -78,13 +76,7 @@ def chunk_agricultural_guide(
         chunks.append({
             "chunk_id": str(uuid.uuid4()),
             "content": current_chunk.strip(),
-            "metadata": {
-                "crop_type": crop_type,
-                "disease_name": disease_name,
-                "region": region,
-                "source_doc": source_doc,
-                "doc_type": "guide",
-            },
+            "metadata": base_metadata.copy(),
         })
 
     return chunks
@@ -105,22 +97,25 @@ def chunk_treatment_protocol(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
         blocks = [text.strip()]
 
     chunks: List[Dict[str, Any]] = []
-    source_doc = doc.get("source_doc", "protocol.txt")
-    crop_type = doc.get("crop_type", "unknown")
-    disease_name = doc.get("disease_name", "unknown")
-    region = doc.get("region", "egypt_general")
+    base_metadata = {
+        "crop_type": doc.get("crop_type", "unknown"),
+        "disease_name": doc.get("disease_name", "unknown"),
+        "region": doc.get("region", "egypt_general"),
+        "source_doc": doc.get("source_doc", "protocol.txt"),
+        "doc_type": doc.get("doc_type", "protocol"),
+    }
+    if "page_start" in doc:
+        base_metadata["page_start"] = doc["page_start"]
+    if "page_end" in doc:
+        base_metadata["page_end"] = doc["page_end"]
+    if "section_header" in doc:
+        base_metadata["section_header"] = doc["section_header"]
 
     for block in blocks:
         chunks.append({
             "chunk_id": str(uuid.uuid4()),
             "content": block,
-            "metadata": {
-                "crop_type": crop_type,
-                "disease_name": disease_name,
-                "region": region,
-                "source_doc": source_doc,
-                "doc_type": "protocol",
-            },
+            "metadata": base_metadata.copy(),
         })
 
     return chunks

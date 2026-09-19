@@ -116,3 +116,18 @@ The pipeline consists of six modular, strictly typed stages:
    ```bash
    python example_run.py
    ```
+
+### Ingest the pest-control recommendations PDF
+
+The PDF ingestion pipeline extracts Arabic text page by page, removes duplicate
+sections, infers crop/disease metadata, and indexes the resulting chunks in the
+same Chroma/BM25 pipeline:
+
+```bash
+python scripts/ingest_knowledge_base.py \
+  --pdf التوصيات_المعتمدة_لمكافحة_الآفات_الزراعية.pdf \
+  --output-jsonl data/extracted_documents.jsonl
+```
+
+Additional PDFs can be supplied after `--pdf`. Use `python -m rag.pdf_ingest`
+when extraction to JSONL is needed without indexing.
