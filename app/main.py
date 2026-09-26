@@ -79,6 +79,17 @@ def auto_ingest_knowledge_base():
             rag_pipeline.ingest_documents(docs)
             logger.info(f"Auto-ingested {len(docs)} documents into knowledge base on startup.")
 
+    uploaded_dir = Path("data/uploaded_pdfs")
+    uploaded_pdfs = sorted(uploaded_dir.glob("*.pdf")) if uploaded_dir.exists() else []
+    if uploaded_pdfs:
+        summary = rag_pipeline.ingest_pdfs([str(path) for path in uploaded_pdfs])
+        logger.info(
+            "Auto-ingested uploaded PDFs: %s files, %s documents, %s chunks.",
+            summary["num_pdfs"],
+            summary["num_documents"],
+            summary["num_chunks"],
+        )
+
 
 @app.get("/health", response_model=HealthCheckResponse, tags=["System Health"])
 def health_check() -> HealthCheckResponse:
