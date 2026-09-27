@@ -1,10 +1,18 @@
 import json
 import sys
+import os
+from dotenv import load_dotenv
 from rag.respond import RAGPipeline
 from rag.generate import GroqLLMProvider
 
 def main():
-    api_key = "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"
+    load_dotenv()
+    
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        print("Error: GROQ_API_KEY not found in .env")
+        return
+        
     pdf_path = "التوصيات_المعتمدة_لمكافحة_الآفات_الزراعية.pdf"
     
     print("Initializing RAG Pipeline...")

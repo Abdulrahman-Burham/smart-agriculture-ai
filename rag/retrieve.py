@@ -35,14 +35,57 @@ class ChromaVectorStore(VectorStoreInterface):
     def __init__(self, collection_name: str = "egyptian_agriculture", persist_directory: str = "./chroma_db"):
         self.collection_name = collection_name
         self.persist_directory = persist_directory
-        self._store: Dict[str, Dict[str, Any]] = {}  # Fallback in-memory dict when chroma is uninitialized
+        
+        try:
+            import chromadb
+            from chromadb.utils import embedding_functions
+            
+            self.client = chromadb.PersistentClient(path=self.persist_directory)
+            # Use a lightweight multilingual model that supports Arabic
+            self.embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name="paraphrase-multilingual-MiniLM-L12-v2"
+            )
+            self.collection = self.client.get_or_create_collection(
+                name=self.collection_name,
+                embedding_function=self.embedding_fn,
+            )
+            self.initialized = True
+        except ImportError:
+            logger.warning("chromadb or sentence-transformers not installed. Using in-memory fallback.")
+            self.initialized = False
+            self._store: Dict[str, Dict[str, Any]] = {}
 
     def add_documents(self, chunks: List[Dict[str, Any]]) -> List[str]:
         added_ids = []
-        for chunk in chunks:
-            cid = chunk.get("chunk_id") or chunk.get("id")
-            self._store[cid] = chunk
-            added_ids.append(cid)
+        if self.initialized:
+            ids = []
+            documents = []
+            metadatas = []
+            
+            for chunk in chunks:
+                cid = chunk.get("chunk_id") or chunk.get("id") or str(len(ids))
+                ids.append(cid)
+                documents.append(chunk.get("content", ""))
+                # Chroma requires metadata values to be str, int, float, or bool
+                meta = chunk.get("metadata", {})
+                clean_meta = {k: str(v) for k, v in meta.items() if v is not None}
+                metadatas.append(clean_meta)
+                added_ids.append(cid)
+                
+            # Batch upsert to Chroma to avoid payload limits
+            batch_size = 100
+            for i in range(0, len(ids), batch_size):
+                self.collection.upsert(
+                    ids=ids[i:i+batch_size],
+                    documents=documents[i:i+batch_size],
+                    metadatas=metadatas[i:i+batch_size],
+                )
+        else:
+            for chunk in chunks:
+                cid = chunk.get("chunk_id") or chunk.get("id")
+                self._store[cid] = chunk
+                added_ids.append(cid)
+                
         return added_ids
 
     def similarity_search(
@@ -52,49 +95,140 @@ class ChromaVectorStore(VectorStoreInterface):
         filter_metadata: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         results = []
-        query_words = set(query.lower().split())
-
-        for cid, chunk in self._store.items():
-            content = chunk.get("content", "").lower()
-            metadata = chunk.get("metadata", {})
-
-            # Simple token overlap proxy for similarity scoring when running without external embedding service
-            content_words = set(content.split())
-            overlap = len(query_words.intersection(content_words))
-            score = float(overlap) / float(max(1, len(query_words)))
-
-            # Metadata filter if specified
+        
+        if self.initialized:
+            # Build where clause for metadata filtering
+            where = None
             if filter_metadata:
-                match = True
-                for fk, fv in filter_metadata.items():
-                    if fv and str(metadata.get(fk, "")).lower() != str(fv).lower():
-                        match = False
-                        break
-                if not match:
-                    continue
+                where_clauses = [{"$eq": {k: str(v)}} for k, v in filter_metadata.items() if v]
+                if len(where_clauses) == 1:
+                    where = list(where_clauses[0].values())[0] # Chroma format
+                elif len(where_clauses) > 1:
+                    # Not perfectly mapping all logic, keeping it simple for this implementation
+                    where = {"$and": [{k: str(v)} for k, v in filter_metadata.items() if v]}
+            
+            # Catch case where filter logic is too complex for this simplified where clause
+            if isinstance(where, dict) and "$and" in where:
+               where = None 
+               
+            search_results = self.collection.query(
+                query_texts=[query],
+                n_results=k,
+                where=where
+            )
+            
+            if search_results and search_results["ids"] and len(search_results["ids"][0]) > 0:
+                for idx, cid in enumerate(search_results["ids"][0]):
+                    distance = search_results["distances"][0][idx]
+                    # Convert L2 distance to similarity score
+                    score = 1.0 / (1.0 + distance)
+                    
+                    results.append({
+                        "chunk_id": cid,
+                        "content": search_results["documents"][0][idx],
+                        "metadata": search_results["metadatas"][0][idx] if search_results["metadatas"] else {},
+                        "vector_score": score,
+                    })
+        else:
+            query_words = set(query.lower().split())
+            for cid, chunk in self._store.items():
+                content = chunk.get("content", "").lower()
+                metadata = chunk.get("metadata", {})
 
-            results.append({
-                "chunk_id": cid,
-                "content": chunk.get("content", ""),
-                "metadata": metadata,
-                "vector_score": score,
-            })
+                content_words = set(content.split())
+                overlap = len(query_words.intersection(content_words))
+                score = float(overlap) / float(max(1, len(query_words)))
+
+                if filter_metadata:
+                    match = True
+                    for fk, fv in filter_metadata.items():
+                        if fv and str(metadata.get(fk, "")).lower() != str(fv).lower():
+                            match = False
+                            break
+                    if not match:
+                        continue
+
+                results.append({
+                    "chunk_id": cid,
+                    "content": chunk.get("content", ""),
+                    "metadata": metadata,
+                    "vector_score": score,
+                })
 
         results.sort(key=lambda x: x["vector_score"], reverse=True)
         return results[:k]
 
 
-class PineconeVectorStore(VectorStoreInterface):
-    """Stub/Plug-in implementation for Pinecone vector store."""
+class QdrantVectorStore(VectorStoreInterface):
+    """Qdrant Cloud vector store implementation using Cohere embeddings."""
 
-    def __init__(self, api_key: str = "", environment: str = "", index_name: str = ""):
-        self.api_key = api_key
-        self.environment = environment
-        self.index_name = index_name
+    def __init__(self, url: str, api_key: str, cohere_api_key: str, collection_name: str = "egyptian_agriculture"):
+        self.collection_name = collection_name
+        try:
+            from qdrant_client import QdrantClient
+            from qdrant_client.http.models import Distance, VectorParams, PointStruct
+            import cohere
+
+            self.client = QdrantClient(url=url, api_key=api_key)
+            self.co = cohere.Client(cohere_api_key)
+            self.model_name = "embed-multilingual-v3.0"
+            
+            # Check if collection exists, if not create it (Cohere v3 multilingual is 1024 dims)
+            collections = self.client.get_collections().collections
+            if not any(c.name == self.collection_name for c in collections):
+                self.client.create_collection(
+                    collection_name=self.collection_name,
+                    vectors_config=VectorParams(size=1024, distance=Distance.COSINE),
+                )
+            self.initialized = True
+        except Exception as e:
+            logger.error(f"Failed to initialize Qdrant/Cohere: {e}")
+            self.initialized = False
 
     def add_documents(self, chunks: List[Dict[str, Any]]) -> List[str]:
-        logger.info(f"PineconeVectorStore: stub add_documents for {len(chunks)} chunks")
-        return [c.get("chunk_id", "") for c in chunks]
+        if not self.initialized or not chunks:
+            return []
+
+        from qdrant_client.http.models import PointStruct
+        import uuid
+
+        added_ids = []
+        texts = [chunk.get("content", "") for chunk in chunks]
+        
+        # Batch size for Cohere API limits
+        batch_size = 90
+        for i in range(0, len(texts), batch_size):
+            batch_texts = texts[i:i+batch_size]
+            batch_chunks = chunks[i:i+batch_size]
+            
+            # Generate embeddings
+            response = self.co.embed(
+                texts=batch_texts, 
+                model=self.model_name, 
+                input_type="search_document"
+            )
+            embeddings = response.embeddings
+            
+            points = []
+            for j, emb in enumerate(embeddings):
+                chunk = batch_chunks[j]
+                cid = chunk.get("chunk_id") or str(uuid.uuid4())
+                added_ids.append(cid)
+                
+                payload = chunk.get("metadata", {}).copy()
+                payload["content"] = chunk.get("content", "")
+                
+                points.append(
+                    PointStruct(id=cid, vector=emb, payload=payload)
+                )
+                
+            self.client.upsert(
+                collection_name=self.collection_name,
+                points=points
+            )
+            
+        logger.info(f"QdrantVectorStore: added {len(added_ids)} chunks")
+        return added_ids
 
     def similarity_search(
         self,
@@ -102,8 +236,50 @@ class PineconeVectorStore(VectorStoreInterface):
         k: int = 20,
         filter_metadata: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
-        logger.info(f"PineconeVectorStore: stub similarity_search for '{query}'")
-        return []
+        if not self.initialized:
+            return []
+            
+        from qdrant_client.http.models import Filter, FieldCondition, MatchValue
+
+        # Embed query
+        response = self.co.embed(
+            texts=[query], 
+            model=self.model_name, 
+            input_type="search_query"
+        )
+        query_vector = response.embeddings[0]
+
+        # Build Qdrant filter
+        qdrant_filter = None
+        if filter_metadata:
+            conditions = []
+            for fk, fv in filter_metadata.items():
+                if fv:
+                    conditions.append(
+                        FieldCondition(key=fk, match=MatchValue(value=str(fv)))
+                    )
+            if conditions:
+                qdrant_filter = Filter(must=conditions)
+
+        search_results = self.client.query_points(
+            collection_name=self.collection_name,
+            query=query_vector,
+            query_filter=qdrant_filter,
+            limit=k,
+        )
+
+        results = []
+        for hit in search_results.points:
+            payload = hit.payload or {}
+            content = payload.pop("content", "")
+            results.append({
+                "chunk_id": str(hit.id),
+                "content": content,
+                "metadata": payload,
+                "vector_score": hit.score,
+            })
+
+        return results
 
 
 def calculate_rrf_score(

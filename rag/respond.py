@@ -15,7 +15,7 @@ from rag.ingest import ingest_text_documents
 from rag.pdf_ingest import load_pdfs_to_documents
 from rag.preprocess import fallback_llm_rewrite, load_lexicon, log_fallback_query, preprocess_query
 from rag.rerank import apply_metadata_filters, rerank_candidates
-from rag.retrieve import ChromaVectorStore, hybrid_retrieval
+from rag.retrieve import ChromaVectorStore, QdrantVectorStore, hybrid_retrieval
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +24,33 @@ class RAGPipeline:
     """Orchestrates the 6-stage Egyptian Agricultural RAG pipeline end-to-end."""
 
     def __init__(self, config_path: str = "rag/config.yaml", lexicon_path: str = "rag/lexicon.json"):
+        import os
+        from dotenv import load_dotenv
+        
+        load_dotenv()
+        
         self.config = self._load_config(config_path)
         self.lexicon = load_lexicon(lexicon_path)
 
-        # Initialize vector store interface and LLM provider
-        self.vector_store = ChromaVectorStore(
-            collection_name=self.config.get("vector_store", {}).get("collection_name", "egyptian_agriculture"),
-            persist_directory=self.config.get("vector_store", {}).get("persist_directory", "./chroma_db"),
-        )
+        # Initialize vector store interface (Qdrant if credentials exist, else Chroma)
+        qdrant_url = os.environ.get("QDRANT_URL")
+        qdrant_key = os.environ.get("QDRANT_API_KEY")
+        cohere_key = os.environ.get("COHERE_API_KEY")
+        
+        if qdrant_url and qdrant_key and cohere_key:
+            logger.info("Initializing Qdrant Cloud Vector Store...")
+            self.vector_store = QdrantVectorStore(
+                url=qdrant_url,
+                api_key=qdrant_key,
+                cohere_api_key=cohere_key,
+                collection_name=self.config.get("vector_store", {}).get("collection_name", "egyptian_agriculture")
+            )
+        else:
+            logger.info("Initializing Local Chroma Vector Store...")
+            self.vector_store = ChromaVectorStore(
+                collection_name=self.config.get("vector_store", {}).get("collection_name", "egyptian_agriculture"),
+                persist_directory=self.config.get("vector_store", {}).get("persist_directory", "./chroma_db"),
+            )
 
         self.llm_provider = MockLLMProvider()
         self.bm25_data: Dict[str, Any] = {}
@@ -129,6 +148,27 @@ class RAGPipeline:
         prep_data = preprocess_query(user_query, self.lexicon, vision_context=vision_context)
         query_text = prep_data["canonical_query"]
         intent = prep_data["intent"]
+
+        # Fast path for Chit-Chat
+        if intent == "chit_chat":
+            prompt = f"أنت مساعد زراعي مصري ذكي ومختص واسمك 'الخبير الزراعي'. المستخدم يوجه لك رسالة ترحيب أو دردشة خفيفة. رد بأسلوب ودي ولطيف، باللغة العربية (يفضل باللهجة المصرية الخفيفة)، واسأله كيف يمكنك مساعدته في مزرعته أو أرضه الزراعية اليوم.\n\nرسالة المستخدم: {user_query}"
+            try:
+                answer = self.llm_provider.generate_text(prompt) if hasattr(self.llm_provider, "generate_text") else "أهلاً بك يا فندم! أنا الخبير الزراعي، إزاي أقدر أساعدك في أرضك ومحصولك النهاردة؟"
+            except Exception:
+                answer = "أهلاً بك يا فندم! أنا الخبير الزراعي، إزاي أقدر أساعدك في أرضك ومحصولك النهاردة؟"
+            
+            return {
+                "query": user_query,
+                "processed_query": query_text,
+                "intent": intent,
+                "answer": answer,
+                "citations": [],
+                "retrieval_confidence": 1.0,
+                "needs_agronomist_review": False,
+                "vision_context_used": vision_context,
+                "latency_seconds": round(time.time() - start_time, 4),
+                "sources": []
+            }
 
         # Stage 2: Hybrid Retrieval (Vector + BM25 + RRF + Vision metadata boost)
         fused_candidates = hybrid_retrieval(

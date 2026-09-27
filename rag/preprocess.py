@@ -117,6 +117,14 @@ def detect_query_intent(query: str) -> str:
     if any(kw in normalized for kw in disease_keywords):
         return "disease_query"
 
+    # Chit-chat / Greetings indicators
+    chit_chat_keywords = [
+        "اهلا", "أهلا", "مرحبا", "سلام", "شلونك", "ازيك", "كيفك", "الو", "انت مين",
+        "صباح", "مساء", "مين انت", "شكرا", "يعطيك العافية", "من انت"
+    ]
+    if any(kw in normalized for kw in chit_chat_keywords) or len(normalized) < 15 and not any(kw in normalized for kw in disease_keywords + dosage_keywords):
+        return "chit_chat"
+
     return "general_advice"
 
 
