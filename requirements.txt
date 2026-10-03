@@ -23,3 +23,7 @@ torch>=2.0.0
 torchvision>=0.15.0
 transformers>=4.30.0
 duckduckgo-search>=4.0.0
+keras>=3.0.0
+h5py>=3.8.0
+optree>=0.10.0
+absl-py>=2.0.0
