@@ -1,39 +1,74 @@
-"""FastAPI Integration Gateway Service connecting Computer Vision, Egyptian RAG Pipeline, and Dashboard UI."""
+"""Unified FastAPI Gateway: RAG + Computer Vision + Dashboard for Smart Agriculture AI MVP."""
 
 from __future__ import annotations
 
+import io
 import logging
+import os
 import time
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-from starlette.responses import FileResponse, Response
+from pydantic import BaseModel, Field
+from starlette.responses import FileResponse
 
-from app.schemas import (
-    CitationItem,
-    DiagnoseAndAdviseRequest,
-    DiagnoseAndAdviseResponse,
-    HealthCheckResponse,
-    VisionPredictionResult,
-)
-from app.services.cv_service import ComputerVisionService
-from mlops.model_registry import ModelRegistry
-from mlops.monitoring import SystemMonitor
-from rag.respond import RAGPipeline
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI Gateway Application
+# ─── Pydantic Schemas ───────────────────────────────────────────────
+
+class ChatRequest(BaseModel):
+    query: str
+    location: str = "Cairo"
+
+class ChatResponse(BaseModel):
+    answer: str
+    weather: str = ""
+    sources: List[str] = []
+    confidence: float = 0.0
+    latency: float = 0.0
+    intent: str = ""
+
+class DiagnoseRequest(BaseModel):
+    query: str = ""
+
+class CVPrediction(BaseModel):
+    label: str = ""
+    label_ar: str = ""
+    confidence: float = 0.0
+
+class DiagnoseResponse(BaseModel):
+    cv_result: Dict[str, Any] = {}
+    advice: str = ""
+    sources: List[str] = []
+    confidence: float = 0.0
+    latency: float = 0.0
+
+class WeatherResponse(BaseModel):
+    temperature: Optional[float] = None
+    wind_speed: Optional[float] = None
+    season: str = ""
+    date: str = ""
+
+class HealthResponse(BaseModel):
+    status: str = "healthy"
+    services: Dict[str, str] = {}
+    version: str = "2.0.0-mvp"
+
+
+# ─── Initialize FastAPI ─────────────────────────────────────────────
+
 app = FastAPI(
-    title="Egyptian Agricultural AI Platform API Gateway",
-    description="Unified API Gateway integrating Computer Vision, Egyptian Farming RAG Pipeline, and Dashboard UI.",
-    version="1.0.0",
+    title="الخبير الزراعي — Smart Agriculture AI",
+    description="Unified MVP: RAG + Computer Vision + Dashboard",
+    version="2.0.0",
 )
 
-# Configure CORS Middleware for Dashboard Web UI Integration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -42,163 +77,214 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount Static Web Dashboard Interface
+# Mount static files for dashboard
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
+# ─── Lazy Globals (initialized on first request) ────────────────────
+
+_rag_pipeline = None
+_cv_classifier = None
+
+
+def get_rag_pipeline():
+    """Lazily initialize and return the RAG pipeline with auto-wired LLM."""
+    global _rag_pipeline
+    if _rag_pipeline is None:
+        from rag.respond import RAGPipeline
+        _rag_pipeline = RAGPipeline(config_path="rag/config.yaml", lexicon_path="rag/lexicon.json")
+
+        # Auto-wire Groq LLM if API key exists
+        groq_key = os.environ.get("GROQ_API_KEY")
+        if groq_key:
+            from rag.generate import GroqLLMProvider
+            _rag_pipeline.llm_provider = GroqLLMProvider(api_key=groq_key)
+            logger.info("✅ Groq LLM auto-wired successfully.")
+        else:
+            logger.warning("⚠️ GROQ_API_KEY not found. Using MockLLMProvider.")
+
+        # Auto-ingest PDF knowledge base
+        pdf_path = Path("التوصيات_المعتمدة_لمكافحة_الآفات_الزراعية.pdf")
+        if pdf_path.exists():
+            logger.info("📚 Ingesting PDF knowledge base...")
+            _rag_pipeline.ingest_pdfs([str(pdf_path)])
+            logger.info("✅ PDF ingestion complete.")
+
+        # Also ingest sample text docs
+        data_dir = Path("data/sample_knowledge_base")
+        if data_dir.exists():
+            docs = []
+            for p in data_dir.glob("*.txt"):
+                docs.append({
+                    "source_doc": p.name,
+                    "doc_type": "guide",
+                    "crop_type": "general",
+                    "disease_name": "general",
+                    "region": "egypt_general",
+                    "content": p.read_text(encoding="utf-8"),
+                })
+            if docs:
+                _rag_pipeline.ingest_documents(docs)
+                logger.info(f"📚 Ingested {len(docs)} text documents.")
+
+    return _rag_pipeline
+
+
+def get_cv_classifier():
+    """Lazily initialize and return the CV classifier."""
+    global _cv_classifier
+    if _cv_classifier is None:
+        try:
+            from computer_vision.inference.classifier import PlantDiseaseClassifier
+            _cv_classifier = PlantDiseaseClassifier()
+            logger.info("✅ Plant Disease CV Model loaded.")
+        except Exception as e:
+            logger.warning(f"⚠️ CV Model not available: {e}")
+            _cv_classifier = "unavailable"
+    return _cv_classifier if _cv_classifier != "unavailable" else None
+
+
+# ─── Routes ──────────────────────────────────────────────────────────
+
 @app.get("/", include_in_schema=False)
 @app.get("/dashboard", include_in_schema=False)
-def serve_dashboard():
-    """Serve the Web Dashboard UI interface."""
+async def serve_dashboard():
+    """Serve the unified MVP dashboard."""
     return FileResponse("app/static/index.html")
 
-# Core Microservice Instances
-cv_service = ComputerVisionService()
-rag_pipeline = RAGPipeline()
-model_registry = ModelRegistry()
-system_monitor = SystemMonitor()
 
-
-@app.on_event("startup")
-def auto_ingest_knowledge_base():
-    """Auto-ingest sample agricultural knowledge base on startup if directory exists."""
-    from pathlib import Path
-    data_dir = Path("data/sample_knowledge_base")
-    if data_dir.exists():
-        docs = []
-        for p in data_dir.glob("*.txt"):
-            docs.append({
-                "source_doc": p.name,
-                "doc_type": "protocol" if "protocol" in p.name.lower() else "guide",
-                "crop_type": "potato" if "potato" in p.name.lower() else "general",
-                "disease_name": "general",
-                "region": "egypt_general",
-                "content": p.read_text(encoding="utf-8"),
-            })
-        if docs:
-            rag_pipeline.ingest_documents(docs)
-            logger.info(f"Auto-ingested {len(docs)} documents into knowledge base on startup.")
-
-
-@app.get("/health", response_model=HealthCheckResponse, tags=["System Health"])
-def health_check() -> HealthCheckResponse:
-    """Readiness and Liveness probe for Kubernetes pod orchestration."""
-    return HealthCheckResponse(
+@app.get("/health", response_model=HealthResponse, tags=["System"])
+async def health_check():
+    """System health and readiness probe."""
+    cv = get_cv_classifier()
+    return HealthResponse(
         status="healthy",
         services={
             "api_gateway": "online",
-            "cv_service": "online" if cv_service.is_loaded else "offline",
             "rag_pipeline": "online",
-            "vector_store": "online",
+            "cv_model": "online" if cv else "offline",
+            "vector_store": "online" if os.environ.get("QDRANT_URL") else "local",
         },
-        version="1.0.0",
     )
 
 
-@app.get("/metrics", tags=["Monitoring"])
-def metrics() -> Response:
-    """Expose Prometheus real-time operational metrics."""
-    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+@app.get("/api/weather", response_model=WeatherResponse, tags=["Tools"])
+async def get_weather_endpoint():
+    """Get current weather and agricultural season."""
+    from rag.tools import get_weather, get_current_date_context
+    import datetime
+
+    weather = get_weather()
+    date_ctx = get_current_date_context()
+
+    return WeatherResponse(
+        temperature=weather.get("temperature"),
+        wind_speed=weather.get("wind_speed"),
+        season=date_ctx.split("فصل ")[-1].rstrip(".") if "فصل" in date_ctx else "",
+        date=datetime.datetime.now().strftime("%Y-%m-%d"),
+    )
 
 
-@app.post("/api/v1/cv/predict", response_model=VisionPredictionResult, tags=["Computer Vision"])
-async def predict_crop_disease(
-    image: UploadFile = File(...),
-    crop_hint: Optional[str] = Form(None),
-) -> VisionPredictionResult:
-    """Standalone Computer Vision model inference endpoint for image disease identification."""
-    try:
-        contents = await image.read()
-        prediction = cv_service.predict(image_bytes=contents, filename=image.filename, crop_hint=crop_hint)
-        return VisionPredictionResult(
-            crop_type=prediction["crop_type"],
-            disease_label=prediction["disease_label"],
-            confidence_score=prediction["confidence_score"],
-            bounding_box=prediction.get("bounding_box"),
-        )
-    except Exception as err:
-        logger.error(f"Computer Vision prediction error: {err}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(err))
-
-
-@app.post(
-    "/api/v1/diagnose-and-advise",
-    response_model=DiagnoseAndAdviseResponse,
-    tags=["Integration Gateway"],
-)
-async def diagnose_and_advise(
-    farmer_query: str = Form(...),
-    image: Optional[UploadFile] = File(None),
-    crop_override: Optional[str] = Form(None),
-    disease_override: Optional[str] = Form(None),
-    region: Optional[str] = Form("egypt_general"),
-) -> DiagnoseAndAdviseResponse:
-    """Unified integration endpoint: processes crop leaf image + query, runs RAG retrieval, returns advice."""
+@app.post("/api/chat", response_model=ChatResponse, tags=["RAG"])
+async def chat_endpoint(request: ChatRequest):
+    """RAG-powered agricultural Q&A chat endpoint."""
     start_time = time.time()
 
     try:
-        # 1. Computer Vision Image Inference (if image payload attached)
-        vision_prediction_payload: Optional[Dict[str, Any]] = None
-        vision_result_schema: Optional[VisionPredictionResult] = None
+        pipeline = get_rag_pipeline()
 
-        if image is not None:
-            image_bytes = await image.read()
-            if len(image_bytes) > 0:
-                vision_prediction_payload = cv_service.predict(
-                    image_bytes=image_bytes, filename=image.filename, crop_hint=crop_override
-                )
-                vision_result_schema = VisionPredictionResult(
-                    crop_type=vision_prediction_payload["crop_type"],
-                    disease_label=vision_prediction_payload["disease_label"],
-                    confidence_score=vision_prediction_payload["confidence_score"],
-                    bounding_box=vision_prediction_payload.get("bounding_box"),
-                )
+        # Enrich query with weather context
+        from rag.tools import get_weather, get_current_date_context
+        date_context = get_current_date_context()
+        weather_data = get_weather()
 
-        # 2. Invoke RAG Pipeline with Vision Metadata
-        rag_response = rag_pipeline.run(
-            user_query=farmer_query,
-            vision_context=vision_prediction_payload,
-            crop_filter=crop_override,
-            disease_filter=disease_override,
-            region_filter=region,
+        weather_str = ""
+        if weather_data.get("status") == "success":
+            weather_str = f"درجة الحرارة: {weather_data.get('temperature')}°C، سرعة الرياح: {weather_data.get('wind_speed')} كم/س."
+
+        enriched_query = f"{request.query}\n(معلومة للمساعد: {date_context} {weather_str})"
+
+        result = pipeline.run(enriched_query)
+
+        sources = list(set(
+            f"صفحة {c.get('metadata', {}).get('page_start', '?')}"
+            for c in result.get("sources", [])
+        ))
+
+        latency = round(time.time() - start_time, 3)
+
+        return ChatResponse(
+            answer=result["answer"],
+            weather=weather_str,
+            sources=sources,
+            confidence=round(result.get("retrieval_confidence", 0), 4),
+            latency=latency,
+            intent=result.get("intent", ""),
+        )
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/diagnose", response_model=DiagnoseResponse, tags=["Vision + RAG"])
+async def diagnose_endpoint(
+    image: UploadFile = File(...),
+    query: str = Form("ما هو المرض وما هو العلاج؟"),
+):
+    """Upload a leaf image → CV diagnosis + RAG treatment advice."""
+    start_time = time.time()
+
+    try:
+        # Step 1: Read image
+        image_bytes = await image.read()
+        if not image_bytes:
+            raise HTTPException(status_code=400, detail="Empty image file.")
+
+        # Step 2: Run Computer Vision
+        cv = get_cv_classifier()
+        cv_result = {}
+        vision_context = None
+
+        if cv:
+            prediction = cv.predict(io.BytesIO(image_bytes))
+            cv_result = prediction
+
+            # Build vision context for RAG
+            vision_context = {
+                "crop_type": prediction.get("crop_type", ""),
+                "disease_label": prediction.get("disease_name", ""),
+                "confidence_score": prediction.get("top_confidence", 0),
+            }
+
+        # Step 3: Enrich query with CV results and run RAG
+        pipeline = get_rag_pipeline()
+
+        enriched_query = query
+        if vision_context and vision_context.get("crop_type") != "unknown":
+            crop_ar = cv_result.get("predictions", [{}])[0].get("label_ar", "")
+            enriched_query = f"{query}\n(نتيجة تحليل الصورة: المحصول: {vision_context['crop_type']}، المرض المكتشف: {crop_ar}، الثقة: {vision_context['confidence_score']:.0%})"
+
+        rag_result = pipeline.run(
+            user_query=enriched_query,
+            vision_context=vision_context,
         )
 
-        latency = time.time() - start_time
+        sources = list(set(
+            f"صفحة {c.get('metadata', {}).get('page_start', '?')}"
+            for c in rag_result.get("sources", [])
+        ))
 
-        # 3. Record metrics in MLOps Monitor
-        system_monitor.record_request(
-            intent=rag_response["intent"],
-            latency_sec=latency,
-            confidence=rag_response["retrieval_confidence"],
-            needs_review=rag_response["needs_agronomist_review"],
+        latency = round(time.time() - start_time, 3)
+
+        return DiagnoseResponse(
+            cv_result=cv_result,
+            advice=rag_result["answer"],
+            sources=sources,
+            confidence=round(rag_result.get("retrieval_confidence", 0), 4),
+            latency=latency,
         )
-
-        citations_list = [
-            CitationItem(
-                citation_tag=c["citation_tag"],
-                chunk_id=c.get("chunk_id"),
-                source_doc=c.get("source_doc"),
-                doc_type=c.get("doc_type"),
-            )
-            for c in rag_response.get("citations", [])
-        ]
-
-        return DiagnoseAndAdviseResponse(
-            status="success",
-            farmer_query=farmer_query,
-            processed_query=rag_response["processed_query"],
-            intent=rag_response["intent"],
-            vision_prediction=vision_result_schema,
-            answer=rag_response["answer"],
-            citations=citations_list,
-            retrieval_confidence=rag_response["retrieval_confidence"],
-            needs_agronomist_review=rag_response["needs_agronomist_review"],
-            latency_seconds=round(latency, 4),
-        )
-
-    except Exception as err:
-        logger.error(f"Integration pipeline error: {err}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Pipeline integration error: {str(err)}",
-        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Diagnose error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

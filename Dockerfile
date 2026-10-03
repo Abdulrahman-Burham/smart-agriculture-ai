@@ -1,4 +1,4 @@
-# Multi-stage production Dockerfile for Egyptian Agriculture AI Platform Gateway
+# Multi-stage production Dockerfile for Smart Agriculture AI MVP
 
 # Stage 1: Build & Dependencies
 FROM python:3.12-slim AS builder
@@ -28,8 +28,9 @@ ENV PYTHONPATH=/app \
 COPY --from=builder /install /usr/local
 
 COPY rag/ /app/rag/
-COPY backend/ /app/backend/
-COPY frontend/ /app/frontend/
+COPY app/ /app/app/
+COPY computer_vision/ /app/computer_vision/
+COPY data/sample_knowledge_base/ /app/data/sample_knowledge_base/
 COPY requirements.txt /app/
 
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
@@ -37,4 +38,7 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -sf http://localhost:8000/health || exit 1
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

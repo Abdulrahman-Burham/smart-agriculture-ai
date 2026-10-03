@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+import io
+from typing import Any, Dict, Optional
+
+from computer_vision.inference.classifier import PlantDiseaseClassifier
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +16,8 @@ class ComputerVisionService:
 
     def __init__(self, model_version: str = "v1.2.0"):
         self.model_version = model_version
-        self.is_loaded = True
+        self.classifier = PlantDiseaseClassifier()
+        self.is_loaded = self.classifier.model is not None
 
     def preprocess_image(self, image_bytes: bytes) -> Dict[str, Any]:
         """Preprocess raw image bytes into normalized tensor array representation."""
@@ -34,30 +38,39 @@ class ComputerVisionService:
         crop_hint: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Predict crop species, disease label, and confidence score from image payload."""
-        filename_lower = (filename or "").lower()
-
-        # Heuristic / deterministic model prediction based on filename/crop hint for integration & testing
-        if "tomato" in filename_lower or crop_hint == "tomato":
-            crop_type = "tomato"
-            disease_label = "early_blight"
-            confidence = 0.91
-        elif "potato" in filename_lower or crop_hint == "potato" or "ندوة" in filename_lower:
-            crop_type = "potato"
-            disease_label = "late_blight"
-            confidence = 0.95
-        elif "wheat" in filename_lower or crop_hint == "wheat" or "قمح" in filename_lower:
-            crop_type = "wheat"
-            disease_label = "yellow_rust"
-            confidence = 0.88
-        else:
-            crop_type = crop_hint or "potato"
-            disease_label = "late_blight"
-            confidence = 0.93
-
-        return {
-            "crop_type": crop_type,
-            "disease_label": disease_label,
-            "confidence_score": confidence,
-            "bounding_box": [0.15, 0.20, 0.85, 0.90],
-            "model_version": self.model_version,
-        }
+        if not image_bytes:
+            return {
+                "crop_type": "unknown",
+                "disease_label": "unknown",
+                "confidence_score": 0.0,
+                "bounding_box": [0.0, 0.0, 0.0, 0.0],
+                "model_version": self.model_version,
+                "predictions": []
+            }
+            
+        try:
+            image_stream = io.BytesIO(image_bytes)
+            results = self.classifier.predict(image_stream)
+            
+            crop_type = results.get('crop_type', 'unknown')
+            disease_label = results.get('disease_name', 'unknown')
+            confidence = results.get('top_confidence', 0.0)
+            predictions = results.get('predictions', [])
+            
+            return {
+                "crop_type": crop_type,
+                "disease_label": disease_label,
+                "confidence_score": confidence,
+                "bounding_box": [0.15, 0.20, 0.85, 0.90], # mock bounding box
+                "model_version": self.model_version,
+                "predictions": predictions
+            }
+        except Exception as e:
+            logger.error(f"Prediction error: {e}")
+            return {
+                "crop_type": "unknown",
+                "disease_label": "unknown",
+                "confidence_score": 0.0,
+                "bounding_box": [0.0, 0.0, 0.0, 0.0],
+                "model_version": self.model_version,
+            }
