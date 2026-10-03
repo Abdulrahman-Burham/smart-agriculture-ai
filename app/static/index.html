@@ -429,6 +429,113 @@
             color: var(--text-muted);
         }
 
+        /* Navigation Tabs */
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 0 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-btn {
+            background: var(--glass-bg);
+            border: var(--glass-border);
+            color: var(--text-muted);
+            padding: 0.75rem 1.8rem;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            box-shadow: var(--shadow);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, var(--primary-green), var(--primary-dark));
+            color: #ffffff;
+            border-color: transparent;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Power BI Container */
+        .powerbi-view {
+            display: none;
+            padding: 0 2rem;
+            margin-bottom: 2rem;
+            flex: 1;
+        }
+
+        .powerbi-view.active {
+            display: block;
+        }
+
+        .main-container.hidden {
+            display: none;
+        }
+
+        .powerbi-card {
+            width: 100%;
+            height: 760px;
+            border-radius: var(--radius-card);
+            overflow: hidden;
+            position: relative;
+            background: rgba(10, 10, 10, 0.6);
+            border: var(--glass-border);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .powerbi-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.5rem;
+            border-bottom: var(--glass-border);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .powerbi-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .powerbi-actions a {
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.4rem 1rem;
+            background: var(--glass-bg);
+            border: var(--glass-border);
+            border-radius: 20px;
+            transition: var(--transition);
+        }
+
+        .powerbi-actions a:hover {
+            background: var(--primary-green);
+            color: #fff;
+        }
+
+        .powerbi-card iframe {
+            width: 100%;
+            flex: 1;
+            border: none;
+        }
+
         /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .main-container {
@@ -445,6 +552,13 @@
             .chat-container {
                 height: 500px;
             }
+            .powerbi-card {
+                height: 550px;
+            }
+            .nav-container {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
         }
     </style>
 </head>
@@ -452,7 +566,7 @@
 
     <header class="glass">
         <div class="logo">
-            🌿 الخبير الزراعي
+            🌿 الخبير الزراعي - Smart Agriculture AI
         </div>
         <div class="header-info">
             <div id="weather-widget">🌡️ جاري التحميل...</div>
@@ -460,7 +574,34 @@
         </div>
     </header>
 
-    <div class="main-container">
+    <!-- Navigation Tabs -->
+    <div class="nav-container">
+        <button class="nav-btn active" id="btn-assistant" onclick="switchView('assistant')">
+            🤖 المساعد الذكي والتشخيص
+        </button>
+        <button class="nav-btn" id="btn-powerbi" onclick="switchView('powerbi')">
+            📊 لوحة تحليلات AgriTech (Power BI)
+        </button>
+    </div>
+
+    <!-- Power BI Report View -->
+    <div class="powerbi-view" id="powerbi-view">
+        <div class="powerbi-card glass">
+            <div class="powerbi-toolbar">
+                <div class="powerbi-title">
+                    📊 لوحة تحليلات AgriTech المتكاملة - Power BI Report
+                </div>
+                <div class="powerbi-actions">
+                    <a href="https://app.powerbi.com/view?r=eyJrIjoiNDUwN2U1ZWItMDc5Mi00ZjI4LWFjYzQtZDVhOGRkYWVjN2VkIiwidCI6IjNmNGYyOGVkLTAwNWUtNGI5Ny1hNzJkLWFkNDQ4OWYzMTg1NyJ9" target="_blank" rel="noopener">
+                        🔗 فتح في نافذة مستقلة ↗
+                    </a>
+                </div>
+            </div>
+            <iframe title="AgriTech Power BI Analytics" src="https://app.powerbi.com/view?r=eyJrIjoiNDUwN2U1ZWItMDc5Mi00ZjI4LWFjYzQtZDVhOGRkYWVjN2VkIiwidCI6IjNmNGYyOGVkLTAwNWUtNGI5Ny1hNzJkLWFkNDQ4OWYzMTg1NyJ9" frameborder="0" allowFullScreen="true"></iframe>
+        </div>
+    </div>
+
+    <div class="main-container" id="main-container">
         
         <!-- Left Panel: Vision & Diagnosis -->
         <div class="panel">
@@ -520,7 +661,7 @@
     </div>
 
     <!-- Bottom Stats Bar -->
-    <div class="stats-bar">
+    <div class="stats-bar" id="stats-bar">
         <div class="stat-card glass">
             <div class="stat-value"><span id="stat-confidence">--</span>%</div>
             <div class="stat-label">🎯 نسبة الثقة</div>
@@ -540,6 +681,29 @@
     </div>
 
     <script>
+        // Tab Switcher
+        function switchView(viewName) {
+            const mainContainer = document.getElementById('main-container');
+            const powerbiView = document.getElementById('powerbi-view');
+            const statsBar = document.getElementById('stats-bar');
+            const btnAssistant = document.getElementById('btn-assistant');
+            const btnPowerbi = document.getElementById('btn-powerbi');
+
+            if (viewName === 'assistant') {
+                mainContainer.classList.remove('hidden');
+                powerbiView.classList.remove('active');
+                statsBar.style.display = 'grid';
+                btnAssistant.classList.add('active');
+                btnPowerbi.classList.remove('active');
+            } else if (viewName === 'powerbi') {
+                mainContainer.classList.add('hidden');
+                powerbiView.classList.add('active');
+                statsBar.style.display = 'none';
+                btnAssistant.classList.remove('active');
+                btnPowerbi.classList.add('active');
+            }
+        }
+
         // State variables
         let queryCount = 0;
         let selectedFile = null;
