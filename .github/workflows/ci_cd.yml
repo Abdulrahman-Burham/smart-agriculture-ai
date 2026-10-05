@@ -34,7 +34,7 @@ jobs:
           PYTHONPATH=. python scripts/generate_qa_report.py
 
       - name: Upload QA Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: qa-report
           path: reports/
