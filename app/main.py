@@ -144,16 +144,21 @@ def get_cv_classifier():
     return _cv_classifier if _cv_classifier != "unavailable" else None
 
 
+import asyncio
+
 # ─── Routes ──────────────────────────────────────────────────────────
 
 @app.get("/", include_in_schema=False)
+@app.head("/", include_in_schema=False)
 @app.get("/dashboard", include_in_schema=False)
+@app.head("/dashboard", include_in_schema=False)
 async def serve_dashboard():
     """Serve the unified MVP dashboard."""
     return FileResponse("app/static/index.html")
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
+@app.head("/health", response_model=HealthResponse, tags=["System"])
 async def health_check():
     """System health and readiness probe."""
     cv = get_cv_classifier()
@@ -174,8 +179,8 @@ async def get_weather_endpoint():
     from rag.tools import get_weather, get_current_date_context
     import datetime
 
-    weather = get_weather()
-    date_ctx = get_current_date_context()
+    weather = await asyncio.to_thread(get_weather)
+    date_ctx = await asyncio.to_thread(get_current_date_context)
 
     return WeatherResponse(
         temperature=weather.get("temperature"),
@@ -187,7 +192,7 @@ async def get_weather_endpoint():
 
 @app.post("/api/chat", response_model=ChatResponse, tags=["RAG"])
 async def chat_endpoint(request: ChatRequest):
-    """RAG-powered agricultural Q&A chat endpoint."""
+    """RAG-powered agricultural Q&A chat endpoint with non-blocking thread execution."""
     start_time = time.time()
 
     try:
@@ -195,8 +200,8 @@ async def chat_endpoint(request: ChatRequest):
 
         # Enrich query with weather context
         from rag.tools import get_weather, get_current_date_context
-        date_context = get_current_date_context()
-        weather_data = get_weather()
+        date_context = await asyncio.to_thread(get_current_date_context)
+        weather_data = await asyncio.to_thread(get_weather)
 
         weather_str = ""
         if weather_data.get("status") == "success":
@@ -204,7 +209,7 @@ async def chat_endpoint(request: ChatRequest):
 
         enriched_query = f"{request.query}\n(معلومة للمساعد: {date_context} {weather_str})"
 
-        result = pipeline.run(enriched_query)
+        result = await asyncio.to_thread(pipeline.run, enriched_query)
 
         sources = list(set(
             f"صفحة {c.get('metadata', {}).get('page_start', '?')}"
@@ -231,32 +236,32 @@ async def diagnose_endpoint(
     image: UploadFile = File(...),
     query: str = Form("ما هو المرض وما هو العلاج؟"),
 ):
-    """Upload a leaf image → CV diagnosis + RAG treatment advice."""
+    """Upload a leaf image → CV diagnosis + RAG treatment advice with non-blocking execution."""
     start_time = time.time()
 
     try:
-        # Step 1: Read image
+        # Step 1: Read image bytes
         image_bytes = await image.read()
         if not image_bytes:
             raise HTTPException(status_code=400, detail="Empty image file.")
 
-        # Step 2: Run Computer Vision
+        # Step 2: Run Computer Vision prediction in thread pool
         cv = get_cv_classifier()
         cv_result = {}
         vision_context = None
 
         if cv:
-            prediction = cv.predict(io.BytesIO(image_bytes))
+            image_stream = io.BytesIO(image_bytes)
+            prediction = await asyncio.to_thread(cv.predict, image_stream)
             cv_result = prediction
 
-            # Build vision context for RAG
             vision_context = {
                 "crop_type": prediction.get("crop_type", ""),
                 "disease_label": prediction.get("disease_name", ""),
                 "confidence_score": prediction.get("top_confidence", 0),
             }
 
-        # Step 3: Enrich query with CV results and run RAG
+        # Step 3: Enrich query with CV results and run RAG in thread pool
         pipeline = get_rag_pipeline()
 
         enriched_query = query
@@ -264,7 +269,8 @@ async def diagnose_endpoint(
             crop_ar = cv_result.get("predictions", [{}])[0].get("label_ar", "")
             enriched_query = f"{query}\n(نتيجة تحليل الصورة: المحصول: {vision_context['crop_type']}، المرض المكتشف: {crop_ar}، الثقة: {vision_context['confidence_score']:.0%})"
 
-        rag_result = pipeline.run(
+        rag_result = await asyncio.to_thread(
+            pipeline.run,
             user_query=enriched_query,
             vision_context=vision_context,
         )
@@ -288,3 +294,4 @@ async def diagnose_endpoint(
     except Exception as e:
         logger.error(f"Diagnose error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
