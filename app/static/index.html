@@ -217,6 +217,26 @@
             border-radius: 20px;
         }
 
+        .model-badge {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #10b981;
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+            transition: var(--transition);
+        }
+
+        .model-badge:hover {
+            background: rgba(16, 185, 129, 0.25);
+            transform: scale(1.03);
+        }
+
         .prediction-item {
             margin-bottom: 1rem;
         }
@@ -605,7 +625,10 @@
         
         <!-- Left Panel: Vision & Diagnosis -->
         <div class="panel">
-            <h2 class="panel-title">👁️ التشخيص البصري</h2>
+            <h2 class="panel-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>👁️ التشخيص البصري</span>
+                <span class="model-badge" id="panel-model-badge">⚡ EfficientNetV2B2_best</span>
+            </h2>
             
             <div class="upload-zone glass" id="upload-zone">
                 <input type="file" id="file-input" accept="image/*">
@@ -622,9 +645,12 @@
             </div>
 
             <div class="cv-results glass" id="cv-results">
-                <div class="result-header">
-                    <div class="disease-name" id="cv-disease-name">تبقع الأوراق</div>
-                    <div class="crop-type" id="cv-crop-type">طماطم</div>
+                <div class="result-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div class="disease-name" id="cv-disease-name">تشخيص النبات</div>
+                        <div class="crop-type" id="cv-crop-type">المحصول</div>
+                    </div>
+                    <div class="model-badge" id="cv-model-badge">🤖 الموديل: EfficientNetV2B2_best</div>
                 </div>
                 <div id="predictions-container">
                     <!-- Predictions will be injected here -->
@@ -918,32 +944,45 @@
 
         function displayCVResults(cvData) {
             if (!cvData) return;
+
+            const modelName = cvData.model_used || "EfficientNetV2B2_best";
+            const cvBadge = document.getElementById('cv-model-badge');
+            const panelBadge = document.getElementById('panel-model-badge');
+            if (cvBadge) cvBadge.innerText = `🤖 الموديل: ${modelName}`;
+            if (panelBadge) panelBadge.innerText = `⚡ ${modelName}`;
             
-            document.getElementById('cv-disease-name').innerText = cvData.disease_name;
-            if(cvData.disease_name.includes('سليم') || cvData.disease_name.includes('Healthy')) {
-                document.getElementById('cv-disease-name').classList.add('healthy');
+            const diseaseText = cvData.disease_name && cvData.disease_name !== "unknown" 
+                ? cvData.disease_name 
+                : (cvData.predictions && cvData.predictions[0] ? (cvData.predictions[0].label_ar || cvData.predictions[0].label || cvData.predictions[0].name) : "تشخيص النبات");
+
+            const diseaseEl = document.getElementById('cv-disease-name');
+            diseaseEl.innerText = diseaseText;
+            if(diseaseText.includes('سليم') || diseaseText.includes('Healthy')) {
+                diseaseEl.classList.add('healthy');
             } else {
-                document.getElementById('cv-disease-name').classList.remove('healthy');
+                diseaseEl.classList.remove('healthy');
             }
             
-            document.getElementById('cv-crop-type').innerText = cvData.crop_type || "غير محدد";
+            document.getElementById('cv-crop-type').innerText = cvData.crop_type && cvData.crop_type !== "unknown" ? cvData.crop_type : "محصول عام";
             
             const container = document.getElementById('predictions-container');
             container.innerHTML = '';
             
             if (cvData.predictions && cvData.predictions.length > 0) {
                 cvData.predictions.slice(0, 3).forEach(pred => {
-                    const conf = pred.confidence;
-                    const color = getConfidenceColor(conf);
+                    const rawConf = pred.confidence;
+                    const confPercent = rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf);
+                    const color = getConfidenceColor(confPercent);
+                    const predName = pred.label_ar || pred.label || pred.name || "فئة زراعية";
                     
                     container.innerHTML += `
                         <div class="prediction-item">
                             <div class="prediction-label">
-                                <span>${pred.name}</span>
-                                <span style="color: ${color}">${conf}%</span>
+                                <span>${predName}</span>
+                                <span style="color: ${color}">${confPercent}%</span>
                             </div>
                             <div class="progress-bg">
-                                <div class="progress-bar" style="width: ${conf}%; background: ${color}"></div>
+                                <div class="progress-bar" style="width: ${confPercent}%; background: ${color}"></div>
                             </div>
                         </div>
                     `;
