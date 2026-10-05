@@ -157,6 +157,13 @@ async def serve_dashboard():
     return FileResponse("app/static/index.html")
 
 
+@app.get("/simple", include_in_schema=False)
+@app.head("/simple", include_in_schema=False)
+async def serve_simple_ui():
+    """Serve isolated simple 2-button image diagnosis interface."""
+    return FileResponse("app/static/simple.html")
+
+
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 @app.head("/health", response_model=HealthResponse, tags=["System"])
 async def health_check():

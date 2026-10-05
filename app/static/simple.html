@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تشخيص أمراض النبات - Smart Agriculture Vision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+            --primary-green: #10b981;
+            --primary-dark: #059669;
+            --accent-green: #0a4a2e;
+            --text-light: #e2e8f0;
+            --text-muted: #94a3b8;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --radius-card: 16px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: var(--glass-border);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow);
+        }
+
+        header {
+            width: 100%;
+            max-width: 800px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .model-badge {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #10b981;
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .main-card {
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .upload-zone {
+            border: 2px dashed rgba(16, 185, 129, 0.5);
+            border-radius: var(--radius-card);
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.02);
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary-green);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .upload-zone input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-text {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        #image-preview {
+            max-width: 100%;
+            max-height: 320px;
+            border-radius: 12px;
+            display: none;
+            object-fit: contain;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1.2rem;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 1.1rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            display: none;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .disease-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #ef4444;
+        }
+
+        .disease-name.healthy {
+            color: var(--primary-green);
+        }
+
+        .crop-type {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        .prediction-item {
+            margin-bottom: 1rem;
+        }
+
+        .prediction-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.3rem;
+            font-size: 0.95rem;
+        }
+
+        .progress-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        .advice-box {
+            background: rgba(255, 255, 255, 0.04);
+            border-right: 3px solid var(--primary-green);
+            padding: 1rem 1.2rem;
+            border-radius: 8px;
+            margin-top: 1.2rem;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 600px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="glass">
+        <div class="logo">
+            🌿 تشخيص أمراض النبات معزول
+        </div>
+        <div class="model-badge">
+            ⚡ الموديل: EfficientNetV2B2_best
+        </div>
+    </header>
+
+    <div class="main-card glass">
+        <div class="card-title">
+            📸 اختيار الصورة وإظهار النتيجة
+        </div>
+
+        <div class="upload-zone" id="upload-zone">
+            <input type="file" id="file-input" accept="image/*">
+            <img id="image-preview" src="" alt="معاينة الصورة">
+            <div id="upload-placeholder">
+                <div class="upload-icon">📸</div>
+                <div class="upload-text">اضغط هنا لاختيار صورة ورقة النبات أو اسحبها إلى هنا</div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn-action btn-primary" id="btn-select">
+                📸 1. ارفع صورة
+            </button>
+            <button class="btn-action btn-secondary" id="btn-diagnose" disabled>
+                🔍 2. إظهار النتيجة
+            </button>
+        </div>
+
+        <div class="results-section glass" id="results-section">
+            <div class="result-header">
+                <div>
+                    <div class="disease-name" id="disease-name">تشخيص النبات</div>
+                    <div class="crop-type" id="crop-type">المحصول</div>
+                </div>
+                <div class="model-badge" id="res-model-badge">
+                    🤖 EfficientNetV2B2_best
+                </div>
+            </div>
+
+            <div id="predictions-container"></div>
+
+            <div class="advice-box" id="advice-box" style="display: none;">
+                <strong>💡 التوصية والعلاج:</strong>
+                <div id="advice-text" style="margin-top: 0.5rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+        const imagePreview = document.getElementById('image-preview');
+        const uploadPlaceholder = document.getElementById('upload-placeholder');
+        const btnSelect = document.getElementById('btn-select');
+        const btnDiagnose = document.getElementById('btn-diagnose');
+        const resultsSection = document.getElementById('results-section');
+
+        btnSelect.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = '#10b981';
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('الرجاء اختيار ملف صورة صالح.');
+                return;
+            }
+
+            selectedFile = file;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+                uploadPlaceholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+
+            btnDiagnose.disabled = false;
+        }
+
+        btnDiagnose.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            btnDiagnose.disabled = true;
+            btnDiagnose.innerText = '⏳ جاري التشخيص...';
+
+            try {
+                const formData = new FormData();
+                formData.append('image', selectedFile);
+                formData.append('query', 'ما هو التشخيص وما هو العلاج المناسب؟');
+
+                const res = await fetch('/api/diagnose', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    renderResults(data);
+                } else {
+                    alert('حدث خطأ في الاتصال بالخادم.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('حدث خطأ في الاتصال.');
+            } finally {
+                btnDiagnose.disabled = false;
+                btnDiagnose.innerText = '🔍 2. إظهار النتيجة';
+            }
+        });
+
+        function renderResults(data) {
+            const cvData = data.cv_result || {};
+            const modelName = cvData.model_used || "EfficientNetV2B2_best";
+
+            document.getElementById('res-model-badge').innerText = `🤖 الموديل: ${modelName}`;
+
+            const diseaseText = cvData.disease_name && cvData.disease_name !== "unknown"
+                ? cvData.disease_name
+                : (cvData.predictions && cvData.predictions[0] ? (cvData.predictions[0].label_ar || cvData.predictions[0].label) : "تشخيص النبات");
+
+            const diseaseEl = document.getElementById('disease-name');
+            diseaseEl.innerText = diseaseText;
+            if (diseaseText.includes('سليم') || diseaseText.includes('Healthy')) {
+                diseaseEl.classList.add('healthy');
+            } else {
+                diseaseEl.classList.remove('healthy');
+            }
+
+            document.getElementById('crop-type').innerText = `المحصول: ${cvData.crop_type && cvData.crop_type !== 'unknown' ? cvData.crop_type : 'عام'}`;
+
+            const container = document.getElementById('predictions-container');
+            container.innerHTML = '';
+
+            if (cvData.predictions && cvData.predictions.length > 0) {
+                cvData.predictions.slice(0, 3).forEach(pred => {
+                    const rawConf = pred.confidence;
+                    const confPercent = rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf);
+                    const color = confPercent > 80 ? '#10b981' : (confPercent > 50 ? '#f59e0b' : '#ef4444');
+                    const predName = pred.label_ar || pred.label || "فئة زراعية";
+
+                    container.innerHTML += `
+                        <div class="prediction-item">
+                            <div class="prediction-label">
+                                <span>${predName}</span>
+                                <span style="color: ${color}">${confPercent}%</span>
+                            </div>
+                            <div class="progress-bg">
+                                <div class="progress-bar" style="width: ${confPercent}%; background: ${color}"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (data.advice) {
+                const adviceText = data.advice.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+                document.getElementById('advice-text').innerHTML = adviceText;
+                document.getElementById('advice-box').style.display = 'block';
+            }
+
+            resultsSection.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

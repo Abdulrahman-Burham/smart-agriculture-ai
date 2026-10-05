@@ -644,16 +644,6 @@
                 </div>
             </div>
 
-            <!-- Two Action Buttons: 1. Upload Image | 2. Show Result -->
-            <div class="action-buttons" style="display: flex; gap: 1rem; margin-top: 1.2rem; margin-bottom: 1.2rem;">
-                <button class="btn-action primary" id="btn-select-image" style="flex: 1; padding: 1rem; font-size: 1.05rem; font-weight: 700; border-radius: 14px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.6rem; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); transition: all 0.3s ease;">
-                    📸 1. ارفع صورة
-                </button>
-                <button class="btn-action secondary" id="btn-diagnose-image" style="flex: 1; padding: 1rem; font-size: 1.05rem; font-weight: 700; border-radius: 14px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; cursor: not-allowed; opacity: 0.5; display: flex; align-items: center; justify-content: center; gap: 0.6rem; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); transition: all 0.3s ease;" disabled>
-                    🔍 2. إظهار النتيجة
-                </button>
-            </div>
-
             <div class="cv-results glass" id="cv-results">
                 <div class="result-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
@@ -1002,29 +992,11 @@
             cvResults.style.display = 'block';
         }
 
-        const btnSelectImage = document.getElementById('btn-select-image');
-        const btnDiagnoseImage = document.getElementById('btn-diagnose-image');
-
         // Event Listeners for Chat
         sendBtn.addEventListener('click', handleSend);
         chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') handleSend();
         });
-
-        // Event Listeners for Buttons
-        if (btnSelectImage) {
-            btnSelectImage.addEventListener('click', (e) => {
-                e.stopPropagation();
-                fileInput.click();
-            });
-        }
-
-        if (btnDiagnoseImage) {
-            btnDiagnoseImage.addEventListener('click', (e) => {
-                e.stopPropagation();
-                handleDiagnoseOnly();
-            });
-        }
 
         // Event Listeners for Upload Zone
         uploadZone.addEventListener('click', () => fileInput.click());
@@ -1074,54 +1046,8 @@
             };
             reader.readAsDataURL(file);
             
-            // Enable Diagnose Button
-            if (btnDiagnoseImage) {
-                btnDiagnoseImage.disabled = false;
-                btnDiagnoseImage.style.opacity = '1';
-                btnDiagnoseImage.style.cursor = 'pointer';
-            }
-        }
-
-        async function handleDiagnoseOnly() {
-            if (!selectedFile) {
-                alert('الرجاء رفع صورة أولاً!');
-                return;
-            }
-
-            if (btnDiagnoseImage) {
-                btnDiagnoseImage.disabled = true;
-                btnDiagnoseImage.innerText = '⏳ جاري التشخيص...';
-            }
-            
-            const startTime = performance.now();
-
-            try {
-                const formData = new FormData();
-                formData.append('image', selectedFile);
-                formData.append('query', 'ما هو المرض وما هو العلاج المناسب؟');
-
-                const res = await fetch('/api/diagnose', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    displayCVResults(data.cv_result);
-                    addMessage(data.advice, false, data.sources);
-                    updateStats(data.confidence, data.latency || (performance.now() - startTime));
-                } else {
-                    alert('حدث خطأ أثناء الاتصال بالخادم لمسار التشخيص.');
-                }
-            } catch (err) {
-                console.error('Diagnosis error:', err);
-                alert('عذراً، حدث خطأ في الاتصال.');
-            } finally {
-                if (btnDiagnoseImage) {
-                    btnDiagnoseImage.disabled = false;
-                    btnDiagnoseImage.innerText = '🔍 2. إظهار النتيجة';
-                }
-            }
+            // Focus chat input so user can type a question about the image
+            chatInput.focus();
         }
 
     </script>
