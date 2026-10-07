@@ -454,6 +454,13 @@ async def serve_login_page():
     return FileResponse("app/templates/login.html", headers=_NO_CACHE_HEADERS)
 
 
+@app.get("/auth/choose-account", include_in_schema=False)
+@app.head("/auth/choose-account", include_in_schema=False)
+async def serve_oauth_chooser_page():
+    """Serve the Google/Facebook/Yahoo Account Chooser tab."""
+    return FileResponse("app/templates/oauth_chooser.html", headers=_NO_CACHE_HEADERS)
+
+
 @app.get("/favicon.ico", include_in_schema=False)
 async def serve_favicon():
     """Serve brand favicon."""

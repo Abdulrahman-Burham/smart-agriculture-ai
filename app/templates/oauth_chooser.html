@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Sign in - Google Accounts</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Cairo:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f0f4f9;
+            color: #1f1f1f;
+            font-family: 'Roboto', 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .outer-wrap {
+            width: 100%;
+            max-width: 880px;
+        }
+
+        .oauth-card {
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Top Google Progress Bar */
+        .loading-bar {
+            height: 4px;
+            width: 100%;
+            background: #e8f0fe;
+            overflow: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+            z-index: 10;
+        }
+
+        .loading-bar.active {
+            display: block;
+        }
+
+        .loading-bar::after {
+            content: '';
+            display: block;
+            height: 100%;
+            width: 45%;
+            background: #0b57d0;
+            border-radius: 2px;
+            animation: gLoad 1s infinite ease-in-out;
+        }
+
+        @keyframes gLoad {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(240%); }
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 36px;
+            border-bottom: 1px solid #e0e3e7;
+            font-size: 14px;
+            color: #444746;
+            font-weight: 500;
+        }
+
+        .card-body {
+            display: grid;
+            grid-template-columns: 1fr 1.15fr;
+            gap: 32px;
+            padding: 36px 36px 32px;
+            min-height: 360px;
+        }
+
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: 4px;
+        }
+
+        .app-logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-bottom: 20px;
+            border: 1px solid #e0e3e7;
+        }
+
+        .choose-title {
+            font-size: 32px;
+            font-weight: 400;
+            color: #1f1f1f;
+            line-height: 1.25;
+            margin-bottom: 12px;
+        }
+
+        .choose-subtitle {
+            font-size: 16px;
+            color: #444746;
+            line-height: 1.5;
+        }
+
+        .choose-subtitle strong {
+            color: #0b57d0;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .account-list {
+            list-style: none;
+            border-top: 1px solid #e0e3e7;
+        }
+
+        .account-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 12px;
+            border-bottom: 1px solid #e0e3e7;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-radius 0.15s ease;
+        }
+
+        .account-item:hover {
+            background-color: #f3f6fc;
+            border-radius: 12px;
+        }
+
+        .acc-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 500;
+            color: #ffffff;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .acc-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .acc-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .acc-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f1f1f;
+            line-height: 1.35;
+        }
+
+        .acc-email {
+            font-size: 12px;
+            color: #444746;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .use-another-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #444746;
+            flex-shrink: 0;
+        }
+
+        .policy-note {
+            font-size: 12px;
+            color: #444746;
+            line-height: 1.6;
+            margin-top: 24px;
+        }
+
+        .policy-note a {
+            color: #0b57d0;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .policy-note a:hover {
+            text-decoration: underline;
+        }
+
+        /* Add Another Account View */
+        .another-account-form {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            padding-top: 6px;
+        }
+
+        .another-account-form.visible {
+            display: flex;
+        }
+
+        .g-input-wrap {
+            position: relative;
+        }
+
+        .g-input {
+            width: 100%;
+            padding: 15px 16px;
+            font-size: 16px;
+            border: 1px solid #747775;
+            border-radius: 4px;
+            color: #1f1f1f;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.15s;
+        }
+
+        .g-input:focus {
+            border-color: #0b57d0;
+            border-width: 2px;
+            padding: 14px 15px;
+        }
+
+        .g-form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .btn-g-text {
+            background: none;
+            border: none;
+            color: #0b57d0;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .btn-g-text:hover {
+            background: #f0f4f9;
+        }
+
+        .btn-g-primary {
+            background: #0b57d0;
+            color: #ffffff;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .btn-g-primary:hover {
+            background: #0842a0;
+        }
+
+        /* Footer */
+        .page-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 8px;
+            font-size: 12px;
+            color: #444746;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .lang-select {
+            background: transparent;
+            border: none;
+            color: #444746;
+            font-size: 12px;
+            cursor: pointer;
+            outline: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-links a {
+            color: #444746;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 680px) {
+            body {
+                padding: 12px;
+                background: #ffffff;
+                justify-content: flex-start;
+            }
+            .oauth-card {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            .card-header {
+                padding: 14px 16px;
+            }
+            .card-body {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 24px 16px;
+            }
+            .choose-title {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="outer-wrap">
+    <div class="oauth-card">
+        <div class="loading-bar active" id="loadingBar"></div>
+
+        <div class="card-header" id="providerHeader">
+            <span id="providerLogo">
+                <svg width="18" height="18" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+            </span>
+            <span id="providerHeaderText">Sign in with Google</span>
+        </div>
+
+        <div class="card-body">
+            <div class="left-col">
+                <img src="/logo.png" alt="Smart Agriculture AI" class="app-logo" onerror="this.style.display='none'">
+                <h1 class="choose-title" id="mainHeading">Choose an account</h1>
+                <p class="choose-subtitle">
+                    to continue to <strong>Smart Agriculture AI (الخبير الزراعي)</strong>
+                </p>
+            </div>
+
+            <div class="right-col">
+                <!-- Account Chooser List View -->
+                <div id="chooserView">
+                    <ul class="account-list" id="accountsListEl"></ul>
+
+                    <div class="account-item" onclick="showAnotherAccountForm()" style="border-bottom: 1px solid #e0e3e7;">
+                        <div class="use-another-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <line x1="19" y1="8" x2="19" y2="14"/>
+                                <line x1="22" y1="11" x2="16" y2="11"/>
+                            </svg>
+                        </div>
+                        <div class="acc-info">
+                            <div class="acc-name">Use another account</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Use Another Account Input View -->
+                <form class="another-account-form" id="anotherAccountForm" onsubmit="submitNewAccount(event)">
+                    <div class="g-input-wrap">
+                        <input type="text" id="newAccEmail" class="g-input" placeholder="Email or phone" autocomplete="username email" required>
+                    </div>
+                    <div class="g-input-wrap">
+                        <input type="text" id="newAccName" class="g-input" placeholder="Full Name (optional)" autocomplete="name">
+                    </div>
+                    <div id="newAccErr" style="display:none; color:#b3261e; font-size:12px;"></div>
+                    <div class="g-form-actions">
+                        <button type="button" class="btn-g-text" onclick="backToChooser()">Back to accounts</button>
+                        <button type="submit" class="btn-g-primary" id="btnNextSubmit">Next</button>
+                    </div>
+                </form>
+
+                <div class="policy-note">
+                    Before using this app, you can review Smart Agriculture AI’s
+                    <a href="/" target="_blank">Privacy Policy</a> and
+                    <a href="/" target="_blank">Terms of Service</a>.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-footer">
+        <select class="lang-select" aria-label="Language">
+            <option value="en-GB">English (United Kingdom)</option>
+            <option value="ar-EG">العربية (مصر)</option>
+        </select>
+
+        <div class="footer-links">
+            <a href="https://support.google.com/accounts?hl=en-GB&p=account_iph" target="_blank" rel="noopener">Help</a>
+            <a href="https://accounts.google.com/TOS?loc=EG&hl=en-GB&privacy=true" target="_blank" rel="noopener">Privacy</a>
+            <a href="https://accounts.google.com/TOS?loc=EG&hl=en-GB" target="_blank" rel="noopener">Terms</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const provider = (params.get('provider') || 'google').toLowerCase();
+    const nextUrl = params.get('next') || '/';
+
+    const PROVIDER_CONFIG = {
+        google: {
+            title: 'Sign in - Google Accounts',
+            header: 'Sign in with Google',
+            domain: '@gmail.com',
+            logo: `<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>`
+        },
+        facebook: {
+            title: 'Sign in with Facebook',
+            header: 'Sign in with Facebook',
+            domain: '@gmail.com',
+            logo: `<svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`
+        },
+        yahoo: {
+            title: 'Sign in with Yahoo',
+            header: 'Sign in with Yahoo',
+            domain: '@yahoo.com',
+            logo: `<svg width="18" height="18" viewBox="0 0 24 24" fill="#6001D2"><path d="M12.9 14.5 17.5 4h-3.6l-2.7 6.8L8.5 4H4.7l4.8 10.5V20h3.4v-5.5z"/><circle cx="18.3" cy="17.8" r="2.1"/></svg>`
+        }
+    };
+
+    const cfg = PROVIDER_CONFIG[provider] || PROVIDER_CONFIG.google;
+    document.title = cfg.title;
+    document.getElementById('providerHeaderText').textContent = cfg.header;
+    document.getElementById('providerLogo').innerHTML = cfg.logo;
+
+    // Default accounts + any saved accounts on device
+    const DEFAULT_ACCOUNTS = [
+        {
+            full_name: 'Burham Abdo',
+            identifier: 'burhamabdo11@gmail.com',
+            color: '#1a73e8'
+        },
+        {
+            full_name: 'Abdulrahman Burham',
+            identifier: 'burhamabdo11edu@gmail.com',
+            color: '#188038'
+        }
+    ];
+
+    const AVATAR_COLORS = ['#1a73e8', '#188038', '#d93025', '#9334e6', '#e37400', '#007b83'];
+
+    function getChooserAccounts() {
+        let saved = [];
+        try {
+            saved = JSON.parse(localStorage.getItem('agri_saved_accounts') || '[]');
+        } catch (e) {}
+
+        const merged = [];
+        const seen = new Set();
+
+        for (const acc of [...saved, ...DEFAULT_ACCOUNTS]) {
+            const id = (acc.identifier || '').toLowerCase().trim();
+            if (!id || seen.has(id)) continue;
+            seen.add(id);
+            merged.push(acc);
+        }
+        return merged;
+    }
+
+    function renderAccounts() {
+        const list = getChooserAccounts();
+        const ul = document.getElementById('accountsListEl');
+        ul.innerHTML = list.map((acc, idx) => {
+            const name = acc.full_name || acc.identifier.split('@')[0];
+            const initial = name.trim().charAt(0).toUpperCase();
+            const bg = acc.color || AVATAR_COLORS[idx % AVATAR_COLORS.length];
+            const avatarInner = acc.avatar_url
+                ? `<img src="${acc.avatar_url}" alt="">`
+                : initial;
+            return `
+                <li class="account-item" onclick="selectAccount(${idx})">
+                    <div class="acc-avatar" style="background:${bg}">${avatarInner}</div>
+                    <div class="acc-info">
+                        <div class="acc-name">${name}</div>
+                        <div class="acc-email">${acc.identifier}</div>
+                    </div>
+                </li>
+            `;
+        }).join('');
+    }
+
+    function showAnotherAccountForm() {
+        document.getElementById('chooserView').style.display = 'none';
+        document.getElementById('anotherAccountForm').classList.add('visible');
+        document.getElementById('mainHeading').textContent = 'Sign in';
+        setTimeout(() => document.getElementById('newAccEmail').focus(), 80);
+    }
+
+    function backToChooser() {
+        document.getElementById('anotherAccountForm').classList.remove('visible');
+        document.getElementById('chooserView').style.display = 'block';
+        document.getElementById('mainHeading').textContent = 'Choose an account';
+    }
+
+    async function selectAccount(idx) {
+        const list = getChooserAccounts();
+        const acc = list[idx];
+        if (!acc) return;
+        await signInWithAccount(acc.identifier, acc.full_name || '', acc.avatar_url || '');
+    }
+
+    async function submitNewAccount(e) {
+        e.preventDefault();
+        let email = (document.getElementById('newAccEmail').value || '').trim();
+        const name = (document.getElementById('newAccName').value || '').trim();
+        if (!email) return;
+        if (!email.includes('@') && !/^01[0125]\d{8}$/.test(email)) {
+            email += cfg.domain;
+        }
+        await signInWithAccount(email, name, '');
+    }
+
+    async function signInWithAccount(identifier, fullName, avatarUrl) {
+        const bar = document.getElementById('loadingBar');
+        bar.classList.add('active');
+        const savedGov = localStorage.getItem('agri_PinnedGov') || localStorage.getItem('agri_gov') || 'القاهرة';
+
+        try {
+            const res = await fetch('/api/auth/social', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider: provider === 'facebook' || provider === 'yahoo' ? provider : 'google',
+                    identifier: identifier,
+                    full_name: fullName,
+                    avatar_url: avatarUrl,
+                    governorate: savedGov
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                bar.classList.remove('active');
+                const errEl = document.getElementById('newAccErr');
+                if (errEl) {
+                    errEl.textContent = data.detail || 'Could not sign in.';
+                    errEl.style.display = 'block';
+                } else {
+                    alert(data.detail || 'Could not sign in.');
+                }
+                return;
+            }
+
+            // Save token & user in localStorage (shared across all tabs of this origin!)
+            localStorage.setItem('agri_auth_token', data.token);
+            localStorage.setItem('agri_token', data.token);
+            localStorage.setItem('agri_user', JSON.stringify(data.user));
+
+            // Save to local chooser history
+            try {
+                const existing = JSON.parse(localStorage.getItem('agri_saved_accounts') || '[]')
+                    .filter(a => (a.identifier || '').toLowerCase() !== data.user.identifier.toLowerCase());
+                existing.unshift({
+                    identifier: data.user.identifier,
+                    full_name: data.user.full_name,
+                    governorate: data.user.governorate || 'القاهرة',
+                    avatar_url: data.user.avatar_url || '',
+                    provider: provider
+                });
+                localStorage.setItem('agri_saved_accounts', JSON.stringify(existing.slice(0, 6)));
+            } catch (e) {}
+
+            // Notify opener tab if opened via window.open
+            if (window.opener && !window.opener.closed) {
+                try {
+                    window.opener.postMessage({
+                        type: 'AGRI_OAUTH_SUCCESS',
+                        token: data.token,
+                        user: data.user,
+                        nextUrl: nextUrl
+                    }, '*');
+                } catch (e) {}
+                setTimeout(() => {
+                    window.close();
+                    // If browser blocks closing a full tab, redirect this tab to nextUrl
+                    window.location.href = nextUrl;
+                }, 250);
+            } else {
+                window.location.href = nextUrl;
+            }
+        } catch (err) {
+            bar.classList.remove('active');
+            alert('Connection error. Please try again.');
+        }
+    }
+
+    renderAccounts();
+    setTimeout(() => {
+        document.getElementById('loadingBar').classList.remove('active');
+    }, 350);
+</script>
+
+</body>
+</html>

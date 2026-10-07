@@ -1303,12 +1303,29 @@
       } catch (e) {}
     })();
 
+    window.addEventListener('message', async (ev) => {
+      if (ev.data && ev.data.type === 'AGRI_OAUTH_SUCCESS' && ev.data.token) {
+        localStorage.setItem('agri_token', ev.data.token);
+        localStorage.setItem('agri_auth_token', ev.data.token);
+        if (ev.data.user) localStorage.setItem('agri_user', JSON.stringify(ev.data.user));
+        await initProfileAndLocation();
+      }
+    });
+
+    window.addEventListener('storage', async (ev) => {
+      if (ev.key === 'agri_auth_token' && ev.newValue) {
+        await initProfileAndLocation();
+      }
+    });
+
     function openMobileQuickAuth(provider) {
-      if (provider === 'google' && mobGoogleTokenClient) {
-        try {
-          mobGoogleTokenClient.requestAccessToken({ prompt: 'select_account' });
-          return;
-        } catch (e) {}
+      if (provider === 'google' || provider === 'facebook' || provider === 'yahoo') {
+        const chooserUrl = `/auth/choose-account?provider=${encodeURIComponent(provider)}&next=${encodeURIComponent('/mobile')}`;
+        const win = window.open(chooserUrl, '_blank');
+        if (!win) {
+          window.location.href = chooserUrl;
+        }
+        return;
       }
       const form = document.getElementById('mobileQuickAuthForm');
       const provInput = document.getElementById('mobAuthProvider');
@@ -1319,12 +1336,9 @@
       if (provider === 'quick_phone') {
         lbl.textContent = 'رقم الموبايل المصري (11 رقم بدون كلمة مرور):';
         inp.placeholder = '01012345678';
-      } else if (provider === 'google') {
-        lbl.textContent = 'بريد Google الإلكتروني (Gmail):';
-        inp.placeholder = 'name@gmail.com';
       } else {
-        lbl.textContent = 'بريد Microsoft أو Apple الإلكتروني:';
-        inp.placeholder = 'name@outlook.com / icloud.com';
+        lbl.textContent = 'البريد الإلكتروني:';
+        inp.placeholder = 'name@gmail.com';
       }
       inp.focus();
     }

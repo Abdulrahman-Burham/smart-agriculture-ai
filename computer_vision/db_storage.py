@@ -1179,7 +1179,7 @@ def social_or_quick_authenticate(
     import secrets
     init_db()
     prov = (provider or "google").strip().lower()
-    if prov not in ("google", "microsoft", "apple", "quick_phone", "passkey"):
+    if prov not in ("google", "facebook", "yahoo", "microsoft", "apple", "quick_phone", "passkey"):
         prov = "google"
 
     identifier, phone, email = normalize_identifier(identifier_raw)
