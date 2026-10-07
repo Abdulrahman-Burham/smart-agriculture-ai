@@ -954,8 +954,61 @@
     <a href="/?desktop=1" class="desktop-switch-link">التبديل إلى واجهة سطح المكتب الكاملة</a>
   </section>
 
-  <!-- VIEW 3: Saved Diagnosis & Memory Log -->
+  <!-- VIEW 3: Saved Diagnosis, Quick Sign-In & Memory Log -->
   <section class="view-section" id="view-history">
+    <!-- Instant Multi-Provider Sign-In Card (shown when guest) -->
+    <div class="settings-card" id="mobileQuickAuthCard">
+      <div class="settings-title">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>تسجيل دخول سريع بضغطة واحدة (بدون كلمة مرور)</span>
+      </div>
+      <p class="settings-desc">اربط حسابك الآن بحساب Google أو برقم موبايلك فقط لحفظ تشخيصاتك وموقع أرضك دائماً على أي جهاز.</p>
+
+      <button type="button" onclick="openMobileQuickAuth('google')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:9px; padding:11px 14px; border-radius:12px; border:1px solid var(--border-strong); background:#FFFFFF; color:#1B241E; font-family:inherit; font-size:0.88rem; font-weight:800; cursor:pointer; margin-bottom:8px; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+        <svg width="18" height="18" viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        <span>المتابعة باستخدام Google</span>
+      </button>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+        <button type="button" onclick="openMobileQuickAuth('quick_phone')" style="display:flex; align-items:center; justify-content:center; gap:6px; padding:10px; border-radius:11px; border:1px solid rgba(45,106,79,0.3); background:var(--brand-mint-tint); color:var(--brand-forest); font-family:inherit; font-size:0.79rem; font-weight:800; cursor:pointer;">
+          <span>دخول برقم الموبايل</span>
+        </button>
+        <button type="button" onclick="openMobileQuickAuth('microsoft')" style="display:flex; align-items:center; justify-content:center; gap:6px; padding:10px; border-radius:11px; border:1px solid var(--border-strong); background:var(--bg-subtle); color:var(--text-primary); font-family:inherit; font-size:0.79rem; font-weight:700; cursor:pointer;">
+          <span>حساب Microsoft / Apple</span>
+        </button>
+      </div>
+
+      <!-- Inline Quick Auth Form inside Mobile -->
+      <form id="mobileQuickAuthForm" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border-soft);" onsubmit="submitMobileQuickAuth(event)">
+        <input type="hidden" id="mobAuthProvider" value="google" />
+        <div class="field-group">
+          <label class="field-label" id="mobAuthIdentLabel">البريد الإلكتروني (Gmail) أو رقم الموبايل:</label>
+          <input type="text" id="mobAuthIdent" class="field-control" placeholder="name@gmail.com أو 01012345678" required />
+        </div>
+        <div class="field-group">
+          <label class="field-label">الاسم:</label>
+          <input type="text" id="mobAuthName" class="field-control" placeholder="مثال: م. أحمد محمد" />
+        </div>
+        <button type="submit" class="btn-save-prefs" id="mobAuthSubmitBtn">تأكيد الدخول الفوري</button>
+      </form>
+    </div>
+
+    <!-- Logged-In Farmer Profile Card (shown when logged in) -->
+    <div class="settings-card" id="mobileLoggedUserCard" style="display:none;">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div>
+          <div style="font-size:0.95rem; font-weight:800; color:var(--brand-forest);" id="mobUserNameTitle">مزارع مسجل</div>
+          <div style="font-size:0.78rem; color:var(--text-secondary);" id="mobUserSubInfo"></div>
+        </div>
+        <button type="button" onclick="logoutMobileUser()" style="border:1px solid rgba(181,56,42,0.3); background:var(--danger-tint); color:var(--danger-crimson); padding:6px 12px; border-radius:9px; font-family:inherit; font-size:0.75rem; font-weight:700; cursor:pointer;">تسجيل خروج</button>
+      </div>
+    </div>
+
     <div class="settings-card">
       <div class="settings-title" style="justify-content:space-between;">
         <span>سجل الفحوصات والمحادثات المرتبطة بك</span>
@@ -1123,7 +1176,10 @@
         const p = data.pinned_profile || {};
         if (data.authenticated && data.user) {
           const u = data.user;
-          if (data.token) localStorage.setItem('agri_token', data.token);
+          if (data.token) {
+            localStorage.setItem('agri_token', data.token);
+            localStorage.setItem('agri_auth_token', data.token);
+          }
           localStorage.setItem('agri_user', JSON.stringify(u));
           SESSION_ID = 'u_' + u.id;
           localStorage.setItem('agri_session_id', SESSION_ID);
@@ -1133,6 +1189,15 @@
           userPill.classList.add('logged-in');
           userPill.href = '#';
           userPill.onclick = (e) => { e.preventDefault(); switchMobileTab('history'); };
+
+          const guestCard = document.getElementById('mobileQuickAuthCard');
+          const loggedCard = document.getElementById('mobileLoggedUserCard');
+          if (guestCard) guestCard.style.display = 'none';
+          if (loggedCard) {
+            loggedCard.style.display = 'block';
+            document.getElementById('mobUserNameTitle').textContent = u.full_name;
+            document.getElementById('mobUserSubInfo').textContent = `${u.identifier} • ${u.governorate || 'القاهرة'} (${u.auth_provider || 'حساب مسجل'})`;
+          }
         }
 
         if (p.governorate) {
@@ -1163,6 +1228,78 @@
       updateSubHeaderLabel();
       await refreshWeather(false);
       await loadMemoryAndHistory();
+    }
+
+    function openMobileQuickAuth(provider) {
+      const form = document.getElementById('mobileQuickAuthForm');
+      const provInput = document.getElementById('mobAuthProvider');
+      const lbl = document.getElementById('mobAuthIdentLabel');
+      const inp = document.getElementById('mobAuthIdent');
+      provInput.value = provider;
+      form.style.display = 'block';
+      if (provider === 'quick_phone') {
+        lbl.textContent = 'رقم الموبايل المصري (11 رقم بدون كلمة مرور):';
+        inp.placeholder = '01012345678';
+      } else if (provider === 'google') {
+        lbl.textContent = 'بريد Google الإلكتروني (Gmail):';
+        inp.placeholder = 'name@gmail.com';
+      } else {
+        lbl.textContent = 'بريد Microsoft أو Apple الإلكتروني:';
+        inp.placeholder = 'name@outlook.com / icloud.com';
+      }
+      inp.focus();
+    }
+
+    async function submitMobileQuickAuth(e) {
+      e.preventDefault();
+      const provider = document.getElementById('mobAuthProvider').value || 'google';
+      let ident = document.getElementById('mobAuthIdent').value.trim();
+      const fullName = document.getElementById('mobAuthName').value.trim();
+      const btn = document.getElementById('mobAuthSubmitBtn');
+      if (!ident) return;
+      if (provider === 'google' && !ident.includes('@') && !/^01[0125]\d{8}$/.test(ident)) {
+        ident += '@gmail.com';
+      }
+      btn.disabled = true;
+      btn.textContent = 'جاري الدخول وربط الحساب...';
+      try {
+        const res = await fetch('/api/auth/social', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider,
+            identifier: ident,
+            full_name: fullName,
+            governorate: document.getElementById('govSelect').value || 'القاهرة',
+            primary_crop: document.getElementById('cropSelect').value || ''
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.detail || 'تعذر تسجيل الدخول.');
+          return;
+        }
+        localStorage.setItem('agri_token', data.token);
+        localStorage.setItem('agri_auth_token', data.token);
+        localStorage.setItem('agri_user', JSON.stringify(data.user));
+        await initProfileAndLocation();
+      } catch (err) {
+        alert('تعذر الاتصال بالخادم.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'تأكيد الدخول الفوري';
+      }
+    }
+
+    async function logoutMobileUser() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+      } catch (e) {}
+      localStorage.removeItem('agri_token');
+      localStorage.removeItem('agri_auth_token');
+      localStorage.removeItem('agri_user');
+      window.location.reload();
     }
 
     // ── Weather & Pinned Location Sync ──

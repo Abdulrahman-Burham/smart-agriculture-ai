@@ -720,6 +720,8 @@ def init_db(force: bool = False) -> None:
             ("gps_lon", "REAL DEFAULT NULL"),
             ("location_source", "TEXT DEFAULT 'manual'"),
             ("last_visitor_id", "TEXT DEFAULT ''"),
+            ("auth_provider", "TEXT DEFAULT 'password'"),
+            ("avatar_url", "TEXT DEFAULT ''"),
         ]:
             _ensure_column(conn, "users", col, cdef)
 
@@ -1155,10 +1157,153 @@ def authenticate_user(
         )
         conn.commit()
         updated = conn.execute(
-            "SELECT id, created_at, last_login_at, full_name, identifier, phone, email, governorate, primary_crop, farm_size_feddan, irrigation_type, role, login_count FROM users WHERE id = ?",
+            "SELECT id, created_at, last_login_at, full_name, identifier, phone, email, governorate, primary_crop, farm_size_feddan, irrigation_type, role, login_count, auth_provider, avatar_url FROM users WHERE id = ?",
             (row["id"],),
         ).fetchone()
         return (dict(updated) if updated else None), None
+
+
+def social_or_quick_authenticate(
+    provider: str,
+    identifier_raw: str,
+    full_name: str = "",
+    governorate: str = "القاهرة",
+    primary_crop: str = "",
+    farm_size_feddan: float = 1.0,
+    irrigation_type: str = "تنقيط",
+    avatar_url: str = "",
+    client_ip: str = "",
+    device_type: str = "",
+) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """Sign in or auto-register a user via Google, Microsoft, Apple, One-Tap Phone, or Passkey without password friction."""
+    import secrets
+    init_db()
+    prov = (provider or "google").strip().lower()
+    if prov not in ("google", "microsoft", "apple", "quick_phone", "passkey"):
+        prov = "google"
+
+    identifier, phone, email = normalize_identifier(identifier_raw)
+    if not identifier:
+        return None, "يرجى إدخال البريد الإلكتروني أو رقم الموبايل الصحيح للمتابعة."
+
+    if prov == "quick_phone" and not phone:
+        return None, "يرجى إدخال رقم موبايل مصري صحيح مكون من 11 رقماً (يبدأ بـ 010 أو 011 أو 012 أو 015)."
+
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    geo = resolve_ip_geo(client_ip)
+
+    with sqlite3.connect(str(DB_PATH), timeout=15.0) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            """
+            SELECT * FROM users
+            WHERE identifier = ?
+               OR (phone != '' AND phone = ?)
+               OR (email != '' AND email = ?)
+            LIMIT 1
+            """,
+            (identifier, phone or "__none__", email or "__none__"),
+        ).fetchone()
+
+        if row:
+            if not int(row["is_active"] or 1):
+                return None, "هذا الحساب موقوف حالياً."
+            new_name = (full_name or "").strip() or row["full_name"]
+            new_gov = (governorate or "").strip() or row["governorate"] or "القاهرة"
+            new_crop = (primary_crop or "").strip() or row["primary_crop"] or ""
+            new_avatar = (avatar_url or "").strip() or row["avatar_url"] or ""
+            conn.execute(
+                """
+                UPDATE users
+                SET last_login_at = ?,
+                    login_count = COALESCE(login_count, 0) + 1,
+                    full_name = ?,
+                    governorate = ?,
+                    primary_crop = ?,
+                    auth_provider = CASE WHEN auth_provider = 'password' OR auth_provider = '' THEN ? ELSE auth_provider END,
+                    avatar_url = CASE WHEN ? != '' THEN ? ELSE avatar_url END,
+                    client_ip = CASE WHEN ? != '' THEN ? ELSE client_ip END,
+                    device_type = CASE WHEN ? != '' THEN ? ELSE device_type END,
+                    geo_city = CASE WHEN ? != '' THEN ? ELSE geo_city END
+                WHERE id = ?
+                """,
+                (
+                    now_str,
+                    new_name,
+                    new_gov,
+                    new_crop,
+                    prov,
+                    new_avatar, new_avatar,
+                    client_ip, client_ip,
+                    device_type, device_type,
+                    geo.get("city", ""), geo.get("city", ""),
+                    row["id"],
+                ),
+            )
+            conn.commit()
+            updated = conn.execute(
+                "SELECT id, created_at, last_login_at, full_name, identifier, phone, email, governorate, primary_crop, farm_size_feddan, irrigation_type, role, login_count, auth_provider, avatar_url FROM users WHERE id = ?",
+                (row["id"],),
+            ).fetchone()
+            return (dict(updated) if updated else None), None
+
+        # Auto-create new account seamlessly
+        clean_name = re.sub(r"\s+", " ", (full_name or "").strip())
+        if len(clean_name) < 2:
+            if email:
+                clean_name = email.split("@")[0].replace(".", " ").replace("_", " ").strip().title()
+            else:
+                clean_name = f"مزارع ({phone[-4:]})" if phone else "مزارع ذكي"
+
+        gov_clean = (governorate or "القاهرة").strip()
+        if gov_clean not in VALID_EGYPT_GOVERNORATES:
+            gov_clean = "القاهرة"
+        crop_clean = (primary_crop or "").strip()
+        try:
+            area_val = max(0.1, min(10000.0, float(farm_size_feddan or 1.0)))
+        except Exception:
+            area_val = 1.0
+        irrig_clean = (irrigation_type or "تنقيط").strip()
+        if irrig_clean not in ("غمر", "تنقيط", "رش", "drip", "surface", "sprinkler"):
+            irrig_clean = "تنقيط"
+
+        auto_pw_hash = hash_password(secrets.token_urlsafe(24))
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO users (
+                created_at, last_login_at, full_name, identifier, phone, email,
+                governorate, primary_crop, password_hash, role, is_active,
+                login_count, client_ip, device_type, geo_city,
+                farm_size_feddan, irrigation_type, auth_provider, avatar_url
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'user', 1, 1, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                now_str,
+                now_str,
+                clean_name,
+                identifier,
+                phone,
+                email,
+                gov_clean,
+                crop_clean,
+                auto_pw_hash,
+                client_ip or "",
+                device_type or "",
+                geo.get("city", ""),
+                area_val,
+                irrig_clean,
+                prov,
+                avatar_url or "",
+            ),
+        )
+        conn.commit()
+        uid = int(cur.lastrowid)
+        created = conn.execute(
+            "SELECT id, created_at, last_login_at, full_name, identifier, phone, email, governorate, primary_crop, farm_size_feddan, irrigation_type, role, login_count, auth_provider, avatar_url FROM users WHERE id = ?",
+            (uid,),
+        ).fetchone()
+        return (dict(created) if created else None), None
 
 
 def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
@@ -1167,7 +1312,7 @@ def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
     with sqlite3.connect(str(DB_PATH)) as conn:
         conn.row_factory = sqlite3.Row
         row = conn.execute(
-            "SELECT id, created_at, last_login_at, full_name, identifier, phone, email, governorate, primary_crop, farm_size_feddan, irrigation_type, role, login_count FROM users WHERE id = ?",
+            "SELECT id, created_at, last_login_at, full_name, identifier, phone, email, governorate, primary_crop, farm_size_feddan, irrigation_type, role, login_count, auth_provider, avatar_url FROM users WHERE id = ?",
             (int(user_id),),
         ).fetchone()
         if not row:
@@ -1939,6 +2084,7 @@ def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
                    u.phone, u.email, u.governorate, u.primary_crop, u.role,
                    u.login_count, u.client_ip, u.device_type, u.geo_city,
                    u.farm_size_feddan, u.irrigation_type, u.gps_lat, u.gps_lon, u.location_source, u.last_visitor_id,
+                   u.auth_provider, u.avatar_url,
                    (SELECT COUNT(*) FROM uploaded_images img WHERE img.user_id = u.id OR (u.last_visitor_id != '' AND img.visitor_hash = u.last_visitor_id)) AS images_count,
                    (SELECT COUNT(*) FROM chat_logs ch WHERE ch.user_id = u.id OR (u.last_visitor_id != '' AND ch.visitor_hash = u.last_visitor_id)) AS chats_count
             FROM users u

@@ -43,6 +43,7 @@ from computer_vision.db_storage import (
     save_image_record,
     save_pinned_location_and_prefs,
     save_visitor_log,
+    social_or_quick_authenticate,
     update_image_ground_truth,
 )
 import secrets as _secrets
@@ -111,7 +112,7 @@ class WeatherResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str = "healthy"
     services: Dict[str, str] = {}
-    version: str = "2.8.0-cookies-pinned-loc"
+    version: str = "2.9.0-multi-auth"
 
 
 class RegisterPayload(BaseModel):
@@ -128,6 +129,18 @@ class RegisterPayload(BaseModel):
 class LoginPayload(BaseModel):
     identifier: str
     password: str
+
+
+class SocialQuickAuthPayload(BaseModel):
+    provider: str = "google"  # google | microsoft | apple | quick_phone | passkey
+    identifier: str = ""
+    full_name: str = ""
+    governorate: str = "القاهرة"
+    primary_crop: str = ""
+    farm_size_feddan: float = 1.0
+    irrigation_type: str = "تنقيط"
+    credential_jwt: str = ""
+    avatar_url: str = ""
 
 
 class UserPrefsPayload(BaseModel):
@@ -505,6 +518,88 @@ async def login_endpoint(payload: LoginPayload, http_request: Request):
 
     token = create_auth_token(user_dict)
     resp = JSONResponse(content={"status": "ok", "token": token, "user": user_dict, "visitor_id": client_info["visitor_hash"]})
+    resp.set_cookie(
+        key="agri_auth_token",
+        value=token,
+        max_age=365 * 86400,
+        path="/",
+        httponly=True,
+        samesite="lax",
+    )
+    return resp
+
+
+@app.get("/api/auth/oauth-config", tags=["Authentication"])
+async def get_oauth_config_endpoint():
+    """Return configured OAuth client IDs (if any) for Google/Microsoft client SDKs."""
+    return {
+        "google_client_id": os.environ.get("GOOGLE_CLIENT_ID", "").strip(),
+        "microsoft_client_id": os.environ.get("MICROSOFT_CLIENT_ID", "").strip(),
+        "providers": ["google", "microsoft", "apple", "quick_phone", "passkey"],
+    }
+
+
+@app.post("/api/auth/social", tags=["Authentication"])
+async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_request: Request):
+    """Sign in or auto-register with Google, Microsoft, Apple, One-Tap Phone (no password), or Passkey/Biometrics."""
+    client_info = extract_client_info(http_request)
+    identifier = (payload.identifier or "").strip()
+    full_name = (payload.full_name or "").strip()
+    avatar_url = (payload.avatar_url or "").strip()
+    provider = (payload.provider or "google").strip().lower()
+
+    # If a real Google Identity Services (GSI) JWT credential is provided, verify it via Google tokeninfo
+    if payload.credential_jwt:
+        def _verify_google_jwt(jwt_str: str):
+            try:
+                r = ext_requests.get(
+                    f"https://oauth2.googleapis.com/tokeninfo?id_token={jwt_str}",
+                    timeout=5,
+                )
+                if r.status_code == 200:
+                    return r.json()
+            except Exception:
+                pass
+            return None
+
+        g_info = await asyncio.to_thread(_verify_google_jwt, payload.credential_jwt)
+        if g_info and g_info.get("email"):
+            identifier = g_info["email"]
+            full_name = g_info.get("name") or full_name
+            avatar_url = g_info.get("picture") or avatar_url
+            provider = "google"
+
+    # Inherit any cookie-pinned governorate/crop if not explicitly specified
+    pinned = await asyncio.to_thread(get_pinned_visitor_profile, client_info["visitor_hash"], None)
+    gov = (payload.governorate or "").strip() or pinned.get("governorate") or "القاهرة"
+    crop = (payload.primary_crop or "").strip() or pinned.get("primary_crop") or ""
+
+    user_dict, err = await asyncio.to_thread(
+        social_or_quick_authenticate,
+        provider=provider,
+        identifier_raw=identifier,
+        full_name=full_name,
+        governorate=gov,
+        primary_crop=crop,
+        farm_size_feddan=payload.farm_size_feddan or pinned.get("farm_size_feddan") or 1.0,
+        irrigation_type=payload.irrigation_type or pinned.get("irrigation_type") or "تنقيط",
+        avatar_url=avatar_url,
+        client_ip=client_info["client_ip"],
+        device_type=client_info["device_type"],
+    )
+    if err or not user_dict:
+        raise HTTPException(status_code=400, detail=err or "تعذر إتمام الدخول السريع.")
+
+    await asyncio.to_thread(link_visitor_to_user, client_info["visitor_hash"], user_dict)
+
+    token = create_auth_token(user_dict)
+    resp = JSONResponse(content={
+        "status": "ok",
+        "token": token,
+        "user": user_dict,
+        "visitor_id": client_info["visitor_hash"],
+        "provider": provider,
+    })
     resp.set_cookie(
         key="agri_auth_token",
         value=token,

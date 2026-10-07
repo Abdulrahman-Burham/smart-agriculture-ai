@@ -263,23 +263,172 @@
             padding: 0.9rem;
             border: none;
             border-radius: 13px;
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: #2D6A4F;
             color: #fff;
             font-size: 1.02rem;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
-            transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(27, 59, 43, 0.35);
+            transition: all 0.2s ease;
         }
 
         .submit-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
+            background: #3C7A5B;
+            transform: translateY(-1px);
         }
 
         .submit-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+
+        /* Multi-Provider Social & One-Tap Auth Styles */
+        .quick-auth-section {
+            margin-bottom: 1.15rem;
+        }
+
+        .btn-google-main {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.7rem;
+            padding: 0.78rem 1rem;
+            background: #ffffff;
+            color: #1f2937;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+            margin-bottom: 0.6rem;
+        }
+
+        .btn-google-main:hover {
+            background: #f9fafb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+        }
+
+        .quick-providers-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .btn-provider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.62rem 0.65rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 11px;
+            color: var(--text-main);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        .btn-provider:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(212, 163, 89, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .btn-provider.phone-fast {
+            background: rgba(60, 122, 91, 0.16);
+            border-color: rgba(60, 122, 91, 0.4);
+            color: #A7F3D0;
+        }
+
+        .btn-provider.passkey-fast {
+            background: rgba(212, 163, 89, 0.13);
+            border-color: rgba(212, 163, 89, 0.35);
+            color: #FDE68A;
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1.05rem 0 0.95rem;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Social / Quick Auth Modal */
+        .oauth-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(10, 14, 12, 0.78);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .oauth-modal-backdrop.open {
+            display: flex;
+        }
+
+        .oauth-modal-card {
+            width: 100%;
+            max-width: 410px;
+            background: #1E2521;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            padding: 1.35rem 1.25rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+            animation: fadeIn 0.2s ease;
+        }
+
+        .saved-acc-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.65rem;
+            padding: 0.65rem 0.8rem;
+            border-radius: 11px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            cursor: pointer;
+            margin-bottom: 0.45rem;
+            transition: all 0.15s;
+        }
+
+        .saved-acc-item:hover {
+            background: rgba(60, 122, 91, 0.18);
+            border-color: rgba(60, 122, 91, 0.45);
+        }
+
+        .saved-acc-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #2D6A4F;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+            flex-shrink: 0;
         }
 
         .alert-msg {
@@ -317,7 +466,7 @@
         }
 
         .footer-links a {
-            color: #34d399;
+            color: #D4A359;
             text-decoration: none;
             font-weight: 600;
         }
@@ -337,21 +486,21 @@
             body {
                 padding: 0.85rem;
                 justify-content: flex-start;
-                padding-top: 1.5rem;
+                padding-top: 1.2rem;
             }
             .brand-logo {
-                font-size: 1.38rem;
+                font-size: 1.35rem;
             }
             .brand-subtitle {
-                font-size: 0.84rem;
+                font-size: 0.82rem;
             }
             .auth-card {
-                padding: 1.25rem 1.1rem;
+                padding: 1.2rem 1.05rem;
                 border-radius: 18px;
             }
             .tab-btn {
-                font-size: 0.86rem;
-                padding: 0.58rem 0.4rem;
+                font-size: 0.85rem;
+                padding: 0.56rem 0.4rem;
             }
             .row-2col {
                 grid-template-columns: 1fr;
@@ -371,14 +520,18 @@
             .brand-logo {
                 font-size: 1.22rem;
             }
+            .quick-providers-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
     <div class="auth-wrapper">
         <div class="top-back-bar">
-            <a href="/" class="hci-back-link">➡️ رجوع للصفحة الرئيسية</a>
+            <a href="/" class="hci-back-link">رجوع للصفحة الرئيسية</a>
             <span style="font-size:0.76rem; color:var(--text-muted); font-weight:600;">Smart Agriculture AI</span>
         </div>
         <div class="brand-header">
@@ -386,30 +539,76 @@
                 <img src="/logo.png" alt="Smart Agri AI">
                 <span>الخبير الزراعي الذكي</span>
             </a>
-            <div class="brand-subtitle">سجّل دخولك لحفظ تشخيصات محصولك واستشاراتك الزراعية</div>
+            <div class="brand-subtitle">سجّل دخولك بضغطة واحدة لحفظ تشخيصات محصولك وموقع أرضك</div>
         </div>
 
         <div class="auth-card">
             <div class="tabs-bar">
                 <button type="button" class="tab-btn active" id="tab-login" onclick="switchAuthTab('login')">
-                    🔐 تسجيل الدخول
+                    تسجيل الدخول
                 </button>
                 <button type="button" class="tab-btn" id="tab-register" onclick="switchAuthTab('register')">
-                    ✨ إنشاء حساب جديد
+                    إنشاء حساب جديد
                 </button>
             </div>
 
             <div id="auth-alert" class="alert-msg"></div>
 
+            <!-- Multi-Provider Instant Sign-In / Sign-Up -->
+            <div class="quick-auth-section">
+                <div id="g-gsi-btn-container" style="display:none; justify-content:center; margin-bottom:0.55rem;"></div>
+
+                <button type="button" class="btn-google-main" onclick="openSocialProviderFlow('google')">
+                    <svg width="20" height="20" viewBox="0 0 48 48">
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                    </svg>
+                    <span>المتابعة باستخدام Google</span>
+                </button>
+
+                <div class="quick-providers-grid">
+                    <button type="button" class="btn-provider phone-fast" onclick="openSocialProviderFlow('quick_phone')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.81.32 1.6.59 2.36a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.76.27 1.55.47 2.36.59A2 2 0 0 1 22 16.92z"/></svg>
+                        <span>دخول سريع برقم الموبايل</span>
+                    </button>
+
+                    <button type="button" class="btn-provider passkey-fast" onclick="handlePasskeyAuth()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 0 0 8 11a4 4 0 1 1 8 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0 0 15.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 0 0 8 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/></svg>
+                        <span>البصمة / Passkey</span>
+                    </button>
+
+                    <button type="button" class="btn-provider" onclick="openSocialProviderFlow('microsoft')">
+                        <svg width="15" height="15" viewBox="0 0 21 21">
+                            <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                            <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                            <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                            <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                        </svg>
+                        <span>حساب Microsoft</span>
+                    </button>
+
+                    <button type="button" class="btn-provider" onclick="openSocialProviderFlow('apple')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                        </svg>
+                        <span>حساب Apple</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="auth-divider">أو بالطريقة التقليدية (موبايل / بريد + كلمة مرور)</div>
+
             <!-- Login Form -->
             <form id="form-login" onsubmit="handleLogin(event)">
                 <div class="form-group">
-                    <label class="form-label">📱 رقم الموبايل أو البريد الإلكتروني</label>
+                    <label class="form-label">رقم الموبايل أو البريد الإلكتروني</label>
                     <input type="text" id="login-identifier" class="form-input" placeholder="مثال: 01012345678 أو email@domain.com" required autocomplete="username">
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">🔑 كلمة المرور</label>
+                    <label class="form-label">كلمة المرور</label>
                     <div class="input-wrap">
                         <input type="password" id="login-password" class="form-input" placeholder="أدخل كلمة المرور" required autocomplete="current-password">
                         <button type="button" class="pw-toggle" onclick="togglePw('login-password', this)">👁️</button>
@@ -417,7 +616,7 @@
                 </div>
 
                 <button type="submit" class="submit-btn" id="btn-login-submit">
-                    🚀 تسجيل الدخول
+                    تسجيل الدخول بكلمة المرور
                 </button>
             </form>
 
@@ -531,9 +730,96 @@
             </form>
 
             <div class="footer-links">
-                <a href="/">🏠 العودة للرئيسية</a>
-                <a href="/simple">📸 التشخيص السريع بالصورة</a>
+                <a href="/">العودة للرئيسية</a>
+                <a href="/simple">التشخيص السريع بالصورة</a>
             </div>
+        </div>
+    </div>
+
+    <!-- Social & One-Tap Quick Auth Modal -->
+    <div class="oauth-modal-backdrop" id="oauth-modal" onclick="if(event.target===this) closeSocialModal()">
+        <div class="oauth-modal-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.85rem;">
+                <div style="display:flex; align-items:center; gap:0.55rem;">
+                    <span id="oauth-modal-icon"></span>
+                    <h3 id="oauth-modal-title" style="font-size:1.05rem; font-weight:800; color:#F2EFE9; margin:0;">المتابعة السريعة</h3>
+                </div>
+                <button type="button" onclick="closeSocialModal()" style="background:none; border:none; color:#9CA89E; font-size:1.25rem; cursor:pointer; line-height:1;">&times;</button>
+            </div>
+
+            <p id="oauth-modal-desc" style="font-size:0.82rem; color:#9CA89E; margin-bottom:0.9rem; line-height:1.5;">
+                أدخل حسابك للمتابعة فوراً بدون الحاجة لكلمة مرور. سيتم حفظ تقدمك وربط أرضك تلقائياً.
+            </p>
+
+            <!-- Saved Accounts on this Device for 1-Tap Login -->
+            <div id="saved-accounts-box" style="display:none; margin-bottom:0.9rem;">
+                <div style="font-size:0.76rem; color:#D4A359; font-weight:700; margin-bottom:0.45rem;">حسابات مسجلة على هذا الجهاز (اضغط للدخول الفوري):</div>
+                <div id="saved-accounts-list"></div>
+            </div>
+
+            <form id="form-social-quick" onsubmit="submitSocialProviderForm(event)">
+                <input type="hidden" id="social-provider-input" value="google">
+
+                <div class="form-group" style="margin-bottom:0.8rem;">
+                    <label class="form-label" id="social-ident-label">البريد الإلكتروني للحساب</label>
+                    <input type="text" id="social-ident-input" class="form-input" placeholder="name@gmail.com" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0.8rem;">
+                    <label class="form-label">الاسم (للحسابات الجديدة)</label>
+                    <input type="text" id="social-name-input" class="form-input" placeholder="مثال: م. أحمد محمد">
+                </div>
+
+                <div class="row-2col" id="social-farm-row" style="margin-bottom:0.4rem;">
+                    <div class="form-group" style="margin-bottom:0.6rem;">
+                        <label class="form-label">المحافظة</label>
+                        <select id="social-gov-input" class="form-select">
+                            <option value="القاهرة">القاهرة</option>
+                            <option value="الجيزة">الجيزة</option>
+                            <option value="البحيرة">البحيرة</option>
+                            <option value="كفر الشيخ">كفر الشيخ</option>
+                            <option value="الدقهلية">الدقهلية</option>
+                            <option value="الشرقية">الشرقية</option>
+                            <option value="المنوفية">المنوفية</option>
+                            <option value="الغربية">الغربية</option>
+                            <option value="القليوبية">القليوبية</option>
+                            <option value="الإسكندرية">الإسكندرية</option>
+                            <option value="الإسماعيلية">الإسماعيلية</option>
+                            <option value="دمياط">دمياط</option>
+                            <option value="بورسعيد">بورسعيد</option>
+                            <option value="السويس">السويس</option>
+                            <option value="الفيوم">الفيوم</option>
+                            <option value="بني سويف">بني سويف</option>
+                            <option value="المنيا">المنيا</option>
+                            <option value="أسيوط">أسيوط</option>
+                            <option value="سوهاج">سوهاج</option>
+                            <option value="قنا">قنا</option>
+                            <option value="الأقصر">الأقصر</option>
+                            <option value="أسوان">أسوان</option>
+                            <option value="مطروح">مطروح</option>
+                            <option value="الوادي الجديد">الوادي الجديد</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0.6rem;">
+                        <label class="form-label">المحصول الأساسي</label>
+                        <select id="social-crop-input" class="form-select">
+                            <option value="طماطم">طماطم</option>
+                            <option value="بطاطس">بطاطس</option>
+                            <option value="قمح">قمح</option>
+                            <option value="ذرة">ذرة</option>
+                            <option value="مانجو">مانجو</option>
+                            <option value="أرز">أرز</option>
+                            <option value="">محاصيل متنوعة</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="social-modal-err" style="display:none; color:#fca5a5; font-size:0.8rem; font-weight:600; margin-bottom:0.6rem;"></div>
+
+                <button type="submit" class="submit-btn" id="btn-social-submit" style="margin-top:0.2rem;">
+                    متابعة والدخول فوراً
+                </button>
+            </form>
         </div>
     </div>
 
@@ -542,6 +828,265 @@
         function toEnglishDigits(str) {
             return (str || '').replace(/[٠-٩۰-۹]/g, ch => ARABIC_NUMS[ch] || ch);
         }
+
+        function getSavedAccounts() {
+            try {
+                return JSON.parse(localStorage.getItem('agri_saved_accounts') || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveAccountLocally(userObj, provider) {
+            if (!userObj || !userObj.identifier) return;
+            try {
+                const list = getSavedAccounts().filter(a => a.identifier !== userObj.identifier);
+                list.unshift({
+                    identifier: userObj.identifier,
+                    full_name: userObj.full_name || '',
+                    governorate: userObj.governorate || 'القاهرة',
+                    primary_crop: userObj.primary_crop || '',
+                    provider: provider || userObj.auth_provider || 'google'
+                });
+                localStorage.setItem('agri_saved_accounts', JSON.stringify(list.slice(0, 5)));
+            } catch (e) {}
+        }
+
+        const PROVIDER_META = {
+            google: {
+                title: 'المتابعة باستخدام Google',
+                desc: 'اختر حساب Google الخاص بك أو أدخل بريدك على Gmail للدخول أو إنشاء حساب فوري بضغطة واحدة.',
+                label: 'بريد Google الإلكتروني (Gmail)',
+                placeholder: 'example@gmail.com',
+                icon: '<svg width="22" height="22" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>'
+            },
+            microsoft: {
+                title: 'المتابعة باستخدام Microsoft',
+                desc: 'سجّل دخولك بسرعة عبر حساب Outlook أو Hotmail أو Microsoft بدون كلمة مرور.',
+                label: 'بريد Microsoft / Outlook / Hotmail',
+                placeholder: 'name@outlook.com',
+                icon: '<svg width="20" height="20" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>'
+            },
+            apple: {
+                title: 'المتابعة باستخدام Apple ID',
+                desc: 'سجّل دخولك الفوري باستخدام بريد iCloud أو Apple ID الخاص بك.',
+                label: 'بريد Apple ID / iCloud',
+                placeholder: 'name@icloud.com',
+                icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>'
+            },
+            quick_phone: {
+                title: 'دخول سريع برقم الموبايل',
+                desc: 'أسهل طريقة للمزارع: اكتب رقم موبايلك فقط (11 رقم) وادخل فوراً بدون حفظ أي كلمات مرور.',
+                label: 'رقم الموبايل المصري (11 رقم)',
+                placeholder: '01012345678',
+                icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.81.32 1.6.59 2.36a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.76.27 1.55.47 2.36.59A2 2 0 0 1 22 16.92z"/></svg>'
+            }
+        };
+
+        function openSocialProviderFlow(provider) {
+            hideAlert();
+            const meta = PROVIDER_META[provider] || PROVIDER_META.google;
+            document.getElementById('social-provider-input').value = provider;
+            document.getElementById('oauth-modal-title').innerText = meta.title;
+            document.getElementById('oauth-modal-desc').innerText = meta.desc;
+            document.getElementById('oauth-modal-icon').innerHTML = meta.icon;
+            document.getElementById('social-ident-label').innerText = meta.label;
+            const identInput = document.getElementById('social-ident-input');
+            identInput.placeholder = meta.placeholder;
+            identInput.value = '';
+            document.getElementById('social-modal-err').style.display = 'none';
+
+            // Pre-fill governorate/crop from saved preferences if available
+            const savedGov = localStorage.getItem('agri_PinnedGov') || localStorage.getItem('agri_gov');
+            if (savedGov) {
+                const govEl = document.getElementById('social-gov-input');
+                if (govEl) govEl.value = savedGov;
+            }
+
+            // Render saved accounts for 1-click sign-in
+            const saved = getSavedAccounts();
+            const box = document.getElementById('saved-accounts-box');
+            const listEl = document.getElementById('saved-accounts-list');
+            if (saved.length > 0) {
+                box.style.display = 'block';
+                listEl.innerHTML = saved.map((acc, idx) => {
+                    const initial = (acc.full_name || acc.identifier || 'م').trim().charAt(0).toUpperCase();
+                    return `
+                        <div class="saved-acc-item" onclick="quickLoginWithSavedAccount(${idx})">
+                            <div style="display:flex; align-items:center; gap:0.65rem;">
+                                <div class="saved-acc-avatar">${initial}</div>
+                                <div>
+                                    <div style="font-size:0.88rem; font-weight:700; color:#F2EFE9;">${acc.full_name || acc.identifier}</div>
+                                    <div style="font-size:0.75rem; color:#9CA89E;">${acc.identifier} • ${acc.governorate || 'القاهرة'}</div>
+                                </div>
+                            </div>
+                            <span style="font-size:0.75rem; color:#6ee7b7; font-weight:700;">دخول فوري ←</span>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                box.style.display = 'none';
+            }
+
+            document.getElementById('oauth-modal').classList.add('open');
+            setTimeout(() => identInput.focus(), 100);
+        }
+
+        function closeSocialModal() {
+            document.getElementById('oauth-modal').classList.remove('open');
+        }
+
+        async function quickLoginWithSavedAccount(idx) {
+            const saved = getSavedAccounts();
+            const acc = saved[idx];
+            if (!acc) return;
+            await executeSocialAuthRequest({
+                provider: acc.provider || 'google',
+                identifier: acc.identifier,
+                full_name: acc.full_name || '',
+                governorate: acc.governorate || 'القاهرة',
+                primary_crop: acc.primary_crop || ''
+            });
+        }
+
+        async function submitSocialProviderForm(e) {
+            e.preventDefault();
+            const provider = document.getElementById('social-provider-input').value || 'google';
+            let ident = toEnglishDigits(document.getElementById('social-ident-input').value || '').trim();
+            const fullName = (document.getElementById('social-name-input').value || '').trim();
+            const gov = document.getElementById('social-gov-input').value || 'القاهرة';
+            const crop = document.getElementById('social-crop-input').value || '';
+            const errEl = document.getElementById('social-modal-err');
+            errEl.style.display = 'none';
+
+            if (!ident) {
+                errEl.innerText = 'يرجى إدخال البريد الإلكتروني أو رقم الموبايل للمتابعة.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            // If user entered just username for Google/Microsoft/Apple without @domain, append default domain
+            if (provider === 'google' && !ident.includes('@') && !/^01[0125]\d{8}$/.test(ident)) {
+                ident = ident + '@gmail.com';
+            } else if (provider === 'microsoft' && !ident.includes('@') && !/^01[0125]\d{8}$/.test(ident)) {
+                ident = ident + '@outlook.com';
+            } else if (provider === 'apple' && !ident.includes('@') && !/^01[0125]\d{8}$/.test(ident)) {
+                ident = ident + '@icloud.com';
+            }
+
+            await executeSocialAuthRequest({
+                provider,
+                identifier: ident,
+                full_name: fullName,
+                governorate: gov,
+                primary_crop: crop
+            });
+        }
+
+        async function executeSocialAuthRequest(payloadObj) {
+            const btn = document.getElementById('btn-social-submit');
+            const errEl = document.getElementById('social-modal-err');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'جاري الدخول...';
+            }
+            if (errEl) errEl.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/auth/social', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObj)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    if (errEl) {
+                        errEl.innerText = data.detail || 'تعذر تسجيل الدخول السريع.';
+                        errEl.style.display = 'block';
+                    } else {
+                        showAlert(data.detail || 'تعذر تسجيل الدخول السريع.', true);
+                    }
+                    return;
+                }
+                closeSocialModal();
+                localStorage.setItem('agri_auth_token', data.token);
+                localStorage.setItem('agri_user', JSON.stringify(data.user));
+                saveAccountLocally(data.user, payloadObj.provider);
+                showAlert(`أهلاً بك يا ${data.user.full_name}! تم الدخول بنجاح، جاري تحويلك...`, false);
+
+                const params = new URLSearchParams(window.location.search);
+                const nextUrl = params.get('next') || '/';
+                setTimeout(() => { window.location.href = nextUrl; }, 450);
+            } catch (err) {
+                if (errEl) {
+                    errEl.innerText = 'حدث خطأ في الاتصال بالخادم.';
+                    errEl.style.display = 'block';
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'متابعة والدخول فوراً';
+                }
+            }
+        }
+
+        async function handlePasskeyAuth() {
+            hideAlert();
+            // Check if user has a saved account on this device for 1-tap biometric/passkey login
+            const saved = getSavedAccounts();
+            let lastUser = null;
+            try {
+                lastUser = JSON.parse(localStorage.getItem('agri_user') || 'null');
+            } catch (e) {}
+
+            const targetAcc = lastUser || (saved.length > 0 ? saved[0] : null);
+            if (targetAcc && targetAcc.identifier) {
+                await executeSocialAuthRequest({
+                    provider: 'passkey',
+                    identifier: targetAcc.identifier,
+                    full_name: targetAcc.full_name || '',
+                    governorate: targetAcc.governorate || 'القاهرة',
+                    primary_crop: targetAcc.primary_crop || ''
+                });
+                return;
+            }
+            // If no previous account is stored on device yet, open quick phone flow as fastest passwordless setup
+            openSocialProviderFlow('quick_phone');
+        }
+
+        // Initialize official Google Identity Services (GSI) button if GOOGLE_CLIENT_ID is configured on backend
+        (async function initGoogleGSI() {
+            try {
+                const res = await fetch('/api/auth/oauth-config');
+                if (!res.ok) return;
+                const cfg = await res.json();
+                if (cfg.google_client_id && window.google && window.google.accounts && window.google.accounts.id) {
+                    window.google.accounts.id.initialize({
+                        client_id: cfg.google_client_id,
+                        callback: async (response) => {
+                            if (response && response.credential) {
+                                await executeSocialAuthRequest({
+                                    provider: 'google',
+                                    credential_jwt: response.credential
+                                });
+                            }
+                        }
+                    });
+                    const container = document.getElementById('g-gsi-btn-container');
+                    if (container) {
+                        container.style.display = 'flex';
+                        window.google.accounts.id.renderButton(container, {
+                            theme: 'filled_black',
+                            size: 'large',
+                            text: 'continue_with',
+                            shape: 'pill',
+                            locale: 'ar'
+                        });
+                    }
+                }
+            } catch (e) {}
+        })();
 
         function setFieldState(inputEl, hintEl, isValid, msg) {
             if (!inputEl || !hintEl) return isValid;
@@ -737,7 +1282,7 @@
 
             const btn = document.getElementById('btn-login-submit');
             btn.disabled = true;
-            btn.innerText = '⏳ جاري التحقق...';
+            btn.innerText = 'جاري التحقق...';
 
             try {
                 const res = await fetch('/api/auth/login', {
@@ -756,7 +1301,8 @@
                 }
                 localStorage.setItem('agri_auth_token', data.token);
                 localStorage.setItem('agri_user', JSON.stringify(data.user));
-                showAlert(`✅ أهلاً بيك يا ${data.user.full_name}! جاري تحويلك...`, false);
+                saveAccountLocally(data.user, 'password');
+                showAlert(`أهلاً بيك يا ${data.user.full_name}! جاري تحويلك...`, false);
 
                 const params = new URLSearchParams(window.location.search);
                 const nextUrl = params.get('next') || '/';
@@ -765,7 +1311,7 @@
                 showAlert('حدث خطأ في الاتصال بالخادم.', true);
             } finally {
                 btn.disabled = false;
-                btn.innerText = '🚀 تسجيل الدخول';
+                btn.innerText = 'تسجيل الدخول بكلمة المرور';
             }
         }
 
@@ -785,7 +1331,7 @@
 
             const btn = document.getElementById('btn-reg-submit');
             btn.disabled = true;
-            btn.innerText = '⏳ جاري التحقق وإنشاء الحساب...';
+            btn.innerText = 'جاري التحقق وإنشاء الحساب...';
 
             try {
                 const res = await fetch('/api/auth/register', {
@@ -810,7 +1356,8 @@
                 }
                 localStorage.setItem('agri_auth_token', data.token);
                 localStorage.setItem('agri_user', JSON.stringify(data.user));
-                showAlert(`✅ تم إنشاء حسابك بنجاح يا ${data.user.full_name}! جاري تحويلك...`, false);
+                saveAccountLocally(data.user, 'password');
+                showAlert(`تم إنشاء حسابك بنجاح يا ${data.user.full_name}! جاري تحويلك...`, false);
 
                 const params = new URLSearchParams(window.location.search);
                 const nextUrl = params.get('next') || '/';
@@ -819,7 +1366,7 @@
                 showAlert('حدث خطأ في الاتصال بالخادم.', true);
             } finally {
                 btn.disabled = false;
-                btn.innerText = '🌱 إنشاء الحساب والدخول فوراً';
+                btn.innerText = 'إنشاء الحساب والدخول فوراً';
             }
         }
 
@@ -844,7 +1391,7 @@
                     const box = document.getElementById('auth-alert');
                     box.style.display = 'block';
                     box.className = 'alert-msg alert-success';
-                    box.innerHTML = `✅ أنت مسجل الدخول بالفعل باسم <strong>${data.user.full_name}</strong>.<br><a href="/" style="display:inline-block; margin-top:8px; background:#10b981; color:#fff; padding:6px 14px; border-radius:10px; text-decoration:none; font-weight:700;">🏠 المتابعة للصفحة الرئيسية بحسابي</a>`;
+                    box.innerHTML = `أنت مسجل الدخول بالفعل باسم <strong>${data.user.full_name}</strong>.<br><a href="/" style="display:inline-block; margin-top:8px; background:#2D6A4F; color:#fff; padding:6px 14px; border-radius:10px; text-decoration:none; font-weight:700;">المتابعة للصفحة الرئيسية بحسابي</a>`;
                 }
             } catch (e) {}
         })();

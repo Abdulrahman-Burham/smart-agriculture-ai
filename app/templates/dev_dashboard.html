@@ -895,12 +895,23 @@
             `}).join('') || '<tr><td colspan="7" style="text-align:center; padding:24px;">لا توجد ملفات كوكيز مسجلة بعد</td></tr>';
 
             // Render Registered Users Table
-            document.getElementById('usersTableBody').innerHTML = users.map(u => `
+            document.getElementById('usersTableBody').innerHTML = users.map(u => {
+                const provMap = {
+                    google: '🔵 Google',
+                    microsoft: '🟦 Microsoft',
+                    apple: '🍎 Apple',
+                    quick_phone: '📱 دخول سريع بالموبايل',
+                    passkey: '🔑 Passkey / البصمة',
+                    password: '🔒 كلمة مرور'
+                };
+                const provLabel = provMap[u.auth_provider || 'password'] || esc(u.auth_provider || 'password');
+                return `
                 <tr class="searchable-row">
                     <td><strong>#${u.id}</strong></td>
                     <td>
                         <div style="font-weight:700; color:#f8fafc;">👤 ${esc(u.full_name)}</div>
                         <span class="badge ${u.role === 'admin' ? 'badge-purple' : 'badge-green'}">${u.role === 'admin' ? '🛡️ Admin Developer' : '🌾 مزارع مسجل'}</span>
+                        <span class="badge badge-blue" style="margin-right:4px;">${provLabel}</span>
                         ${u.last_visitor_id ? `<div style="margin-top:4px;"><span class="badge badge-purple mono">🍪 ${esc(u.last_visitor_id)}</span></div>` : ''}
                     </td>
                     <td>
