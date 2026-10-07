@@ -568,8 +568,42 @@ async def get_oauth_config_endpoint():
         "google_client_id": cfg["google_client_id"],
         "microsoft_client_id": cfg["microsoft_client_id"],
         "is_google_configured": bool(cfg["google_client_id"]),
-        "providers": ["google", "microsoft", "apple", "quick_phone", "passkey"],
+        "providers": ["google", "facebook", "yahoo", "microsoft", "apple", "quick_phone", "passkey"],
     }
+
+
+@app.get("/api/auth/google/login", tags=["Authentication"])
+async def google_oauth_redirect_login(request: Request, next: str = Query("/")):
+    """Redirect the browser directly to the real Google OAuth 2.0 Account Chooser (accounts.google.com)."""
+    from urllib.parse import urlencode
+    from starlette.responses import RedirectResponse
+
+    cfg = _load_oauth_config()
+    client_id = cfg.get("google_client_id", "").strip()
+    if not client_id:
+        return RedirectResponse(url=f"/api/auth/google/callback?setup=1&next={next}", status_code=302)
+
+    proto = request.headers.get("x-forwarded-proto") or request.url.scheme or "https"
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or "plantapi-abdo.uaenorth.cloudapp.azure.com"
+    redirect_uri = f"{proto}://{host}/api/auth/google/callback"
+
+    params = {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "response_type": "token",
+        "scope": "openid email profile",
+        "include_granted_scopes": "true",
+        "prompt": "select_account",
+        "state": next or "/",
+    }
+    google_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+    return RedirectResponse(url=google_url, status_code=302)
+
+
+@app.get("/api/auth/google/callback", include_in_schema=False)
+async def google_oauth_callback_page():
+    """Serve the Google OAuth 2.0 callback handler page."""
+    return FileResponse("app/templates/google_callback.html", headers=_NO_CACHE_HEADERS)
 
 
 @app.post("/api/auth/social", tags=["Authentication"])

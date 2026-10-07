@@ -1003,8 +1003,24 @@
             const params = new URLSearchParams(window.location.search);
             const nextUrl = params.get('next') || '/';
 
-            // Open the dedicated Google/Facebook/Yahoo "Choose an account" tab directly!
-            if (provider === 'google' || provider === 'facebook' || provider === 'yahoo') {
+            if (provider === 'google') {
+                // 1. If Google Identity Services TokenClient is ready, open the REAL accounts.google.com popup window
+                if (googleTokenClient) {
+                    try {
+                        googleTokenClient.requestAccessToken({ prompt: 'select_account' });
+                        return;
+                    } catch (e) {}
+                }
+                // 2. Otherwise open /api/auth/google/login (which redirects to real https://accounts.google.com/o/oauth2/v2/auth)
+                const realGoogleUrl = `/api/auth/google/login?next=${encodeURIComponent(nextUrl)}`;
+                const win = window.open(realGoogleUrl, '_blank');
+                if (!win) {
+                    window.location.href = realGoogleUrl;
+                }
+                return;
+            }
+
+            if (provider === 'facebook' || provider === 'yahoo') {
                 const chooserUrl = `/auth/choose-account?provider=${encodeURIComponent(provider)}&next=${encodeURIComponent(nextUrl)}`;
                 const win = window.open(chooserUrl, '_blank');
                 if (!win) {

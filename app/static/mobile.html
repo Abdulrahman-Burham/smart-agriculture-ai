@@ -1319,7 +1319,21 @@
     });
 
     function openMobileQuickAuth(provider) {
-      if (provider === 'google' || provider === 'facebook' || provider === 'yahoo') {
+      if (provider === 'google') {
+        if (mobGoogleTokenClient) {
+          try {
+            mobGoogleTokenClient.requestAccessToken({ prompt: 'select_account' });
+            return;
+          } catch (e) {}
+        }
+        const realGoogleUrl = `/api/auth/google/login?next=${encodeURIComponent('/mobile')}`;
+        const win = window.open(realGoogleUrl, '_blank');
+        if (!win) {
+          window.location.href = realGoogleUrl;
+        }
+        return;
+      }
+      if (provider === 'facebook' || provider === 'yahoo') {
         const chooserUrl = `/auth/choose-account?provider=${encodeURIComponent(provider)}&next=${encodeURIComponent('/mobile')}`;
         const win = window.open(chooserUrl, '_blank');
         if (!win) {

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>جاري تسجيل الدخول عبر Google...</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+        body {
+            background: #151A17;
+            color: #F3F0E8;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: #1D2420;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            padding: 28px 24px;
+            max-width: 520px;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+            text-align: center;
+        }
+        .spinner {
+            width: 42px;
+            height: 42px;
+            border: 4px solid rgba(110, 231, 183, 0.2);
+            border-top-color: #6ee7b7;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .copy-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 8px 12px;
+            border-radius: 10px;
+            direction: ltr;
+            font-family: monospace;
+            font-size: 0.78rem;
+            color: #6ee7b7;
+            margin-top: 6px;
+            text-align: left;
+        }
+        .btn-copy {
+            background: #2B5B44;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .inp {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 0.88rem;
+            direction: ltr;
+            margin-top: 12px;
+            outline: none;
+        }
+        .inp:focus { border-color: #60a5fa; }
+        .btn-main {
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            background: #2563eb;
+            color: #fff;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card" id="loadingCard">
+    <div class="spinner" id="spinEl"></div>
+    <h2 id="statusTitle" style="font-size:1.15rem; margin-bottom:8px;">جاري استلام بيانات حسابك من Google...</h2>
+    <p id="statusDesc" style="font-size:0.85rem; color:#A3ACA5;">يرجى الانتظار لحظة، يتم تسجيل دخولك وتحويلك تلقائياً.</p>
+</div>
+
+<div class="card" id="setupCard" style="display:none; text-align:right;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+        <svg width="26" height="26" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        <h2 style="font-size:1.05rem;">تفعيل صفحة Google الحقيقية (لمرة واحدة فقط)</h2>
+    </div>
+    <p style="font-size:0.82rem; color:#cbd5e1; line-height:1.6; margin-bottom:10px;">
+        لكي يفتح سيرفر جوجل الرسمي (<code style="color:#93c5fd;">accounts.google.com</code>) لموقعك، الصق <b>Client ID</b> الخاص بك مرة واحدة فقط:
+    </p>
+    <div style="font-size:0.78rem; color:#cbd5e1; line-height:1.6;">
+        1️⃣ افتح <a href="https://console.cloud.google.com/apis/credentials/oauthclient" target="_blank" rel="noopener" style="color:#60a5fa; font-weight:700; text-decoration:underline;">إنشاء Google OAuth Client ID مباشرةً من هنا</a> واختر <b>Web application</b>.
+        <br>2️⃣ في خانة <b>Authorized redirect URIs</b> أضف هذا الرابط:
+        <div class="copy-box">
+            <span id="redirectUriText" style="overflow:hidden; text-overflow:ellipsis;">https://plantapi-abdo.uaenorth.cloudapp.azure.com/api/auth/google/callback</span>
+            <button type="button" class="btn-copy" onclick="navigator.clipboard.writeText(document.getElementById('redirectUriText').innerText); this.innerText='✅ نُسخ';">نسخ</button>
+        </div>
+    </div>
+
+    <input type="text" id="cidInput" class="inp" placeholder="الصق xxxx.apps.googleusercontent.com هنا">
+    <div id="setupErr" style="display:none; color:#fca5a5; font-size:0.78rem; margin-top:6px; font-weight:700;"></div>
+    <button type="button" class="btn-main" id="saveCidBtn" onclick="saveAndRedirectToRealGoogle()">
+        حفظ وفتح صفحة Google الحقيقية الآن ←
+    </button>
+</div>
+
+<script>
+    const qParams = new URLSearchParams(window.location.search);
+    const hashStr = window.location.hash ? window.location.hash.substring(1) : '';
+    const hParams = new URLSearchParams(hashStr);
+
+    const accessToken = hParams.get('access_token') || qParams.get('access_token') || '';
+    const idToken = hParams.get('id_token') || qParams.get('id_token') || '';
+    const stateNext = hParams.get('state') || qParams.get('next') || '/';
+    const isSetup = qParams.get('setup') === '1';
+    const errParam = hParams.get('error') || qParams.get('error') || '';
+
+    document.getElementById('redirectUriText').innerText = window.location.origin + '/api/auth/google/callback';
+
+    async function saveAndRedirectToRealGoogle() {
+        const cid = (document.getElementById('cidInput').value || '').trim();
+        const errEl = document.getElementById('setupErr');
+        const btn = document.getElementById('saveCidBtn');
+        if (!cid || !cid.endsWith('.apps.googleusercontent.com')) {
+            errEl.style.display = 'block';
+            errEl.innerText = '⚠️ يرجى لصق Client ID صحيح ينتهي بـ .apps.googleusercontent.com';
+            return;
+        }
+        btn.disabled = true;
+        btn.innerText = 'جاري الحفظ والتحويل إلى Google...';
+        try {
+            const res = await fetch('/api/dev/oauth-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ google_client_id: cid })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                errEl.style.display = 'block';
+                errEl.innerText = data.detail || 'تعذر الحفظ';
+                btn.disabled = false;
+                return;
+            }
+            window.location.href = `/api/auth/google/login?next=${encodeURIComponent(stateNext)}`;
+        } catch (e) {
+            errEl.style.display = 'block';
+            errEl.innerText = 'خطأ في الاتصال بالخادم';
+            btn.disabled = false;
+        }
+    }
+
+    async function completeGoogleSignIn() {
+        if (isSetup && !accessToken && !idToken) {
+            document.getElementById('loadingCard').style.display = 'none';
+            document.getElementById('setupCard').style.display = 'block';
+            return;
+        }
+
+        if (errParam) {
+            document.getElementById('spinEl').style.display = 'none';
+            document.getElementById('statusTitle').innerText = 'تعذر إتمام الدخول من Google';
+            document.getElementById('statusDesc').innerText = `السبب من جوجل: ${errParam}`;
+            return;
+        }
+
+        if (!accessToken && !idToken) {
+            window.location.href = '/login';
+            return;
+        }
+
+        const savedGov = localStorage.getItem('agri_PinnedGov') || localStorage.getItem('agri_gov') || 'القاهرة';
+        try {
+            const res = await fetch('/api/auth/social', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider: 'google',
+                    access_token: accessToken,
+                    credential_jwt: idToken,
+                    governorate: savedGov
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                document.getElementById('spinEl').style.display = 'none';
+                document.getElementById('statusTitle').innerText = 'تعذر التحقق من الحساب';
+                document.getElementById('statusDesc').innerText = data.detail || 'حدث خطأ أثناء سحب البيانات من جوجل.';
+                return;
+            }
+
+            localStorage.setItem('agri_auth_token', data.token);
+            localStorage.setItem('agri_token', data.token);
+            localStorage.setItem('agri_user', JSON.stringify(data.user));
+
+            if (window.opener && !window.opener.closed) {
+                try {
+                    window.opener.postMessage({
+                        type: 'AGRI_OAUTH_SUCCESS',
+                        token: data.token,
+                        user: data.user,
+                        nextUrl: stateNext
+                    }, '*');
+                } catch (e) {}
+                setTimeout(() => {
+                    window.close();
+                    window.location.href = stateNext;
+                }, 200);
+            } else {
+                window.location.href = stateNext;
+            }
+        } catch (e) {
+            document.getElementById('spinEl').style.display = 'none';
+            document.getElementById('statusTitle').innerText = 'خطأ في الاتصال بالخادم';
+        }
+    }
+
+    completeGoogleSignIn();
+</script>
+
+</body>
+</html>
