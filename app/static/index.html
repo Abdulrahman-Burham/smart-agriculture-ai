@@ -15,21 +15,21 @@
     <style>
         :root {
             --bg-gradient:
-                radial-gradient(circle at 12% 10%, rgba(16, 185, 129, 0.14), transparent 38%),
-                radial-gradient(circle at 88% 85%, rgba(59, 130, 246, 0.12), transparent 38%),
-                linear-gradient(160deg, #040d09 0%, #091912 52%, #0b1724 100%);
-            --glass-bg: rgba(15, 31, 23, 0.72);
-            --glass-border: 1px solid rgba(52, 211, 153, 0.18);
-            --primary-green: #10b981;
-            --primary-dark: #059669;
-            --accent-gold: #fbbf24;
-            --accent-blue: #3b82f6;
-            --text-light: #f1f5f9;
-            --text-muted: #94a3b8;
-            --shadow: 0 12px 36px rgba(0, 0, 0, 0.42);
-            --radius-card: 18px;
-            --radius-bubble: 22px;
-            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                radial-gradient(circle at 15% 12%, rgba(60, 122, 91, 0.08), transparent 45%),
+                radial-gradient(circle at 85% 88%, rgba(194, 109, 58, 0.06), transparent 45%),
+                linear-gradient(165deg, #151A17 0%, #1B221E 55%, #161C18 100%);
+            --glass-bg: rgba(30, 38, 33, 0.92);
+            --glass-border: 1px solid rgba(226, 221, 209, 0.12);
+            --primary-green: #3C7A5B;
+            --primary-dark: #2B5B44;
+            --accent-gold: #D4A359;
+            --accent-blue: #5A8270;
+            --text-light: #F3F0E8;
+            --text-muted: #A3ACA5;
+            --shadow: 0 8px 28px rgba(10, 14, 12, 0.36);
+            --radius-card: 16px;
+            --radius-bubble: 18px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -60,13 +60,13 @@
             padding-bottom: env(safe-area-inset-bottom, 0px);
         }
 
-        /* Glassmorphism utility (Modern Bento Card with Specular Top Highlight) */
+        /* Editorial Matte Card */
         .glass {
             background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: var(--glass-border);
-            border-top: 1px solid rgba(52, 211, 153, 0.28);
+            border-top: 1px solid rgba(226, 221, 209, 0.18);
             border-radius: var(--radius-card);
             box-shadow: var(--shadow);
         }
@@ -80,12 +80,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom-left-radius: 20px;
-            border-bottom-right-radius: 20px;
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
             margin-bottom: 1rem;
             gap: 0.75rem;
             flex-wrap: wrap;
-            background: rgba(7, 20, 14, 0.88) !important;
+            background: rgba(22, 28, 24, 0.95) !important;
+            border-bottom: 1px solid rgba(226, 221, 209, 0.12);
         }
 
         .brand-row {
@@ -104,19 +105,18 @@
         }
 
         .brand-logo-img {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
             object-fit: cover;
-            border: 1.5px solid rgba(52, 211, 153, 0.55);
-            box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);
+            border: 1px solid rgba(226, 221, 209, 0.25);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
             flex-shrink: 0;
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            transition: transform 0.2s ease;
         }
 
         .logo:hover .brand-logo-img {
-            transform: scale(1.05) rotate(-2deg);
-            box-shadow: 0 0 22px rgba(16, 185, 129, 0.55);
+            transform: scale(1.03);
         }
 
         .brand-text-wrap {
@@ -126,19 +126,17 @@
         }
 
         .brand-title {
-            font-size: clamp(1.08rem, 2vw, 1.38rem);
+            font-size: clamp(1.08rem, 2vw, 1.32rem);
             font-weight: 800;
-            background: linear-gradient(135deg, #34d399 0%, #a7f3d0 55%, #fbbf24 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #F3F0E8;
             letter-spacing: -0.2px;
         }
 
         .brand-subtitle {
             font-size: 0.68rem;
             font-weight: 700;
-            color: var(--text-muted);
-            letter-spacing: 0.4px;
+            color: #A3ACA5;
+            letter-spacing: 0.3px;
         }
 
         /* HCI Global & In-View Back Button */
@@ -1934,11 +1932,39 @@
         try {
             const rawGps = localStorage.getItem('agri_gps_coords');
             if (rawGps) userGpsCoords = JSON.parse(rawGps);
+            const savedGov = localStorage.getItem('agri_gov');
+            if (savedGov && document.getElementById('gov-select')) document.getElementById('gov-select').value = savedGov;
             const savedArea = localStorage.getItem('agri_farm_area');
             if (savedArea && document.getElementById('area-input')) document.getElementById('area-input').value = savedArea;
             const savedIrrig = localStorage.getItem('agri_farm_irrig');
             if (savedIrrig && document.getElementById('irrig-select')) document.getElementById('irrig-select').value = savedIrrig;
         } catch (e) {}
+
+        async function syncPinnedPreferencesToServer(locSource = 'manual') {
+            try {
+                const govEl = document.getElementById('gov-select');
+                const cropEl = document.getElementById('crop-select');
+                const aEl = document.getElementById('area-input');
+                const iEl = document.getElementById('irrig-select');
+                const tok = localStorage.getItem('agri_auth_token') || localStorage.getItem('agri_token') || '';
+                const hdrs = { 'Content-Type': 'application/json' };
+                if (tok) hdrs['Authorization'] = 'Bearer ' + tok;
+                await fetch('/api/user/preferences', {
+                    method: 'POST',
+                    headers: hdrs,
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        governorate: govEl ? govEl.value : 'القاهرة',
+                        lat: userGpsCoords ? userGpsCoords.lat : null,
+                        lon: userGpsCoords ? userGpsCoords.lon : null,
+                        location_source: userGpsCoords ? 'gps' : locSource,
+                        primary_crop: cropEl ? cropEl.value : '',
+                        farm_size_feddan: aEl && aEl.value ? parseFloat(aEl.value) : 1.0,
+                        irrigation_type: iEl ? iEl.value : 'تنقيط'
+                    })
+                });
+            } catch (e) {}
+        }
 
         function saveFarmPrefs() {
             try {
@@ -1948,17 +1974,23 @@
                 if (iEl && iEl.value) localStorage.setItem('agri_farm_irrig', iEl.value);
             } catch (e) {}
             updateFarmSummaryPill();
+            syncPinnedPreferencesToServer();
         }
 
         function onManualGovChange() {
             userGpsCoords = null;
-            try { localStorage.removeItem('agri_gps_coords'); } catch (e) {}
+            try {
+                localStorage.removeItem('agri_gps_coords');
+                const govEl = document.getElementById('gov-select');
+                if (govEl && govEl.value) localStorage.setItem('agri_gov', govEl.value);
+            } catch (e) {}
             const gpsBtn = document.getElementById('btn-gps-loc');
             const gpsHdr = document.getElementById('btn-gps-header');
             if (gpsBtn) gpsBtn.innerText = '🎯 موقعي (GPS)';
             if (gpsHdr) gpsHdr.innerText = '🎯 GPS';
             updateFarmSummaryPill();
-            fetchWeather();
+            syncPinnedPreferencesToServer('manual');
+            fetchWeather(null, null, true);
         }
 
         function detectGPSLocation() {
@@ -1977,9 +2009,10 @@
                         lon: Number(pos.coords.longitude.toFixed(4))
                     };
                     try { localStorage.setItem('agri_gps_coords', JSON.stringify(userGpsCoords)); } catch (e) {}
-                    await fetchWeather(userGpsCoords.lat, userGpsCoords.lon);
-                    if (gpsBtn) gpsBtn.innerText = '✅ موقعي مفعل';
-                    if (gpsHdr) gpsHdr.innerText = '✅ GPS';
+                    await fetchWeather(userGpsCoords.lat, userGpsCoords.lon, true);
+                    await syncPinnedPreferencesToServer('gps');
+                    if (gpsBtn) gpsBtn.innerText = '✅ موقعي مثبت (GPS)';
+                    if (gpsHdr) gpsHdr.innerText = '✅ GPS مثبت';
                     updateFarmSummaryPill();
                 },
                 (err) => {
@@ -1992,9 +2025,35 @@
         }
 
         // Fetch Weather on load, governorate change, or exact GPS coordinates
-        async function fetchWeather(gpsLat = null, gpsLon = null) {
+        async function fetchWeather(gpsLat = null, gpsLon = null, explicitChange = false) {
             try {
                 const govEl = document.getElementById('gov-select');
+                if (!explicitChange) {
+                    try {
+                        const prefRes = await fetch('/api/user/preferences', { credentials: 'same-origin' });
+                        if (prefRes.ok) {
+                            const prefData = await prefRes.json();
+                            const p = prefData.preferences || {};
+                            if (p.governorate && govEl) {
+                                govEl.value = p.governorate;
+                                localStorage.setItem('agri_gov', p.governorate);
+                            }
+                            if (p.gps_lat != null && p.gps_lon != null && p.location_source === 'gps') {
+                                userGpsCoords = { lat: Number(p.gps_lat), lon: Number(p.gps_lon) };
+                            }
+                            if (p.primary_crop && document.getElementById('crop-select')) {
+                                document.getElementById('crop-select').value = p.primary_crop;
+                            }
+                            if (p.farm_size_feddan && document.getElementById('area-input')) {
+                                document.getElementById('area-input').value = p.farm_size_feddan;
+                            }
+                            if (p.irrigation_type && document.getElementById('irrig-select')) {
+                                document.getElementById('irrig-select').value = p.irrigation_type;
+                            }
+                        }
+                    } catch (e) {}
+                }
+
                 let gov = govEl ? govEl.value : 'القاهرة';
                 let temp = 28;
                 let wind = 12;
@@ -2004,9 +2063,9 @@
 
                 try {
                     const url = (useLat !== null && useLon !== null)
-                        ? `/api/weather?lat=${encodeURIComponent(useLat)}&lon=${encodeURIComponent(useLon)}&governorate=${encodeURIComponent(gov)}`
-                        : `/api/weather?governorate=${encodeURIComponent(gov)}`;
-                    const res = await fetch(url);
+                        ? `/api/weather?lat=${encodeURIComponent(useLat)}&lon=${encodeURIComponent(useLon)}&governorate=${encodeURIComponent(gov)}&pin=${explicitChange ? 'true' : 'false'}`
+                        : (explicitChange ? `/api/weather?governorate=${encodeURIComponent(gov)}&pin=true` : `/api/weather?pin=false`);
+                    const res = await fetch(url, { credentials: 'same-origin' });
                     if (res.ok) {
                         const data = await res.json();
                         if (data.temperature !== null && data.temperature !== undefined) temp = data.temperature;
@@ -2014,6 +2073,7 @@
                         if (data.governorate) {
                             gov = data.governorate;
                             if (govEl && govEl.value !== gov) govEl.value = gov;
+                            localStorage.setItem('agri_gov', gov);
                         }
                         isGps = !!data.is_gps;
                     }
@@ -2021,7 +2081,7 @@
                     console.log("Weather API notice:", e);
                 }
                 
-                const gpsTag = isGps ? ' <small style="color:#60a5fa">(GPS)</small>' : '';
+                const gpsTag = isGps ? ' <small style="color:#D4A359">(GPS مثبت)</small>' : ' <small style="color:#A3ACA5">(مثبت)</small>';
                 document.getElementById('weather-widget').innerHTML = `📍 ${gov}${gpsTag}: 🌡️ ${temp}°C | 💨 ${wind} كم/س`;
                 statTemp.innerText = temp;
                 updateFarmSummaryPill();
@@ -2030,7 +2090,7 @@
             }
         }
         
-        fetchWeather();
+        fetchWeather(null, null, false);
 
         function getConfidenceColor(percent) {
             if (percent > 80) return '#10b981';

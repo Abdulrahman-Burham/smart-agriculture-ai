@@ -1,1925 +1,1512 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#040d09">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="apple-touch-icon" href="/logo.png">
-    <title>الخبير الزراعي الذكي | تطبيق الموبايل</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-app: #040d09;
-            --bg-card: rgba(14, 29, 22, 0.88);
-            --bg-card-elevated: rgba(20, 40, 30, 0.95);
-            --primary: #10b981;
-            --primary-dark: #059669;
-            --primary-light: #34d399;
-            --accent-blue: #3b82f6;
-            --accent-gold: #f59e0b;
-            --danger: #ef4444;
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --border-subtle: rgba(255, 255, 255, 0.12);
-            --border-emerald: rgba(52, 211, 153, 0.35);
-            --header-h: 60px;
-            --bottom-nav-h: 66px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Cairo', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            height: 100dvh;
-            overflow: hidden;
-            background-color: var(--bg-app);
-            background-image:
-                radial-gradient(ellipse 90% 45% at 50% 0%, rgba(16, 185, 129, 0.18), transparent 60%),
-                radial-gradient(ellipse 80% 40% at 80% 100%, rgba(59, 130, 246, 0.12), transparent 60%);
-            color: var(--text-main);
-            -webkit-text-size-adjust: 100%;
-        }
-
-        /* ─── Fixed Native Mobile App Shell ─── */
-        .app-shell {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            max-width: 540px;
-            height: 100%;
-            height: 100dvh;
-            margin: 0 auto;
-            position: relative;
-            background: transparent;
-        }
-
-        /* ─── Top App Bar ─── */
-        .app-topbar {
-            height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
-            padding: calc(0.4rem + env(safe-area-inset-top, 0px)) 0.85rem 0.4rem 0.85rem;
-            background: rgba(6, 18, 13, 0.94);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--border-subtle);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.5rem;
-            flex-shrink: 0;
-            z-index: 50;
-        }
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 0.55rem;
-            min-width: 0;
-        }
-
-        .app-logo-img {
-            width: 38px;
-            height: 38px;
-            border-radius: 11px;
-            object-fit: cover;
-            border: 1.5px solid rgba(52, 211, 153, 0.55);
-            box-shadow: 0 3px 10px rgba(16, 185, 129, 0.3);
-            flex-shrink: 0;
-        }
-
-        .app-title-box {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-
-        .app-title-main {
-            font-size: 0.98rem;
-            font-weight: 800;
-            color: #fff;
-            line-height: 1.15;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .app-weather-pill {
-            font-size: 0.72rem;
-            color: var(--primary-light);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            white-space: nowrap;
-        }
-
-        .topbar-left {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            flex-shrink: 0;
-        }
-
-        /* Prominent HCI Back Button */
-        .mob-back-btn {
-            display: none;
-            align-items: center;
-            gap: 0.3rem;
-            background: rgba(16, 185, 129, 0.18);
-            border: 1px solid rgba(52, 211, 153, 0.5);
-            color: #6ee7b7;
-            padding: 0.38rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.82rem;
-            font-weight: 800;
-            cursor: pointer;
-            white-space: nowrap;
-            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.2);
-        }
-
-        .mob-back-btn.visible {
-            display: inline-flex;
-        }
-
-        .mob-back-btn:active {
-            transform: scale(0.95);
-        }
-
-        .top-user-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-main);
-            padding: 0.36rem 0.68rem;
-            border-radius: 12px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            cursor: pointer;
-            max-width: 125px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* ─── Main Screens Container ─── */
-        .app-screens {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .mob-screen {
-            display: none;
-            flex-direction: column;
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            padding: 0.85rem;
-            gap: 0.85rem;
-        }
-
-        .mob-screen.active {
-            display: flex;
-            animation: screenIn 0.2s ease-out;
-        }
-
-        /* Chat screen needs internal flex layout so input stays pinned at bottom */
-        #screen-chat {
-            padding: 0;
-            overflow: hidden;
-            gap: 0;
-        }
-
-        @keyframes screenIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ─── Sub-screen Header Bar (Inside Vision / Chat / Farm / History) ─── */
-        .screen-subheader {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.5rem;
-            padding: 0.65rem 0.8rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 16px;
-            flex-shrink: 0;
-        }
-
-        .screen-subheader-title {
-            font-size: 0.96rem;
-            font-weight: 800;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .inline-back-pill {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #f8fafc;
-            padding: 0.34rem 0.75rem;
-            border-radius: 11px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-
-        .inline-back-pill:active {
-            background: rgba(16, 185, 129, 0.25);
-        }
-
-        /* ─── SCREEN 1: HOME DASHBOARD ─── */
-        .hero-farm-card {
-            background: linear-gradient(145deg, rgba(16, 185, 129, 0.2), rgba(14, 29, 22, 0.92));
-            border: 1px solid var(--border-emerald);
-            border-radius: 20px;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.65rem;
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
-        }
-
-        .hero-top-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 0.5rem;
-        }
-
-        .hero-greeting {
-            font-size: 1.08rem;
-            font-weight: 800;
-            color: #fff;
-        }
-
-        .hero-sub {
-            font-size: 0.8rem;
-            color: #cbd5e1;
-            margin-top: 0.15rem;
-        }
-
-        .gps-chip-btn {
-            background: rgba(59, 130, 246, 0.2);
-            border: 1px solid rgba(59, 130, 246, 0.5);
-            color: #93c5fd;
-            padding: 0.35rem 0.7rem;
-            border-radius: 12px;
-            font-size: 0.76rem;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .farm-pills-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.4rem;
-            align-items: center;
-            justify-content: space-between;
-            padding-top: 0.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .farm-info-badge {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #6ee7b7;
-            background: rgba(0, 0, 0, 0.28);
-            padding: 0.32rem 0.7rem;
-            border-radius: 10px;
-        }
-
-        .edit-farm-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #fff;
-            padding: 0.32rem 0.7rem;
-            border-radius: 10px;
-            font-size: 0.76rem;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        /* Big Action Cards on Home */
-        .big-actions-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-        }
-
-        .big-action-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 20px;
-            padding: 1.15rem 0.85rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 0.45rem;
-            cursor: pointer;
-            transition: transform 0.18s ease, border-color 0.18s ease;
-            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
-        }
-
-        .big-action-card:active {
-            transform: scale(0.97);
-        }
-
-        .big-action-card.vision-card {
-            background: linear-gradient(160deg, rgba(16, 185, 129, 0.24), rgba(14, 29, 22, 0.92));
-            border-color: rgba(52, 211, 153, 0.45);
-        }
-
-        .big-action-card.chat-card {
-            background: linear-gradient(160deg, rgba(59, 130, 246, 0.22), rgba(14, 29, 22, 0.92));
-            border-color: rgba(96, 165, 250, 0.45);
-        }
-
-        .big-action-icon {
-            width: 54px;
-            height: 54px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.75rem;
-            background: rgba(255, 255, 255, 0.08);
-            margin-bottom: 0.15rem;
-        }
-
-        .big-action-title {
-            font-size: 0.98rem;
-            font-weight: 800;
-            color: #fff;
-        }
-
-        .big-action-desc {
-            font-size: 0.75rem;
-            color: var(--text-sub);
-            line-height: 1.35;
-        }
-
-        .section-label {
-            font-size: 0.86rem;
-            font-weight: 800;
-            color: #cbd5e1;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 0.15rem;
-        }
-
-        .quick-q-list {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.55rem;
-        }
-
-        .quick-q-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 14px;
-            padding: 0.7rem 0.75rem;
-            color: var(--text-main);
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-align: right;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-            line-height: 1.35;
-        }
-
-        .quick-q-card:active {
-            background: rgba(16, 185, 129, 0.18);
-            border-color: var(--primary);
-        }
-
-        .mini-stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem;
-        }
-
-        .mini-stat-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 14px;
-            padding: 0.65rem 0.4rem;
-            text-align: center;
-        }
-
-        .mini-stat-val {
-            font-size: 1.05rem;
-            font-weight: 800;
-            color: var(--primary-light);
-        }
-
-        .mini-stat-lbl {
-            font-size: 0.7rem;
-            color: var(--text-sub);
-        }
-
-        /* ─── SCREEN 2: CHAT (Native WhatsApp/ChatGPT Feel) ─── */
-        .chat-top-strip {
-            padding: 0.55rem 0.8rem;
-            background: rgba(11, 25, 19, 0.95);
-            border-bottom: 1px solid var(--border-subtle);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.4rem;
-            flex-shrink: 0;
-        }
-
-        .chat-messages-box {
-            flex: 1;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            padding: 0.85rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .msg-bubble {
-            max-width: 90%;
-            padding: 0.8rem 0.95rem;
-            border-radius: 18px;
-            font-size: 0.92rem;
-            line-height: 1.6;
-            word-wrap: break-word;
-        }
-
-        .msg-bot {
-            background: var(--bg-card-elevated);
-            border: 1px solid rgba(52, 211, 153, 0.25);
-            color: #f1f5f9;
-            align-self: flex-start;
-            border-bottom-right-radius: 4px;
-        }
-
-        .msg-user {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: #ffffff;
-            align-self: flex-end;
-            border-bottom-left-radius: 4px;
-            font-weight: 600;
-        }
-
-        .msg-sources {
-            margin-top: 0.55rem;
-            padding-top: 0.45rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.72rem;
-            color: var(--text-sub);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.3rem;
-        }
-
-        .source-chip {
-            background: rgba(16, 185, 129, 0.15);
-            color: #6ee7b7;
-            padding: 2px 7px;
-            border-radius: 8px;
-        }
-
-        .typing-box {
-            display: none;
-            align-self: flex-start;
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            padding: 0.6rem 1rem;
-            border-radius: 16px;
-            margin: 0 0.85rem 0.4rem 0.85rem;
-            font-size: 0.8rem;
-            color: var(--primary-light);
-            font-weight: 700;
-        }
-
-        .chat-Composer {
-            padding: 0.55rem 0.65rem;
-            background: rgba(8, 20, 15, 0.98);
-            border-top: 1px solid var(--border-subtle);
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            flex-shrink: 0;
-        }
-
-        .composer-btn {
-            width: 42px;
-            height: 42px;
-            border-radius: 13px;
-            border: 1px solid var(--border-subtle);
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--text-main);
-            font-size: 1.12rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-
-        .composer-btn.send {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-color: transparent;
-            color: #fff;
-            box-shadow: 0 3px 12px rgba(16, 185, 129, 0.35);
-        }
-
-        .composer-input {
-            flex: 1;
-            min-width: 0;
-            height: 42px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 14px;
-            padding: 0 0.85rem;
-            color: #fff;
-            font-size: 16px !important; /* Prevents iOS auto-zoom */
-            outline: none;
-        }
-
-        .composer-input:focus {
-            border-color: var(--primary);
-        }
-
-        /* ─── SCREEN 3: VISION / CAMERA DIAGNOSIS ─── */
-        .hci-stepper {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.35rem;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 0.35rem;
-            border-radius: 14px;
-            border: 1px solid var(--border-subtle);
-        }
-
-        .hci-step {
-            text-align: center;
-            font-size: 0.74rem;
-            font-weight: 700;
-            padding: 0.4rem 0.25rem;
-            border-radius: 10px;
-            color: var(--text-sub);
-        }
-
-        .hci-step.active {
-            background: rgba(16, 185, 129, 0.22);
-            color: #6ee7b7;
-            border: 1px solid rgba(52, 211, 153, 0.45);
-        }
-
-        .hci-step.done {
-            color: var(--primary-light);
-        }
-
-        .cam-buttons-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.65rem;
-        }
-
-        .cam-big-btn {
-            padding: 0.95rem 0.6rem;
-            border-radius: 16px;
-            font-size: 0.92rem;
-            font-weight: 800;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.3rem;
-            border: 1px solid rgba(52, 211, 153, 0.45);
-        }
-
-        .cam-big-btn.camera {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: #fff;
-            border: none;
-            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
-        }
-
-        .cam-big-btn.gallery {
-            background: rgba(16, 185, 129, 0.14);
-            color: #6ee7b7;
-        }
-
-        .preview-card {
-            background: var(--bg-card);
-            border: 2px dashed rgba(52, 211, 153, 0.4);
-            border-radius: 18px;
-            min-height: 185px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-            position: relative;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        #mob-image-preview {
-            max-width: 100%;
-            max-height: 240px;
-            border-radius: 12px;
-            display: none;
-            object-fit: contain;
-        }
-
-        .diagnose-cta-btn {
-            width: 100%;
-            padding: 0.95rem;
-            border-radius: 16px;
-            border: none;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            color: #fff;
-            font-size: 1rem;
-            font-weight: 800;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            opacity: 0.45;
-            transition: all 0.25s ease;
-        }
-
-        .diagnose-cta-btn.ready {
-            opacity: 1;
-            box-shadow: 0 6px 22px rgba(59, 130, 246, 0.5);
-            animation: pulseCta 1.8s infinite;
-        }
-
-        @keyframes pulseCta {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.55); }
-            50% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-        }
-
-        .result-box {
-            display: none;
-            background: var(--bg-card-elevated);
-            border: 1px solid var(--border-emerald);
-            border-radius: 18px;
-            padding: 1rem;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .pred-row {
-            margin-bottom: 0.55rem;
-        }
-
-        .pred-lbl {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.84rem;
-            margin-bottom: 0.25rem;
-            font-weight: 700;
-        }
-
-        .pred-track {
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 99px;
-            overflow: hidden;
-        }
-
-        .pred-fill {
-            height: 100%;
-            border-radius: 99px;
-        }
-
-        /* ─── SCREEN 4: FARM & ACCOUNT SETTINGS ─── */
-        .settings-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 18px;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.85rem;
-        }
-
-        .field-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.35rem;
-        }
-
-        .field-group label {
-            font-size: 0.84rem;
-            font-weight: 700;
-            color: #cbd5e1;
-        }
-
-        .mob-select, .mob-input {
-            width: 100%;
-            height: 44px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 12px;
-            padding: 0 0.85rem;
-            color: #fff;
-            font-size: 16px !important;
-            outline: none;
-        }
-
-        .mob-select option {
-            background: #0f172a;
-            color: #fff;
-        }
-
-        /* ─── Fixed Bottom Navigation Bar ─── */
-        .app-bottom-nav {
-            height: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
-            padding: 0.35rem 0.4rem calc(0.35rem + env(safe-area-inset-bottom, 0px)) 0.4rem;
-            background: rgba(6, 18, 13, 0.96);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border-top: 1px solid rgba(52, 211, 153, 0.25);
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 0.2rem;
-            flex-shrink: 0;
-            z-index: 50;
-        }
-
-        .bnav-btn {
-            background: none;
-            border: none;
-            color: var(--text-sub);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.15rem;
-            font-size: 0.7rem;
-            font-weight: 700;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .bnav-btn .bnav-ico {
-            font-size: 1.2rem;
-            line-height: 1;
-        }
-
-        .bnav-btn.active {
-            color: #6ee7b7;
-            background: rgba(16, 185, 129, 0.15);
-        }
-
-        /* Center Camera Tab Highlight */
-        .bnav-btn.center-cam .bnav-ico {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: #fff;
-            width: 36px;
-            height: 36px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 3px 10px rgba(16, 185, 129, 0.4);
-        }
-
-        /* Floating Toast */
-        .mob-toast {
-            position: fixed;
-            top: calc(var(--header-h) + 10px);
-            left: 50%;
-            transform: translateX(-50%) translateY(-20px);
-            background: rgba(10, 26, 19, 0.96);
-            border: 1px solid var(--primary-light);
-            color: #fff;
-            padding: 0.55rem 1rem;
-            border-radius: 99px;
-            font-size: 0.82rem;
-            font-weight: 700;
-            z-index: 9999;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.25s ease;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-            white-space: nowrap;
-        }
-
-        .mob-toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#F7F5F0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>المستشار الزراعي — فحص المحاصيل والاستشارة الذكية</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      /* Editorial Botanical & Warm Stone Palette — Human-Crafted, Zero Neon */
+      --bg-canvas: #F7F5F0;
+      --bg-surface: #FFFFFF;
+      --bg-subtle: #EFECE4;
+      --bg-elevated: #FAF8F4;
+      --border-soft: #E5E0D5;
+      --border-strong: #D2CBB8;
+
+      --text-primary: #1B241E;
+      --text-secondary: #4A554E;
+      --text-muted: #76827A;
+
+      --brand-forest: #1C3F2F;
+      --brand-forest-hover: #25523D;
+      --brand-sage: #2D6A4F;
+      --brand-sage-tint: #E9F2EC;
+
+      --accent-terracotta: #B85D3B;
+      --accent-terracotta-tint: #F9EFEA;
+      --accent-ochre: #9C6B21;
+      --accent-ochre-tint: #FBF5E8;
+      --danger-crimson: #A83232;
+      --danger-tint: #FDF2F2;
+
+      --shadow-card: 0 2px 10px rgba(27, 36, 30, 0.04);
+      --shadow-sheet: 0 -8px 30px rgba(27, 36, 30, 0.12);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+      padding-top: 60px;
+      padding-bottom: calc(134px + var(--safe-bottom));
+    }
+
+    body.non-chat-tab {
+      padding-bottom: calc(70px + var(--safe-bottom));
+    }
+
+    svg.icon {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      flex-shrink: 0;
+    }
+
+    /* ── Top App Bar ── */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      left: 0;
+      height: 60px;
+      background: rgba(247, 245, 240, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      z-index: 90;
+      gap: 8px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      object-fit: cover;
+      border: 1px solid var(--border-soft);
+      background: var(--brand-forest);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 0.96rem;
+      font-weight: 800;
+      color: var(--brand-forest);
+      white-space: nowrap;
+      letter-spacing: -0.2px;
+    }
+
+    .brand-subtitle {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      display: block;
+      margin-top: -3px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .loc-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-soft);
+      color: var(--text-primary);
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow-card);
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .loc-pill:active {
+      background: var(--bg-subtle);
+    }
+
+    .loc-pill .pin-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--brand-sage);
+      display: inline-block;
+    }
+
+    .loc-pill.gps-pinned .pin-dot {
+      background: var(--accent-terracotta);
+    }
+
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--brand-forest);
+      color: #FFFFFF;
+      border: 1px solid var(--brand-forest);
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      font-family: inherit;
+      max-width: 115px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-pill.logged-in {
+      background: var(--brand-sage-tint);
+      color: var(--brand-forest);
+      border-color: #C5DDD0;
+    }
+
+    /* ── Views ── */
+    .view-section {
+      display: none;
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 12px 14px 20px;
+      flex: 1;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    /* ── Compact Leaf Scan Card inside Main Stream ── */
+    .scan-banner {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .scan-banner-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      gap: 8px;
+    }
+
+    .scan-banner-title {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .scan-banner-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--brand-sage);
+      background: var(--brand-sage-tint);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .scan-actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .btn-scan-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      background: var(--brand-forest);
+      color: #FFFFFF;
+      border: 1px solid var(--brand-forest);
+      border-radius: 12px;
+      padding: 11px 10px;
+      font-family: inherit;
+      font-size: 0.83rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-scan-primary:active {
+      background: var(--brand-forest-hover);
+    }
+
+    .btn-scan-secondary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 11px 10px;
+      font-family: inherit;
+      font-size: 0.83rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-scan-secondary:active {
+      background: var(--bg-subtle);
+    }
+
+    /* ── Inline Diagnosis Result Card ── */
+    .scan-result-box {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-soft);
+    }
+
+    .scan-result-box.visible {
+      display: block;
+    }
+
+    .scan-preview-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .scan-thumb {
+      width: 68px;
+      height: 68px;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 1px solid var(--border-soft);
+      flex-shrink: 0;
+    }
+
+    .scan-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .scan-disease-name {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--brand-forest);
+      line-height: 1.35;
+    }
+
+    .scan-conf-pill {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--brand-sage-tint);
+      color: var(--brand-forest);
+    }
+
+    .scan-advice-text {
+      margin-top: 10px;
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-soft);
+      border-radius: 10px;
+      padding: 10px 12px;
+      white-space: pre-wrap;
+      line-height: 1.65;
+    }
+
+    /* ── Quick Prompts Strip ── */
+    .quick-strip {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .quick-strip::-webkit-scrollbar { display: none; }
+
+    .prompt-chip {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-soft);
+      color: var(--text-secondary);
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 0.77rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-card);
+    }
+
+    .prompt-chip:active {
+      background: var(--brand-sage-tint);
+      color: var(--brand-forest);
+      border-color: var(--brand-sage);
+    }
+
+    /* ── Chat Conversation Feed ── */
+    .chat-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg-card {
+      padding: 13px 15px;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      line-height: 1.72;
+      word-break: break-word;
+      position: relative;
+    }
+
+    .msg-card.bot {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-soft);
+      color: var(--text-primary);
+      border-top-right-radius: 5px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .msg-card.user {
+      background: var(--brand-forest);
+      color: #FFFFFF;
+      align-self: flex-start;
+      border-top-left-radius: 5px;
+      max-width: 90%;
+    }
+
+    .msg-sender {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--brand-sage);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .msg-card.bot strong {
+      color: var(--brand-forest);
+      font-weight: 800;
+    }
+
+    .msg-sources {
+      margin-top: 8px;
+      padding-top: 7px;
+      border-top: 1px solid var(--border-soft);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Fixed Bottom Composer (Above Bottom Nav) ── */
+    .composer-bar {
+      position: fixed;
+      right: 0;
+      left: 0;
+      bottom: calc(62px + var(--safe-bottom));
+      background: rgba(247, 245, 240, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border-soft);
+      padding: 8px 12px;
+      z-index: 85;
+    }
+
+    .composer-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-end;
+      gap: 7px;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .icon-btn:active {
+      background: var(--bg-subtle);
+    }
+
+    .icon-btn.recording {
+      background: var(--danger-tint);
+      border-color: var(--danger-crimson);
+      color: var(--danger-crimson);
+      animation: pulseRec 1.2s infinite;
+    }
+
+    @keyframes pulseRec {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    .composer-input-wrap {
+      flex: 1;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+    }
+
+    .composer-input-wrap:focus-within {
+      border-color: var(--brand-forest);
+    }
+
+    .composer-textarea {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 16px; /* Prevents iOS zoom */
+      color: var(--text-primary);
+      resize: none;
+      max-height: 92px;
+      line-height: 1.45;
+    }
+
+    .composer-textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .send-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: none;
+      background: var(--brand-forest);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+    }
+
+    /* ── Bottom Navigation Bar ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      height: calc(62px + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-soft);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      z-index: 90;
+    }
+
+    .nav-tab {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.73rem;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .nav-tab.active {
+      color: var(--brand-forest);
+    }
+
+    .nav-tab.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      width: 32px;
+      height: 3px;
+      border-radius: 0 0 4px 4px;
+      background: var(--brand-forest);
+    }
+
+    /* ── Settings / Farm & Location Card ── */
+    .settings-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .settings-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--brand-forest);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .settings-desc {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+      line-height: 1.55;
+    }
+
+    .field-group {
+      margin-bottom: 12px;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 5px;
+    }
+
+    .field-control {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 11px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      outline: none;
+    }
+
+    .field-control:focus {
+      border-color: var(--brand-forest);
+      background: var(--bg-surface);
+    }
+
+    .btn-gps-pin {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--accent-terracotta);
+      background: var(--accent-terracotta-tint);
+      color: var(--accent-terracotta);
+      font-family: inherit;
+      font-size: 0.84rem;
+      font-weight: 800;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+
+    .btn-save-prefs {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      background: var(--brand-forest);
+      color: #FFFFFF;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .pin-status-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--brand-sage-tint);
+      border: 1px solid #C5DDD0;
+      color: var(--brand-forest);
+      padding: 9px 12px;
+      border-radius: 11px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .weather-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .weather-stat {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-soft);
+      border-radius: 11px;
+      padding: 9px;
+      text-align: center;
+    }
+
+    .weather-stat-val {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--brand-forest);
+    }
+
+    .weather-stat-lbl {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* ── History Cards ── */
+    .history-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .history-item-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .history-item-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--brand-forest);
+    }
+
+    .desktop-switch-link {
+      display: block;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 10px;
+      margin-top: 8px;
+    }
+  </style>
 </head>
 <body>
 
-<div class="app-shell">
-    <!-- Top App Bar -->
-    <header class="app-topbar">
-        <div class="topbar-right" onclick="goMobileScreen('home')" style="cursor:pointer;">
-            <img src="/logo.png" alt="Logo" class="app-logo-img">
-            <div class="app-title-box">
-                <div class="app-title-main">الخبير الزراعي الذكي</div>
-                <div class="app-weather-pill" id="mob-weather-pill">🌡️ جاري التحميل...</div>
-            </div>
+  <!-- Hidden File Inputs for Camera & Gallery -->
+  <input type="file" id="cameraFileInput" accept="image/*" capture="environment" style="display:none" onchange="handleLeafImage(this.files[0])" />
+  <input type="file" id="galleryFileInput" accept="image/*" style="display:none" onchange="handleLeafImage(this.files[0])" />
+
+  <!-- Top Header -->
+  <header class="top-bar">
+    <div class="brand-group">
+      <img src="/logo.png" alt="Logo" class="brand-logo" onerror="this.style.display='none'" />
+      <div>
+        <span class="brand-title">المستشار الزراعي</span>
+        <span class="brand-subtitle" id="cropSubLabel">ذاكرة متصلة • فحص وتشخيص</span>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button type="button" class="loc-pill" id="topLocPill" onclick="switchMobileTab('farm')" title="تغيير أو تثبيت موقعك">
+        <span class="pin-dot"></span>
+        <span id="topLocText">القاهرة • --°</span>
+      </button>
+      <a href="/login" class="user-pill" id="topUserPill">حسابي</a>
+    </div>
+  </header>
+
+  <!-- VIEW 1: Unified Assistant + Leaf Scanner -->
+  <main class="view-section active" id="view-assistant">
+    <!-- Compact Leaf Scanner Card -->
+    <section class="scan-banner">
+      <div class="scan-banner-head">
+        <div class="scan-banner-title">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+          <span>فحص أوراق النبات بالكاميرا</span>
         </div>
-        <div class="topbar-left">
-            <button type="button" class="mob-back-btn" id="mob-global-back" onclick="goBackMobile()">
-                <span>➡️</span>
-                <span>رجوع</span>
-            </button>
-            <div id="mob-auth-top">
-                <a href="/login" class="top-user-btn" style="background:rgba(16,185,129,0.2); border-color:rgba(52,211,153,0.45); color:#6ee7b7;">🔐 دخول</a>
-            </div>
+        <span class="scan-banner-badge">دقة 97.6%</span>
+      </div>
+
+      <div class="scan-actions-grid">
+        <button type="button" class="btn-scan-primary" onclick="document.getElementById('cameraFileInput').click()">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          <span>تصوير الورقة</span>
+        </button>
+        <button type="button" class="btn-scan-secondary" onclick="document.getElementById('galleryFileInput').click()">
+          <svg class="icon" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+          <span>من المعرض</span>
+        </button>
+      </div>
+
+      <!-- Inline Scan Result -->
+      <div class="scan-result-box" id="scanResultBox">
+        <div class="scan-preview-row">
+          <img id="scanPreviewImg" class="scan-thumb" src="" alt="ورقة النبات" />
+          <div class="scan-meta">
+            <div class="scan-disease-name" id="scanDiseaseTitle">جاري تحليل الورقة...</div>
+            <span class="scan-conf-pill" id="scanConfidenceBadge">يرجى الانتظار</span>
+          </div>
         </div>
-    </header>
+        <div class="scan-advice-text" id="scanAdviceText">يقوم النظام بفحص الأنسجة النباتية واسترجاع التوصية المعتمدة...</div>
+      </div>
+    </section>
 
-    <!-- Toast Notification -->
-    <div id="mob-toast" class="mob-toast"></div>
+    <!-- Quick Question Chips -->
+    <div class="quick-strip">
+      <button type="button" class="prompt-chip" onclick="sendQuickPrompt('احسب جدول الري لمحصولي حسب طقس محافظتي المثبتة')">جدول الري حسب طقس منطقتي</button>
+      <button type="button" class="prompt-chip" onclick="sendQuickPrompt('ما هي أهم التوصيات الوقائية لمحصولي هذا الأسبوع؟')">توصيات الأسبوع لمحصولي</button>
+      <button type="button" class="prompt-chip" onclick="sendQuickPrompt('علاج اصفرار والتفاف الأوراق والجرعة لكل فدان')">علاج اصفرار الأوراق</button>
+      <button type="button" class="prompt-chip" onclick="sendQuickPrompt('برنامج التسميد المناسب للمرحلة الحالية')">برنامج التسميد</button>
+    </div>
 
-    <!-- Screens Viewport -->
-    <main class="app-screens">
+    <!-- Conversation Stream -->
+    <div class="chat-list" id="chatList">
+      <div class="msg-card bot">
+        <div class="msg-sender">
+          <span>المستشار الزراعي</span>
+          <span id="welcomePinStatus">موقعك محفوظ بالكوكيز</span>
+        </div>
+        أهلاً بك. يمكنك تصوير أي ورقة نبات لفحصها فوراً أو كتابة سؤالك أو التسجيل بصوتك، وسأتذكر بيانات أرضك وموقعك المثبت ومحادثاتك السابقة تلقائياً.
+      </div>
+    </div>
+  </main>
 
-        <!-- ═══════════════════════════════════════════════════ -->
-        <!-- SCREEN 1: HOME DASHBOARD (الرئيسية)                 -->
-        <!-- ═══════════════════════════════════════════════════ -->
-        <section class="mob-screen active" id="screen-home">
-            <div class="hero-farm-card">
-                <div class="hero-top-row">
-                    <div>
-                        <div class="hero-greeting" id="hero-user-greeting">أهلاً بك يا هندسة 🌿</div>
-                        <div class="hero-sub">مساعدك الزراعي الذكي لتشخيص الأمراض وحساب الجرعات</div>
-                    </div>
-                    <button type="button" class="gps-chip-btn" id="btn-mob-gps" onclick="detectMobileGPS()">
-                        🎯 GPS الطقس
-                    </button>
-                </div>
-                <div class="farm-pills-row">
-                    <span class="farm-info-badge" id="home-farm-summary">🚜 القاهرة • تلقائي • 1 فدان (غمر)</span>
-                    <button type="button" class="edit-farm-btn" onclick="goMobileScreen('farm')">⚙️ تعديل أرضي</button>
-                </div>
-            </div>
+  <!-- VIEW 2: Pinned Location & Farm Settings -->
+  <section class="view-section" id="view-farm">
+    <div class="settings-card">
+      <div class="settings-title">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span>تثبيت الموقع الجغرافي والطقس</span>
+      </div>
+      <p class="settings-desc">
+        لأن عنوان الـ IP في شبكات الموبايل غالباً يظهر في محافظة أخرى، يتم تثبيت محافظتك أو إحداثيات الـ GPS الخاصة بك في الكوكيز وربطها بحسابك دائماً.
+      </p>
 
-            <!-- Primary 2 Big Actions -->
-            <div class="big-actions-grid">
-                <div class="big-action-card vision-card" onclick="goMobileScreen('vision')">
-                    <div class="big-action-icon">📸</div>
-                    <div class="big-action-title">فحص صورة النبات</div>
-                    <div class="big-action-desc">صوّر الورقة بالكاميرا أو ارفعها لمعرفة المرض والعلاج فوراً</div>
-                </div>
-                <div class="big-action-card chat-card" onclick="goMobileScreen('chat')">
-                    <div class="big-action-icon">💬</div>
-                    <div class="big-action-title">المستشار الذكي</div>
-                    <div class="big-action-desc">اسأل بالكتابة أو بالصوت 🎤 باللهجة المصرية مع ذاكرة ممتدة</div>
-                </div>
-            </div>
+      <div class="pin-status-banner" id="pinStatusBanner">
+        <span id="pinBannerText">المحافظة المثبتة حالياً: القاهرة</span>
+        <span id="pinSourceBadge">مثبت</span>
+      </div>
 
-            <!-- Quick One-Tap Consultations -->
-            <div class="section-label">
-                <span>⚡ استشارات سريعة بضغطة واحدة</span>
-                <span style="font-size:0.72rem; color:var(--primary-light);">Agri-RAG</span>
-            </div>
-            <div class="quick-q-list">
-                <button type="button" class="quick-q-card" onclick="quickAskMobile('ما هو علاج الندوة المتأخرة في الطماطم بالجرعات؟', 'طماطم')">
-                    <span>🍅</span><span>علاج الندوة المتأخرة بالطماطم</span>
-                </button>
-                <button type="button" class="quick-q-card" onclick="quickAskMobile('كيف أعالج اللفحة المبكرة في البطاطس؟', 'بطاطس')">
-                    <span>🥔</span><span>اللفحة المبكرة في البطاطس</span>
-                </button>
-                <button type="button" class="quick-q-card" onclick="quickAskMobile('ما هي خطوات مكافحة الصدأ الأصفر في القمح؟', 'قمح')">
-                    <span>🌾</span><span>مكافحة الصدأ الأصفر بالقمح</span>
-                </button>
-                <button type="button" class="quick-q-card" onclick="quickAskMobile('ما هو علاج العفن الهبابي والبياض الدقيقي في المانجو؟', 'مانجو')">
-                    <span>🥭</span><span>العفن الهبابي بالمانجو</span>
-                </button>
-            </div>
+      <button type="button" class="btn-gps-pin" id="gpsPinBtn" onclick="pinExactGpsLocation()">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M2 12h3"/><path d="M19 12h3"/></svg>
+        <span id="gpsBtnLabel">تحديد وتثبيت موقع المزرعة بدقة عبر GPS</span>
+      </button>
 
-            <!-- Live Performance Metrics -->
-            <div class="section-label">
-                <span>📊 مؤشرات الجلسة الحية</span>
-            </div>
-            <div class="mini-stats-grid">
-                <div class="mini-stat-box">
-                    <div class="mini-stat-val"><span id="m-stat-conf">--</span>%</div>
-                    <div class="mini-stat-lbl">🎯 دقة التشخيص</div>
-                </div>
-                <div class="mini-stat-box">
-                    <div class="mini-stat-val"><span id="m-stat-temp">--</span>°C</div>
-                    <div class="mini-stat-lbl">🌡️ الحرارة الآن</div>
-                </div>
-                <div class="mini-stat-box">
-                    <div class="mini-stat-val" id="m-stat-queries">0</div>
-                    <div class="mini-stat-lbl">💬 استشاراتك</div>
-                </div>
-            </div>
-        </section>
+      <div class="field-group">
+        <label class="field-label" for="govSelect">أو اختر المحافظة يدوياً لتثبيتها:</label>
+        <select id="govSelect" class="field-control" onchange="onManualGovChange()">
+          <option value="القاهرة">القاهرة</option>
+          <option value="الجيزة">الجيزة</option>
+          <option value="الإسكندرية">الإسكندرية</option>
+          <option value="البحيرة">البحيرة</option>
+          <option value="كفر الشيخ">كفر الشيخ</option>
+          <option value="الدقهلية">الدقهلية</option>
+          <option value="الشرقية">الشرقية</option>
+          <option value="المنوفية">المنوفية</option>
+          <option value="الغربية">الغربية</option>
+          <option value="القليوبية">القليوبية</option>
+          <option value="الإسماعيلية">الإسماعيلية</option>
+          <option value="دمياط">دمياط</option>
+          <option value="بورسعيد">بورسعيد</option>
+          <option value="السويس">السويس</option>
+          <option value="الفيوم">الفيوم</option>
+          <option value="بني سويف">بني سويف</option>
+          <option value="المنيا">المنيا</option>
+          <option value="أسيوط">أسيوط</option>
+          <option value="سوهاج">سوهاج</option>
+          <option value="قنا">قنا</option>
+          <option value="الأقصر">الأقصر</option>
+          <option value="أسوان">أسوان</option>
+          <option value="مطروح">مطروح</option>
+          <option value="الوادي الجديد">الوادي الجديد</option>
+          <option value="البحر الأحمر">البحر الأحمر</option>
+          <option value="شمال سيناء">شمال سيناء</option>
+          <option value="جنوب سيناء">جنوب سيناء</option>
+        </select>
+      </div>
 
-        <!-- ═══════════════════════════════════════════════════ -->
-        <!-- SCREEN 2: CHAT (المحادثة الذكية)                     -->
-        <!-- ═══════════════════════════════════════════════════ -->
-        <section class="mob-screen" id="screen-chat">
-            <div class="chat-top-strip">
-                <button type="button" class="inline-back-pill" onclick="goMobileScreen('home')">
-                    ➡️ رجوع للرئيسية
-                </button>
-                <span id="mob-memory-badge" style="font-size:0.74rem; color:#34d399; font-weight:700;">🧠 الذاكرة متصلة</span>
-                <button type="button" class="inline-back-pill" onclick="resetMobileChat()" style="font-size:0.74rem; padding:0.28rem 0.55rem;">
-                    🔄 جديد
-                </button>
-            </div>
+      <div class="weather-summary-grid">
+        <div class="weather-stat">
+          <div class="weather-stat-val" id="wTempVal">--°C</div>
+          <div class="weather-stat-lbl">الحرارة</div>
+        </div>
+        <div class="weather-stat">
+          <div class="weather-stat-val" id="wHumVal">--%</div>
+          <div class="weather-stat-lbl">الرطوبة</div>
+        </div>
+        <div class="weather-stat">
+          <div class="weather-stat-val" id="wWindVal">-- كم/س</div>
+          <div class="weather-stat-lbl">الرياح</div>
+        </div>
+      </div>
+    </div>
 
-            <div class="chat-messages-box" id="mob-chat-messages">
-                <div class="msg-bubble msg-bot">
-                    أهلاً بك في <strong>المستشار الزراعي الذكي (Agri-RAG)</strong> 🌿<br>
-                    أنا أتذكر محصولك ومساحة أرضك وتشخيصاتك السابقة. اكتب سؤالك أو اضغط 🎤 للتحدث بالصوت!
-                </div>
-            </div>
+    <div class="settings-card">
+      <div class="settings-title">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>بيانات المحصول والأرض الزراعية</span>
+      </div>
 
-            <div class="typing-box" id="mob-typing">⏳ جاري تحضير التوصية الزراعية والجرعات...</div>
+      <div class="field-group">
+        <label class="field-label" for="cropSelect">المحصول الأساسي:</label>
+        <select id="cropSelect" class="field-control">
+          <option value="">جميع المحاصيل (عام)</option>
+          <option value="طماطم">طماطم</option>
+          <option value="بطاطس">بطاطس</option>
+          <option value="قمح">قمح</option>
+          <option value="ذرة">ذرة</option>
+          <option value="خيار">خيار</option>
+          <option value="فلفل">فلفل</option>
+          <option value="فراولة">فراولة</option>
+          <option value="عنب">عنب</option>
+          <option value="موالح">موالح</option>
+          <option value="مانجو">مانجو</option>
+          <option value="أرز">أرز</option>
+          <option value="بصل">بصل</option>
+        </select>
+      </div>
 
-            <div class="chat-Composer">
-                <button type="button" class="composer-btn" onclick="goMobileScreen('vision')" title="فحص صورة" style="color:#34d399;">📷</button>
-                <button type="button" class="composer-btn" id="mob-voice-btn" onclick="toggleMobileVoice()" title="تحدث بالصوت">🎤</button>
-                <input type="text" class="composer-input" id="mob-chat-input" placeholder="اكتب سؤالك الزراعي هنا...">
-                <button type="button" class="composer-btn send" id="mob-send-btn" onclick="sendMobileChat()">➤</button>
-            </div>
-        </section>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="field-group">
+          <label class="field-label" for="areaInput">المساحة (بالفدان):</label>
+          <input type="number" id="areaInput" class="field-control" min="0.25" step="0.25" value="1" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="irrigSelect">نظام الري:</label>
+          <select id="irrigSelect" class="field-control">
+            <option value="تنقيط">تنقيط</option>
+            <option value="غمر">غمر</option>
+            <option value="رش">رش محوري / ثابت</option>
+          </select>
+        </div>
+      </div>
 
-        <!-- ═══════════════════════════════════════════════════ -->
-        <!-- SCREEN 3: VISION / CAMERA (فحص صورة النبات)         -->
-        <!-- ═══════════════════════════════════════════════════ -->
-        <section class="mob-screen" id="screen-vision">
-            <div class="screen-subheader">
-                <div class="screen-subheader-title">📸 التشخيص البصري بالصورة</div>
-                <button type="button" class="inline-back-pill" onclick="goMobileScreen('home')">
-                    ➡️ رجوع للرئيسية
-                </button>
-            </div>
+      <button type="button" class="btn-save-prefs" id="savePrefsBtn" onclick="saveFarmAndLocationPrefs()">
+        حفظ وتثبيت الإعدادات في الكوكيز والحساب
+      </button>
+    </div>
 
-            <!-- HCI 3-Step Stepper -->
-            <div class="hci-stepper">
-                <div class="hci-step active" id="m-step-1">① اختر/صوّر الورقة</div>
-                <div class="hci-step" id="m-step-2">② اضغط فحص</div>
-                <div class="hci-step" id="m-step-3">③ التشخيص والعلاج</div>
-            </div>
+    <a href="/?desktop=1" class="desktop-switch-link">التبديل إلى واجهة سطح المكتب الكاملة</a>
+  </section>
 
-            <!-- Model Selector Pill -->
-            <div style="display:flex; gap:0.4rem;">
-                <button type="button" id="m-effnet-btn" onclick="setMobModel('EfficientNetV2B2')" style="flex:1; padding:0.45rem; border-radius:11px; border:1px solid #10b981; background:rgba(16,185,129,0.2); color:#6ee7b7; font-size:0.78rem; font-weight:700; cursor:pointer;">
-                    ⚡ EfficientNetV2B2 (الأساسي)
-                </button>
-                <button type="button" id="m-resnet-btn" onclick="setMobModel('ResNet18')" style="flex:1; padding:0.45rem; border-radius:11px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); color:#94a3b8; font-size:0.78rem; font-weight:700; cursor:pointer;">
-                    🧪 ResNet18 (إضافي)
-                </button>
-            </div>
+  <!-- VIEW 3: Saved Diagnosis & Memory Log -->
+  <section class="view-section" id="view-history">
+    <div class="settings-card">
+      <div class="settings-title" style="justify-content:space-between;">
+        <span>سجل الفحوصات والمحادثات المرتبطة بك</span>
+        <button type="button" onclick="clearLocalSession()" style="border:1px solid var(--border-strong); background:var(--bg-elevated); padding:4px 10px; border-radius:8px; font-family:inherit; font-size:0.74rem; font-weight:700; cursor:pointer;">بدء جلسة جديدة</button>
+      </div>
+      <p class="settings-desc">جميع التشخيصات والأسئلة التالية محفوظة ومرتبطة بمعرف الكوكي الخاص بك (<span id="cookieIdBadge" style="font-family:monospace;">...</span>) وبحسابك.</p>
+      <div id="historyContainer">
+        <div style="color:var(--text-muted); font-size:0.84rem; text-align:center; padding:20px 0;">جاري تحميل السجل...</div>
+      </div>
+    </div>
+  </section>
 
-            <!-- Hidden File Inputs -->
-            <input type="file" id="mob-camera-input" accept="image/*" capture="environment" style="display:none;">
-            <input type="file" id="mob-gallery-input" accept="image/*" style="display:none;">
+  <!-- Sticky Bottom Composer (Visible in Assistant View) -->
+  <div class="composer-bar" id="composerBar">
+    <div class="composer-inner">
+      <button type="button" class="icon-btn" onclick="document.getElementById('cameraFileInput').click()" title="تصوير ورقة نبات">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+      </button>
 
-            <!-- 2 Big Camera / Gallery Buttons -->
-            <div class="cam-buttons-row">
-                <button type="button" class="cam-big-btn camera" onclick="document.getElementById('mob-camera-input').click()">
-                    <span style="font-size:1.4rem;">📷</span>
-                    <span>تصوير بالكاميرا</span>
-                </button>
-                <button type="button" class="cam-big-btn gallery" onclick="document.getElementById('mob-gallery-input').click()">
-                    <span style="font-size:1.4rem;">🖼️</span>
-                    <span>اختيار من المعرض</span>
-                </button>
-            </div>
+      <button type="button" class="icon-btn" id="voiceBtn" onclick="toggleVoiceRecording()" title="تسجيل صوتي">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+      </button>
 
-            <!-- Image Preview Zone -->
-            <div class="preview-card" onclick="document.getElementById('mob-gallery-input').click()">
-                <img id="mob-image-preview" src="" alt="Preview">
-                <div id="mob-upload-placeholder">
-                    <div style="font-size:2.2rem; margin-bottom:0.3rem;">🌿</div>
-                    <div style="font-size:0.86rem; color:var(--text-sub); font-weight:600;">صورة ورقة النبات ستظهر هنا بعد اختيارها</div>
-                </div>
-            </div>
+      <div class="composer-input-wrap">
+        <textarea id="chatInput" class="composer-textarea" rows="1" placeholder="اسأل عن مرض، جرعة مبيد، أو جدول ري..." oninput="autoGrow(this)"></textarea>
+      </div>
 
-            <!-- Diagnose Action Row -->
-            <div style="display:flex; gap:0.5rem;">
-                <button type="button" class="diagnose-cta-btn" id="mob-diagnose-btn" onclick="runMobileDiagnosis()" disabled>
-                    🔍 2. ابدأ الفحص وإظهار العلاج
-                </button>
-                <button type="button" id="mob-clear-img-btn" onclick="clearMobileImage()" style="display:none; width:50px; border-radius:16px; border:1px solid rgba(239,68,68,0.4); background:rgba(239,68,68,0.18); color:#fca5a5; font-size:1.1rem; cursor:pointer;">
-                    🗑️
-                </button>
-            </div>
+      <button type="button" class="send-btn" id="sendBtn" onclick="sendChatMessage()" title="إرسال">
+        <svg class="icon" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+      </button>
+    </div>
+  </div>
 
-            <!-- Diagnosis Results + Full Treatment Prescription -->
-            <div class="result-box" id="mob-cv-results">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
-                    <div>
-                        <div id="mob-disease-name" style="font-size:1.05rem; font-weight:800; color:#f87171;">تشخيص النبات</div>
-                        <div id="mob-crop-name" style="font-size:0.82rem; color:var(--text-sub);">المحصول</div>
-                    </div>
-                    <span id="mob-model-used" style="font-size:0.72rem; background:rgba(16,185,129,0.18); color:#6ee7b7; padding:0.25rem 0.55rem; border-radius:8px; font-weight:700;">EfficientNetV2B2</span>
-                </div>
+  <!-- Bottom Tab Navigation -->
+  <nav class="bottom-nav">
+    <button type="button" class="nav-tab active" id="navBtn-assistant" onclick="switchMobileTab('assistant')">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>المستشار والفحص</span>
+    </button>
+    <button type="button" class="nav-tab" id="navBtn-farm" onclick="switchMobileTab('farm')">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span>أرضي وموقعي</span>
+    </button>
+    <button type="button" class="nav-tab" id="navBtn-history" onclick="switchMobileTab('history')">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+      <span>سجلي الزراعي</span>
+    </button>
+  </nav>
 
-                <div id="mob-preds-list"></div>
-
-                <div id="mob-advice-wrap" style="padding-top:0.75rem; border-top:1px solid rgba(255,255,255,0.12);">
-                    <div style="font-size:0.9rem; font-weight:800; color:#34d399; margin-bottom:0.4rem;">💊 خطة العلاج والجرعات الموصى بها:</div>
-                    <div id="mob-advice-text" style="font-size:0.88rem; line-height:1.65; color:#e2e8f0; background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:12px; border-right:3px solid #10b981;"></div>
-                    <button type="button" onclick="goMobileScreen('chat')" style="width:100%; margin-top:0.7rem; padding:0.75rem; border-radius:12px; border:none; background:linear-gradient(135deg,#10b981,#059669); color:#fff; font-weight:800; font-size:0.88rem; cursor:pointer;">
-                        💬 متابعة النقاش حول هذا المرض في الشات ⬅️
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════════════ -->
-        <!-- SCREEN 4: FARM & ACCOUNT SETTINGS (أرضي وحسابي)     -->
-        <!-- ═══════════════════════════════════════════════════ -->
-        <section class="mob-screen" id="screen-farm">
-            <div class="screen-subheader">
-                <div class="screen-subheader-title">🚜 إعدادات أرضي وحسابي</div>
-                <button type="button" class="inline-back-pill" onclick="goMobileScreen('home')">
-                    ➡️ رجوع للرئيسية
-                </button>
-            </div>
-
-            <div class="settings-card">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:800; color:#34d399; font-size:0.92rem;">📍 بيانات المزرعة (لحساب الجرعات بدقة)</span>
-                    <button type="button" class="gps-chip-btn" onclick="detectMobileGPS()">🎯 تحديد بالـ GPS</button>
-                </div>
-
-                <div class="field-group">
-                    <label>📍 المحافظة:</label>
-                    <select id="m-gov-select" class="mob-select" onchange="saveMobileFarmPrefs()">
-                        <option value="القاهرة">القاهرة</option>
-                        <option value="البحيرة">البحيرة</option>
-                        <option value="كفر الشيخ">كفر الشيخ</option>
-                        <option value="الدقهلية">الدقهلية</option>
-                        <option value="الشرقية">الشرقية</option>
-                        <option value="المنوفية">المنوفية</option>
-                        <option value="الغربية">الغربية</option>
-                        <option value="القليوبية">القليوبية</option>
-                        <option value="الإسكندرية">الإسكندرية</option>
-                        <option value="الجيزة">الجيزة</option>
-                        <option value="الإسماعيلية">الإسماعيلية</option>
-                        <option value="دمياط">دمياط</option>
-                        <option value="بورسعيد">بورسعيد</option>
-                        <option value="السويس">السويس</option>
-                        <option value="الفيوم">الفيوم</option>
-                        <option value="بني سويف">بني سويف</option>
-                        <option value="المنيا">المنيا</option>
-                        <option value="أسيوط">أسيوط</option>
-                        <option value="سوهاج">سوهاج</option>
-                        <option value="قنا">قنا</option>
-                        <option value="الأقصر">الأقصر</option>
-                        <option value="أسوان">أسوان</option>
-                        <option value="مطروح">مطروح</option>
-                        <option value="الوادي الجديد">الوادي الجديد</option>
-                        <option value="البحر الأحمر">البحر الأحمر</option>
-                        <option value="شمال سيناء">شمال سيناء</option>
-                        <option value="جنوب سيناء">جنوب سيناء</option>
-                    </select>
-                </div>
-
-                <div class="field-group">
-                    <label>🌱 المحصول الأساسي:</label>
-                    <select id="m-crop-select" class="mob-select" onchange="saveMobileFarmPrefs()">
-                        <option value="">تلقائي / عام</option>
-                        <option value="طماطم">طماطم 🍅</option>
-                        <option value="بطاطس">بطاطس 🥔</option>
-                        <option value="قمح">قمح 🌾</option>
-                        <option value="ذرة">ذرة 🌽</option>
-                        <option value="مانجو">مانجو 🥭</option>
-                        <option value="أرز">أرز 🍚</option>
-                        <option value="عنب">عنب 🍇</option>
-                        <option value="تفاح">تفاح 🍎</option>
-                        <option value="برتقال">موالح وبرتقال 🍊</option>
-                        <option value="فلفل حلو">فلفل 🫑</option>
-                        <option value="فراولة">فراولة 🍓</option>
-                    </select>
-                </div>
-
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.65rem;">
-                    <div class="field-group">
-                        <label>🚜 المساحة (فدان):</label>
-                        <input type="number" id="m-area-input" class="mob-input" min="0.25" max="5000" step="0.5" value="1" onchange="saveMobileFarmPrefs()">
-                    </div>
-                    <div class="field-group">
-                        <label>💧 نظام الري:</label>
-                        <select id="m-irrig-select" class="mob-select" onchange="saveMobileFarmPrefs()">
-                            <option value="غمر">ري بالغمر 🌊</option>
-                            <option value="تنقيط">ري بالتنقيط 💧</option>
-                            <option value="رش">ري بالرش 🚿</option>
-                        </select>
-                    </div>
-                </div>
-
-                <button type="button" onclick="saveMobileFarmPrefs(true)" style="width:100%; padding:0.8rem; border-radius:13px; border:none; background:linear-gradient(135deg,#10b981,#059669); color:#fff; font-weight:800; font-size:0.92rem; cursor:pointer;">
-                    ✅ حفظ إعدادات الأرض والرجوع للرئيسية
-                </button>
-            </div>
-
-            <!-- Account Box -->
-            <div class="settings-card" id="mob-account-card">
-                <div style="font-weight:800; color:#60a5fa; font-size:0.92rem;">👤 الحساب الشخصي</div>
-                <div id="mob-account-details" style="font-size:0.85rem; color:var(--text-sub);">
-                    سجّل دخولك لحفظ جميع تشخيصاتك واستشاراتك الزراعية على حسابك.
-                </div>
-                <div id="mob-account-actions" style="display:flex; gap:0.5rem;">
-                    <a href="/login" style="flex:1; text-align:center; padding:0.75rem; border-radius:12px; background:linear-gradient(135deg,#10b981,#059669); color:#fff; text-decoration:none; font-weight:800; font-size:0.88rem;">🔐 تسجيل الدخول</a>
-                    <a href="/login?tab=register" style="flex:1; text-align:center; padding:0.75rem; border-radius:12px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; text-decoration:none; font-weight:700; font-size:0.88rem;">✨ حساب جديد</a>
-                </div>
-            </div>
-
-            <div style="text-align:center; padding:0.4rem;">
-                <a href="/?view=desktop" style="color:var(--text-sub); font-size:0.78rem; text-decoration:none;">💻 التبديل إلى نسخة الكمبيوتر الكاملة</a>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════════════ -->
-        <!-- SCREEN 5: HISTORY & POWER BI (سجلي وتحليلاتي)       -->
-        <!-- ═══════════════════════════════════════════════════ -->
-        <section class="mob-screen" id="screen-history">
-            <div class="screen-subheader">
-                <div class="screen-subheader-title">📜 سجلي الزراعي والتحليلات</div>
-                <button type="button" class="inline-back-pill" onclick="goMobileScreen('home')">
-                    ➡️ رجوع للرئيسية
-                </button>
-            </div>
-
-            <div style="display:flex; gap:0.45rem;">
-                <button type="button" id="tab-hist-btn" onclick="toggleHistorySubTab('records')" style="flex:1; padding:0.55rem; border-radius:12px; border:1px solid #10b981; background:rgba(16,185,129,0.2); color:#6ee7b7; font-weight:800; font-size:0.82rem; cursor:pointer;">
-                    📜 تشخيصاتي واستشاراتي
-                </button>
-                <button type="button" id="tab-pbi-btn" onclick="toggleHistorySubTab('powerbi')" style="flex:1; padding:0.55rem; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); color:#94a3b8; font-weight:700; font-size:0.82rem; cursor:pointer;">
-                    📊 لوحة Power BI
-                </button>
-            </div>
-
-            <div id="mob-history-records" class="settings-card" style="flex:1; overflow-y:auto;">
-                ⏳ جاري تحميل سجلك الزراعي...
-            </div>
-
-            <div id="mob-powerbi-box" class="settings-card" style="display:none; padding:0.5rem; flex:1;">
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:0.25rem 0.4rem;">
-                    <span style="font-size:0.8rem; font-weight:700; color:#34d399;">📊 تقرير AgriTech Power BI</span>
-                    <a href="https://app.powerbi.com/view?r=eyJrIjoiNDUwN2U1ZWItMDc5Mi00ZjI4LWFjYzQtZDVhOGRkYWVjN2VkIiwidCI6IjNmNGYyOGVkLTAwNWUtNGI5Ny1hNzJkLWFkNDQ4OWYzMTg1NyJ9" target="_blank" style="font-size:0.75rem; color:#60a5fa; text-decoration:none; font-weight:700;">↗ فتح بملء الشاشة</a>
-                </div>
-                <iframe id="mob-pbi-iframe" data-src="https://app.powerbi.com/view?r=eyJrIjoiNDUwN2U1ZWItMDc5Mi00ZjI4LWFjYzQtZDVhOGRkYWVjN2VkIiwidCI6IjNmNGYyOGVkLTAwNWUtNGI5Ny1hNzJkLWFkNDQ4OWYzMTg1NyJ9" style="width:100%; height:420px; border:none; border-radius:12px; background:#09140e;" allowFullScreen="true"></iframe>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Fixed Bottom Navigation Bar (5 Native Tabs) -->
-    <nav class="app-bottom-nav">
-        <button type="button" class="bnav-btn active" id="bnav-home" onclick="goMobileScreen('home')">
-            <span class="bnav-ico">🏠</span>
-            <span>الرئيسية</span>
-        </button>
-        <button type="button" class="bnav-btn" id="bnav-chat" onclick="goMobileScreen('chat')">
-            <span class="bnav-ico">💬</span>
-            <span>المحادثة</span>
-        </button>
-        <button type="button" class="bnav-btn center-cam" id="bnav-vision" onclick="goMobileScreen('vision')">
-            <span class="bnav-ico">📸</span>
-            <span style="color:#6ee7b7;">فحص صورة</span>
-        </button>
-        <button type="button" class="bnav-btn" id="bnav-farm" onclick="goMobileScreen('farm')">
-            <span class="bnav-ico">🚜</span>
-            <span>أرضي</span>
-        </button>
-        <button type="button" class="bnav-btn" id="bnav-history" onclick="goMobileScreen('history')">
-            <span class="bnav-ico">📜</span>
-            <span>سجلي</span>
-        </button>
-    </nav>
-</div>
-
-<script>
-    // ─── Mobile App State ───
-    let currentScreen = 'home';
-    let screenStack = ['home'];
-    let mobVisionModel = 'EfficientNetV2B2';
-    let mobSelectedFile = null;
-    let mobImageDiagnosed = false;
-    let mobQueryCount = 0;
-    let mobGpsCoords = null;
-    let mobSessionId = localStorage.getItem('agri_chat_session_id') || '';
-    let mobSavedMessages = [];
-    try {
-        mobSavedMessages = JSON.parse(localStorage.getItem('agri_chat_messages_v2') || '[]');
-    } catch (e) { mobSavedMessages = []; }
-
-    function showMobToast(text, ms = 2600) {
-        const el = document.getElementById('mob-toast');
-        if (!el) return;
-        el.innerText = text;
-        el.classList.add('show');
-        clearTimeout(window._mobToastTimer);
-        window._mobToastTimer = setTimeout(() => el.classList.remove('show'), ms);
+  <script>
+    // ── Cookie & Local State Helpers ──
+    function getCookie(name) {
+      const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return m ? decodeURIComponent(m[2]) : '';
     }
 
-    // ─── Screen Navigation + Hardware Back Button Support ───
-    function goMobileScreen(screenName, fromPopState = false) {
-        const screens = ['home', 'chat', 'vision', 'farm', 'history'];
-        screens.forEach(s => {
-            const sc = document.getElementById('screen-' + s);
-            const bn = document.getElementById('bnav-' + s);
-            if (sc) sc.classList.toggle('active', s === screenName);
-            if (bn) bn.classList.toggle('active', s === screenName);
+    function setCookie(name, val, days = 365) {
+      const maxAge = days * 86400;
+      document.cookie = `${name}=${encodeURIComponent(val)}; max-age=${maxAge}; path=/; SameSite=Lax`;
+    }
+
+    let SESSION_ID = localStorage.getItem('agri_session_id') || '';
+    if (!SESSION_ID) {
+      SESSION_ID = 's_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now().toString(36);
+      localStorage.setItem('agri_session_id', SESSION_ID);
+    }
+
+    let pinnedLat = localStorage.getItem('agri_gps_lat') ? parseFloat(localStorage.getItem('agri_gps_lat')) : null;
+    let pinnedLon = localStorage.getItem('agri_gps_lon') ? parseFloat(localStorage.getItem('agri_gps_lon')) : null;
+    let pinnedSource = localStorage.getItem('agri_loc_source') || 'manual';
+    let lastDiagnosisSummary = localStorage.getItem('agri_last_diag') || '';
+    let isSending = false;
+
+    function getAuthHeaders() {
+      const h = {};
+      const tok = localStorage.getItem('agri_token');
+      if (tok) h['Authorization'] = 'Bearer ' + tok;
+      return h;
+    }
+
+    function escHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function formatMarkdown(text) {
+      return escHtml(text)
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+    }
+
+    function autoGrow(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 92) + 'px';
+    }
+
+    function switchMobileTab(tab) {
+      document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+      const targetView = document.getElementById('view-' + tab);
+      const targetBtn = document.getElementById('navBtn-' + tab);
+      if (targetView) targetView.classList.add('active');
+      if (targetBtn) targetBtn.classList.add('active');
+
+      const composer = document.getElementById('composerBar');
+      if (tab === 'assistant') {
+        composer.style.display = 'block';
+        document.body.classList.remove('non-chat-tab');
+      } else {
+        composer.style.display = 'none';
+        document.body.classList.add('non-chat-tab');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateSubHeaderLabel() {
+      const crop = document.getElementById('cropSelect').value;
+      const area = document.getElementById('areaInput').value || '1';
+      const irrig = document.getElementById('irrigSelect').value || 'تنقيط';
+      const sub = document.getElementById('cropSubLabel');
+      if (crop) {
+        sub.textContent = `${crop} • ${area} فدان (${irrig})`;
+      } else {
+        sub.textContent = `ذاكرة متصلة • فحص وتشخيص`;
+      }
+    }
+
+    // ── Restore Pinned Profile from Server & Cookies ──
+    async function initProfileAndLocation() {
+      // 1. Check cookie preferences first for instant UI
+      try {
+        const rawCookiePrefs = getCookie('agri_prefs');
+        if (rawCookiePrefs) {
+          const cp = JSON.parse(rawCookiePrefs);
+          if (cp.gov) document.getElementById('govSelect').value = cp.gov;
+          if (cp.crop !== undefined) document.getElementById('cropSelect').value = cp.crop;
+          if (cp.area) document.getElementById('areaInput').value = cp.area;
+          if (cp.irrig) document.getElementById('irrigSelect').value = cp.irrig;
+          if (cp.lat != null && cp.lon != null) {
+            pinnedLat = parseFloat(cp.lat);
+            pinnedLon = parseFloat(cp.lon);
+            pinnedSource = cp.src || 'gps';
+          }
+        } else {
+          const savedGov = localStorage.getItem('agri_gov');
+          const savedCrop = localStorage.getItem('agri_crop');
+          const savedArea = localStorage.getItem('agri_area');
+          const savedIrrig = localStorage.getItem('agri_irrig');
+          if (savedGov) document.getElementById('govSelect').value = savedGov;
+          if (savedCrop) document.getElementById('cropSelect').value = savedCrop;
+          if (savedArea) document.getElementById('areaInput').value = savedArea;
+          if (savedIrrig) document.getElementById('irrigSelect').value = savedIrrig;
+        }
+      } catch (e) {}
+
+      // 2. Sync with /api/auth/me (returns both authenticated user AND cookie-pinned profile)
+      try {
+        const res = await fetch('/api/auth/me', { headers: getAuthHeaders(), credentials: 'same-origin' });
+        const data = await res.json();
+        if (data.visitor_id) {
+          document.getElementById('cookieIdBadge').textContent = data.visitor_id;
+        }
+        const p = data.pinned_profile || {};
+        if (data.authenticated && data.user) {
+          const u = data.user;
+          if (data.token) localStorage.setItem('agri_token', data.token);
+          localStorage.setItem('agri_user', JSON.stringify(u));
+          SESSION_ID = 'u_' + u.id;
+          localStorage.setItem('agri_session_id', SESSION_ID);
+
+          const userPill = document.getElementById('topUserPill');
+          userPill.textContent = u.full_name.split(' ')[0];
+          userPill.classList.add('logged-in');
+          userPill.href = '#';
+          userPill.onclick = (e) => { e.preventDefault(); switchMobileTab('history'); };
+        }
+
+        if (p.governorate) {
+          document.getElementById('govSelect').value = p.governorate;
+          localStorage.setItem('agri_gov', p.governorate);
+        }
+        if (p.gps_lat != null && p.gps_lon != null) {
+          pinnedLat = parseFloat(p.gps_lat);
+          pinnedLon = parseFloat(p.gps_lon);
+          pinnedSource = p.location_source || 'gps';
+          localStorage.setItem('agri_gps_lat', String(pinnedLat));
+          localStorage.setItem('agri_gps_lon', String(pinnedLon));
+        }
+        if (p.primary_crop) {
+          document.getElementById('cropSelect').value = p.primary_crop;
+          localStorage.setItem('agri_crop', p.primary_crop);
+        }
+        if (p.farm_size_feddan) {
+          document.getElementById('areaInput').value = p.farm_size_feddan;
+          localStorage.setItem('agri_area', p.farm_size_feddan);
+        }
+        if (p.irrigation_type) {
+          document.getElementById('irrigSelect').value = p.irrigation_type;
+          localStorage.setItem('agri_irrig', p.irrigation_type);
+        }
+      } catch (e) {}
+
+      updateSubHeaderLabel();
+      await refreshWeather(false);
+      await loadMemoryAndHistory();
+    }
+
+    // ── Weather & Pinned Location Sync ──
+    async function refreshWeather(pinChange = false) {
+      const gov = document.getElementById('govSelect').value || 'القاهرة';
+      try {
+        let url = `/api/weather?pin=${pinChange ? 'true' : 'false'}`;
+        if (pinnedLat != null && pinnedLon != null && pinnedSource === 'gps') {
+          url += `&lat=${encodeURIComponent(pinnedLat)}&lon=${encodeURIComponent(pinnedLon)}`;
+        } else {
+          url += `&gov=${encodeURIComponent(gov)}`;
+        }
+        const res = await fetch(url, { headers: getAuthHeaders(), credentials: 'same-origin' });
+        if (!res.ok) return;
+        const w = await res.json();
+        if (w.governorate) {
+          document.getElementById('govSelect').value = w.governorate;
+          localStorage.setItem('agri_gov', w.governorate);
+        }
+        const tempRounded = Math.round(w.temperature || 28);
+        const topPill = document.getElementById('topLocPill');
+        const isGps = Boolean(w.is_gps || pinnedSource === 'gps');
+        topPill.classList.toggle('gps-pinned', isGps);
+        document.getElementById('topLocText').textContent = `${w.governorate} • ${tempRounded}°C`;
+
+        document.getElementById('wTempVal').textContent = `${tempRounded}°C`;
+        document.getElementById('wHumVal').textContent = `${Math.round(w.humidity || 50)}%`;
+        document.getElementById('wWindVal').textContent = `${Math.round(w.wind_speed || w.windspeed || 12)} كم/س`;
+
+        document.getElementById('pinBannerText').textContent = `الموقع المثبت: ${w.governorate}`;
+        document.getElementById('pinSourceBadge').textContent = isGps ? 'GPS دقيق مثبت' : 'محافظة مثبتة';
+      } catch (e) {}
+    }
+
+    async function onManualGovChange() {
+      pinnedLat = null;
+      pinnedLon = null;
+      pinnedSource = 'manual';
+      localStorage.removeItem('agri_gps_lat');
+      localStorage.removeItem('agri_gps_lon');
+      localStorage.setItem('agri_loc_source', 'manual');
+      const gov = document.getElementById('govSelect').value;
+      localStorage.setItem('agri_gov', gov);
+      await saveFarmAndLocationPrefs(true);
+      await refreshWeather(true);
+    }
+
+    function pinExactGpsLocation() {
+      if (!navigator.geolocation) {
+        alert('متصفحك لا يدعم تحديد الموقع الجغرافي GPS.');
+        return;
+      }
+      const btnLabel = document.getElementById('gpsBtnLabel');
+      btnLabel.textContent = 'جاري قراءة إحداثيات GPS وتثبيتها...';
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          pinnedLat = pos.coords.latitude;
+          pinnedLon = pos.coords.longitude;
+          pinnedSource = 'gps';
+          localStorage.setItem('agri_gps_lat', String(pinnedLat));
+          localStorage.setItem('agri_gps_lon', String(pinnedLon));
+          localStorage.setItem('agri_loc_source', 'gps');
+          await refreshWeather(true);
+          await saveFarmAndLocationPrefs(true);
+          btnLabel.textContent = 'تم تثبيت موقع المزرعة عبر GPS بنجاح';
+        },
+        () => {
+          btnLabel.textContent = 'تعذر الوصول للـ GPS — اختر المحافظة يدوياً بالأسفل';
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    async function saveFarmAndLocationPrefs(silent = false) {
+      const gov = document.getElementById('govSelect').value || 'القاهرة';
+      const crop = document.getElementById('cropSelect').value || '';
+      const area = parseFloat(document.getElementById('areaInput').value) || 1.0;
+      const irrig = document.getElementById('irrigSelect').value || 'تنقيط';
+
+      localStorage.setItem('agri_gov', gov);
+      localStorage.setItem('agri_crop', crop);
+      localStorage.setItem('agri_area', String(area));
+      localStorage.setItem('agri_irrig', irrig);
+      updateSubHeaderLabel();
+
+      try {
+        await fetch('/api/user/preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            governorate: gov,
+            lat: pinnedLat,
+            lon: pinnedLon,
+            location_source: pinnedSource,
+            primary_crop: crop,
+            farm_size_feddan: area,
+            irrigation_type: irrig
+          })
         });
-
-        currentScreen = screenName;
-        const backBtn = document.getElementById('mob-global-back');
-        if (backBtn) {
-            backBtn.classList.toggle('visible', screenName !== 'home');
+        if (!silent) {
+          const btn = document.getElementById('savePrefsBtn');
+          const orig = btn.textContent;
+          btn.textContent = 'تم حفظ وتثبيت بياناتك بنجاح';
+          setTimeout(() => { btn.textContent = orig; switchMobileTab('assistant'); }, 900);
         }
-
-        if (!fromPopState) {
-            screenStack.push(screenName);
-            try { history.pushState({ screen: screenName }, '', '#' + screenName); } catch (e) {}
-        }
-
-        if (screenName === 'chat') {
-            setTimeout(() => {
-                const box = document.getElementById('mob-chat-messages');
-                if (box) box.scrollTop = box.scrollHeight;
-            }, 50);
-        } else if (screenName === 'history') {
-            loadMobileHistory();
-        }
+      } catch (e) {}
     }
 
-    function goBackMobile() {
-        if (currentScreen !== 'home') {
-            goMobileScreen('home', true);
-            try { history.pushState({ screen: 'home' }, '', '#home'); } catch (e) {}
-        }
+    // ── Leaf Image Diagnosis ──
+    async function handleLeafImage(file) {
+      if (!file) return;
+      switchMobileTab('assistant');
+      const box = document.getElementById('scanResultBox');
+      const imgEl = document.getElementById('scanPreviewImg');
+      const titleEl = document.getElementById('scanDiseaseTitle');
+      const badgeEl = document.getElementById('scanConfidenceBadge');
+      const adviceEl = document.getElementById('scanAdviceText');
+
+      box.classList.add('visible');
+      imgEl.src = URL.createObjectURL(file);
+      titleEl.textContent = 'جاري الفحص والتشخيص...';
+      badgeEl.textContent = 'تحليل الشبكة العصبية';
+      adviceEl.textContent = 'يتم الآن مطابقة الأعراض مع قاعدة البيانات الزراعية...';
+
+      const fd = new FormData();
+      fd.append('image', file);
+      fd.append('session_id', SESSION_ID);
+      fd.append('location', document.getElementById('govSelect').value || 'القاهرة');
+      fd.append('area_feddan', document.getElementById('areaInput').value || '1');
+      fd.append('irrigation_type', document.getElementById('irrigSelect').value || 'تنقيط');
+
+      try {
+        const res = await fetch('/api/diagnose', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          credentials: 'same-origin',
+          body: fd
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'تعذر تحليل الصورة');
+
+        const cv = data.cv_result || {};
+        const predAr = cv.predicted_class_ar || cv.predicted_class || data.disease_name_ar || 'تم الفحص';
+        const confStr = cv.confidence_str || (cv.confidence ? (cv.confidence * 100).toFixed(1) + '%' : '');
+        const adviceText = data.advice || data.rag_recommendations || 'تم التشخيص بنجاح.';
+
+        titleEl.textContent = predAr;
+        badgeEl.textContent = confStr ? `درجة الثقة: ${confStr}` : 'مكتمل';
+        adviceEl.innerHTML = formatMarkdown(adviceText);
+
+        lastDiagnosisSummary = `${predAr} (${confStr})`;
+        localStorage.setItem('agri_last_diag', lastDiagnosisSummary);
+        appendMessage('bot', `**نتيجة فحص الورقة:** ${predAr} (${confStr})\n\n${adviceText}`, data.sources || []);
+      } catch (err) {
+        titleEl.textContent = 'تعذر إتمام الفحص';
+        badgeEl.textContent = 'تنبيه';
+        adviceEl.textContent = err.message || 'يرجى التأكد من وضوح الصورة والمحاولة مرة أخرى.';
+      }
     }
 
-    window.addEventListener('popstate', (e) => {
-        const target = (e.state && e.state.screen) ? e.state.screen : 'home';
-        goMobileScreen(target, true);
+    // ── Chat & Voice Assistant ──
+    function appendMessage(role, text, sources = []) {
+      const list = document.getElementById('chatList');
+      const div = document.createElement('div');
+      div.className = `msg-card ${role}`;
+      if (role === 'bot') {
+        const srcHtml = (sources && sources.length)
+          ? `<div class="msg-sources">المصادر: ${sources.slice(0, 2).map(escHtml).join(' • ')}</div>`
+          : '';
+        div.innerHTML = `<div class="msg-sender"><span>المستشار الزراعي</span></div><div>${formatMarkdown(text)}</div>${srcHtml}`;
+      } else {
+        div.innerHTML = `<div>${escHtml(text)}</div>`;
+      }
+      list.appendChild(div);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      return div;
+    }
+
+    function sendQuickPrompt(q) {
+      const inp = document.getElementById('chatInput');
+      inp.value = q;
+      sendChatMessage();
+    }
+
+    async function sendChatMessage() {
+      if (isSending) return;
+      const inp = document.getElementById('chatInput');
+      const q = (inp.value || '').trim();
+      if (!q) return;
+
+      inp.value = '';
+      inp.style.height = 'auto';
+      appendMessage('user', q);
+
+      const loadingCard = appendMessage('bot', 'جاري تحضير الإجابة الفنية بناءً على موقعك وبيانات أرضك...');
+      isSending = true;
+      document.getElementById('sendBtn').disabled = true;
+
+      try {
+        const gov = document.getElementById('govSelect').value || 'القاهرة';
+        const crop = document.getElementById('cropSelect').value || '';
+        const area = parseFloat(document.getElementById('areaInput').value) || 1.0;
+        const irrig = document.getElementById('irrigSelect').value || 'تنقيط';
+
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            query: q,
+            crop: crop || null,
+            location: gov,
+            area_feddan: area,
+            irrigation_type: irrig,
+            session_id: SESSION_ID,
+            last_diagnosis: lastDiagnosisSummary || null
+          })
+        });
+        const data = await res.json();
+        loadingCard.remove();
+        if (!res.ok) throw new Error(data.detail || 'حدث خطأ في الاتصال');
+        appendMessage('bot', data.answer || 'تم استلام سؤالك.', data.sources || []);
+      } catch (err) {
+        loadingCard.remove();
+        appendMessage('bot', 'عذراً، تعذر الاتصال بالخادم حالياً. يرجى المحاولة مرة أخرى.');
+      } finally {
+        isSending = false;
+        document.getElementById('sendBtn').disabled = false;
+      }
+    }
+
+    document.getElementById('chatInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+      }
     });
 
-    // ─── Farm Preferences & Weather ───
-    function loadMobileFarmPrefs() {
-        const savedGov = localStorage.getItem('agri_farm_gov');
-        const savedCrop = localStorage.getItem('agri_farm_crop');
-        const savedArea = localStorage.getItem('agri_farm_area');
-        const savedIrrig = localStorage.getItem('agri_farm_irrig');
-        const savedGps = localStorage.getItem('agri_user_gps');
+    // ── Voice Recording (STT) ──
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
 
-        if (savedGov) document.getElementById('m-gov-select').value = savedGov;
-        if (savedCrop !== null) document.getElementById('m-crop-select').value = savedCrop;
-        if (savedArea) document.getElementById('m-area-input').value = savedArea;
-        if (savedIrrig) document.getElementById('m-irrig-select').value = savedIrrig;
-        if (savedGps) {
-            try { mobGpsCoords = JSON.parse(savedGps); } catch (e) {}
-        }
-        updateHomeFarmSummary();
-    }
-
-    function updateHomeFarmSummary() {
-        const gov = document.getElementById('m-gov-select').value || 'القاهرة';
-        const crop = document.getElementById('m-crop-select').value || 'تلقائي';
-        const area = document.getElementById('m-area-input').value || '1';
-        const irrig = document.getElementById('m-irrig-select').value || 'غمر';
-        const badge = document.getElementById('home-farm-summary');
-        if (badge) {
-            badge.innerText = `🚜 ${gov} • ${crop} • ${area} فدان (${irrig})`;
-        }
-    }
-
-    function saveMobileFarmPrefs(andReturnHome = false) {
-        const gov = document.getElementById('m-gov-select').value;
-        const crop = document.getElementById('m-crop-select').value;
-        const area = document.getElementById('m-area-input').value;
-        const irrig = document.getElementById('m-irrig-select').value;
-        try {
-            localStorage.setItem('agri_farm_gov', gov);
-            localStorage.setItem('agri_farm_crop', crop);
-            localStorage.setItem('agri_farm_area', area);
-            localStorage.setItem('agri_farm_irrig', irrig);
-        } catch (e) {}
-        updateHomeFarmSummary();
-        fetchMobileWeather();
-        if (andReturnHome) {
-            showMobToast('✅ تم حفظ إعدادات أرضك بنجاح');
-            goMobileScreen('home');
-        }
-    }
-
-    async function fetchMobileWeather() {
-        const gov = document.getElementById('m-gov-select').value || 'القاهرة';
-        const pill = document.getElementById('mob-weather-pill');
-        try {
-            let url = `/api/weather?gov=${encodeURIComponent(gov)}`;
-            if (mobGpsCoords && mobGpsCoords.lat && mobGpsCoords.lon) {
-                url += `&lat=${mobGpsCoords.lat}&lon=${mobGpsCoords.lon}`;
-            }
-            const res = await fetch(url);
-            if (!res.ok) return;
+    async function toggleVoiceRecording() {
+      const btn = document.getElementById('voiceBtn');
+      if (isRecording && mediaRecorder) {
+        mediaRecorder.stop();
+        isRecording = false;
+        btn.classList.remove('recording');
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+        mediaRecorder.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const fd = new FormData();
+          fd.append('audio', blob, 'voice.webm');
+          const inp = document.getElementById('chatInput');
+          inp.placeholder = 'جاري تحويل صوتك إلى نص...';
+          try {
+            const res = await fetch('/api/stt', { method: 'POST', body: fd, credentials: 'same-origin' });
             const data = await res.json();
-            const temp = data.temperature ?? '--';
-            const loc = data.governorate || gov;
-            const gpsMark = data.source === 'gps_coords' ? '🎯 ' : '📍 ';
-            if (pill) pill.innerText = `${gpsMark}${loc}: ${temp}°C | رياح ${data.windspeed ?? '--'} كم/س`;
-            const tempStat = document.getElementById('m-stat-temp');
-            if (tempStat) tempStat.innerText = temp;
-            if (data.governorate && document.getElementById('m-gov-select').value !== data.governorate) {
-                document.getElementById('m-gov-select').value = data.governorate;
-                updateHomeFarmSummary();
+            if (data.text) {
+              inp.value = data.text;
+              sendChatMessage();
             }
-        } catch (e) {
-            if (pill) pill.innerText = `📍 ${gov}: 28°C`;
-        }
-    }
-
-    function detectMobileGPS() {
-        if (!navigator.geolocation) {
-            showMobToast('⚠️ المتصفح لا يدعم تحديد الموقع GPS');
-            return;
-        }
-        showMobToast('📡 جاري تحديد موقع أرضك بالـ GPS...');
-        navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-                mobGpsCoords = {
-                    lat: Number(pos.coords.latitude.toFixed(5)),
-                    lon: Number(pos.coords.longitude.toFixed(5))
-                };
-                try { localStorage.setItem('agri_user_gps', JSON.stringify(mobGpsCoords)); } catch (e) {}
-                await fetchMobileWeather();
-                showMobToast('🎯 تم ربط الطقس بإحداثيات أرضك بنجاح!');
-            },
-            () => {
-                showMobToast('⚠️ تعذر الوصول للـ GPS، يرجى تفعيله من الهاتف');
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
-    }
-
-    // ─── Format Markdown Response Cleanly ───
-    function formatMobText(text) {
-        if (!text) return '';
-        return String(text)
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\n/g, '<br>');
-    }
-
-    // ─── Chat Engine & Memory ───
-    function appendMobileMessage(text, isUser = false, sources = [], skipSave = false) {
-        const box = document.getElementById('mob-chat-messages');
-        if (!box) return;
-        const div = document.createElement('div');
-        div.className = `msg-bubble ${isUser ? 'msg-user' : 'msg-bot'}`;
-        let html = formatMobText(text);
-        if (!isUser && Array.isArray(sources) && sources.length > 0) {
-            html += `<div class="msg-sources">📚 المصادر: ` +
-                sources.slice(0, 3).map(s => `<span class="source-chip">${s}</span>`).join('') +
-                `</div>`;
-        }
-        div.innerHTML = html;
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
-
-        if (!skipSave && text) {
-            mobSavedMessages.push({ text, isUser: !!isUser, sources: sources || [] });
-            if (mobSavedMessages.length > 40) mobSavedMessages = mobSavedMessages.slice(-40);
-            try { localStorage.setItem('agri_chat_messages_v2', JSON.stringify(mobSavedMessages)); } catch (e) {}
-        }
-    }
-
-    function quickAskMobile(question, cropName) {
-        if (cropName) {
-            document.getElementById('m-crop-select').value = cropName;
-            saveMobileFarmPrefs(false);
-        }
-        goMobileScreen('chat');
-        const input = document.getElementById('mob-chat-input');
-        if (input) {
-            input.value = question;
-            sendMobileChat();
-        }
-    }
-
-    async function sendMobileChat() {
-        const input = document.getElementById('mob-chat-input');
-        const text = (input.value || '').trim();
-        if (!text) return;
-
-        input.value = '';
-        appendMobileMessage(text, true);
-        mobQueryCount++;
-        const qEl = document.getElementById('m-stat-queries');
-        if (qEl) qEl.innerText = mobQueryCount;
-
-        const typing = document.getElementById('mob-typing');
-        if (typing) typing.style.display = 'block';
-
-        const gov = document.getElementById('m-gov-select').value || 'القاهرة';
-        const crop = document.getElementById('m-crop-select').value || null;
-        const area = parseFloat(document.getElementById('m-area-input').value || '1') || 1.0;
-        const irrig = document.getElementById('m-irrig-select').value || 'غمر';
-        const tok = localStorage.getItem('agri_auth_token') || '';
-
-        try {
-            const headers = { 'Content-Type': 'application/json' };
-            if (tok) headers['Authorization'] = `Bearer ${tok}`;
-            const res = await fetch('/api/chat', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
-                    query: text,
-                    location: gov,
-                    crop: crop,
-                    session_id: mobSessionId || null,
-                    rag_choice: 'agri_rag',
-                    area_feddan: area,
-                    irrigation_type: irrig,
-                    lat: mobGpsCoords ? mobGpsCoords.lat : null,
-                    lon: mobGpsCoords ? mobGpsCoords.lon : null
-                })
-            });
-            if (res.ok) {
-                const data = await res.json();
-                if (data.session_id) {
-                    mobSessionId = data.session_id;
-                    try { localStorage.setItem('agri_chat_session_id', mobSessionId); } catch (e) {}
-                }
-                appendMobileMessage(data.answer || data.response || 'تمت المعالجة.', false, data.sources || []);
-                if (data.confidence) {
-                    const c = data.confidence <= 1 ? Math.round(data.confidence * 100) : Math.round(data.confidence);
-                    document.getElementById('m-stat-conf').innerText = c;
-                }
-            } else {
-                appendMobileMessage('⚠️ تعذر الاتصال بالخادم حالياً، يرجى المحاولة مرة أخرى.', false, [], true);
-            }
-        } catch (e) {
-            appendMobileMessage('⚠️ حدث خطأ في الشبكة، تأكد من اتصالك بالإنترنت.', false, [], true);
-        } finally {
-            if (typing) typing.style.display = 'none';
-        }
-    }
-
-    document.getElementById('mob-chat-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMobileChat();
-    });
-
-    async function resetMobileChat() {
-        const oldId = mobSessionId;
-        mobSessionId = 'agri_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
-        mobSavedMessages = [];
-        try {
-            localStorage.setItem('agri_chat_session_id', mobSessionId);
-            localStorage.removeItem('agri_chat_messages_v2');
-        } catch (e) {}
-        document.getElementById('mob-chat-messages').innerHTML = `
-            <div class="msg-bubble msg-bot">
-                🔄 تم بدء <strong>جلسة استشارة جديدة</strong>! اسألني عن أي محصول أو صوّر ورقة نبات جديدة.
-            </div>
-        `;
-        showMobToast('🔄 تم بدء محادثة جديدة');
-        if (oldId) {
-            try {
-                await fetch('/api/chat/reset', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: oldId })
-                });
-            } catch (e) {}
-        }
-    }
-
-    // ─── Egyptian Dialect Voice Input (Mobile Safe) ───
-    let mobRecorder = null;
-    let mobAudioChunks = [];
-    let mobRecording = false;
-
-    async function toggleMobileVoice() {
-        const btn = document.getElementById('mob-voice-btn');
-        const input = document.getElementById('mob-chat-input');
-
-        if (mobRecording) {
-            mobRecording = false;
-            if (mobRecorder && mobRecorder.state !== 'inactive') mobRecorder.stop();
-            return;
-        }
-
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && typeof MediaRecorder !== 'undefined') {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mobAudioChunks = [];
-                mobRecorder = new MediaRecorder(stream);
-                mobRecording = true;
-                btn.innerText = '⏹️';
-                btn.style.background = 'rgba(239,68,68,0.35)';
-                input.placeholder = '🔴 اتكلم دلوقتي... واضغط ⏹️ للإرسال';
-
-                mobRecorder.ondataavailable = (e) => {
-                    if (e.data && e.data.size > 0) mobAudioChunks.push(e.data);
-                };
-                mobRecorder.onstop = async () => {
-                    stream.getTracks().forEach(t => t.stop());
-                    btn.innerText = '🎤';
-                    btn.style.background = 'rgba(255,255,255,0.06)';
-                    input.placeholder = '⏳ جاري تحويل الصوت لنص...';
-                    try {
-                        const mime = (mobRecorder.mimeType || 'audio/webm').split(';')[0];
-                        const ext = mime.includes('mp4') || mime.includes('aac') ? 'm4a' : 'webm';
-                        const blob = new Blob(mobAudioChunks, { type: mime });
-                        const fd = new FormData();
-                        fd.append('audio', blob, `voice.${ext}`);
-                        const res = await fetch('/api/stt', { method: 'POST', body: fd });
-                        if (res.ok) {
-                            const data = await res.json();
-                            if (data.text) {
-                                input.value = (input.value + ' ' + data.text).trim();
-                                input.focus();
-                            }
-                        }
-                    } catch (e) {}
-                    input.placeholder = 'اكتب سؤالك الزراعي هنا...';
-                };
-                mobRecorder.start();
-                setTimeout(() => { if (mobRecording) toggleMobileVoice(); }, 15000);
-                return;
-            } catch (e) {
-                showMobToast('⚠️ يرجى السماح بصلاحية الميكروفون');
-            }
-        } else {
-            showMobToast('⚠️ الميكروفون غير مدعوم في هذا المتصفح');
-        }
-    }
-
-    // ─── Vision / Camera Diagnosis & Client-Side Photo Compression ───
-    function setMobStepper(step) {
-        ['1', '2', '3'].forEach(n => {
-            const el = document.getElementById('m-step-' + n);
-            if (!el) return;
-            el.classList.remove('active', 'done');
-            if (Number(n) < step) el.classList.add('done');
-            else if (Number(n) === step) el.classList.add('active');
-        });
-    }
-
-    function setMobModel(m) {
-        mobVisionModel = m;
-        const b1 = document.getElementById('m-effnet-btn');
-        const b2 = document.getElementById('m-resnet-btn');
-        if (m === 'EfficientNetV2B2') {
-            b1.style.background = 'rgba(16,185,129,0.22)';
-            b1.style.borderColor = '#10b981';
-            b1.style.color = '#6ee7b7';
-            b2.style.background = 'rgba(255,255,255,0.05)';
-            b2.style.borderColor = 'rgba(255,255,255,0.15)';
-            b2.style.color = '#94a3b8';
-        } else {
-            b2.style.background = 'rgba(16,185,129,0.22)';
-            b2.style.borderColor = '#10b981';
-            b2.style.color = '#6ee7b7';
-            b1.style.background = 'rgba(255,255,255,0.05)';
-            b1.style.borderColor = 'rgba(255,255,255,0.15)';
-            b1.style.color = '#94a3b8';
-        }
-        showMobToast(`🤖 الموديل: ${m}`);
-    }
-
-    function compressMobilePhoto(file) {
-        return new Promise((resolve) => {
-            if (!file || file.size < 450 * 1024) {
-                resolve(file);
-                return;
-            }
-            const img = new Image();
-            const url = URL.createObjectURL(file);
-            img.onload = () => {
-                URL.revokeObjectURL(url);
-                const maxD = 1280;
-                let w = img.width, h = img.height;
-                if (w > maxD || h > maxD) {
-                    if (w > h) { h = Math.round((h * maxD) / w); w = maxD; }
-                    else { w = Math.round((w * maxD) / h); h = maxD; }
-                }
-                const cvs = document.createElement('canvas');
-                cvs.width = w; cvs.height = h;
-                cvs.getContext('2d').drawImage(img, 0, 0, w, h);
-                cvs.toBlob(b => {
-                    resolve(b ? new File([b], 'leaf_mobile.jpg', { type: 'image/jpeg' }) : file);
-                }, 'image/jpeg', 0.84);
-            };
-            img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-            img.src = url;
-        });
-    }
-
-    async function onMobileImageChosen(file) {
-        if (!file || !file.type.startsWith('image/')) {
-            showMobToast('⚠️ يرجى اختيار صورة صحيحة');
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = document.getElementById('mob-image-preview');
-            img.src = e.target.result;
-            img.style.display = 'block';
-            document.getElementById('mob-upload-placeholder').style.display = 'none';
+          } catch (e) {}
+          inp.placeholder = 'اسأل عن مرض، جرعة مبيد، أو جدول ري...';
         };
-        reader.readAsDataURL(file);
-
-        mobSelectedFile = await compressMobilePhoto(file);
-        mobImageDiagnosed = false;
-
-        const diagBtn = document.getElementById('mob-diagnose-btn');
-        diagBtn.disabled = false;
-        diagBtn.classList.add('ready');
-        document.getElementById('mob-clear-img-btn').style.display = 'inline-block';
-        setMobStepper(2);
-        showMobToast('📸 الصورة جاهزة! اضغط «ابدأ الفحص وإظهار العلاج»');
+        mediaRecorder.start();
+        isRecording = true;
+        btn.classList.add('recording');
+      } catch (e) {
+        alert('يرجى السماح بصلاحية الميكروفون للتسجيل الصوتي.');
+      }
     }
 
-    document.getElementById('mob-camera-input').addEventListener('change', (e) => {
-        if (e.target.files && e.target.files[0]) onMobileImageChosen(e.target.files[0]);
-    });
-    document.getElementById('mob-gallery-input').addEventListener('change', (e) => {
-        if (e.target.files && e.target.files[0]) onMobileImageChosen(e.target.files[0]);
-    });
+    // ── Load Persistent Memory & History ──
+    async function loadMemoryAndHistory() {
+      try {
+        const res = await fetch(`/api/chat/memory?session_id=${encodeURIComponent(SESSION_ID)}&limit=15`, {
+          headers: getAuthHeaders(),
+          credentials: 'same-origin'
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const mem = data.memory || {};
+        const turns = mem.turns || [];
+        const diags = mem.diagnoses || [];
 
-    function clearMobileImage() {
-        mobSelectedFile = null;
-        document.getElementById('mob-camera-input').value = '';
-        document.getElementById('mob-gallery-input').value = '';
-        const img = document.getElementById('mob-image-preview');
-        img.src = '';
-        img.style.display = 'none';
-        document.getElementById('mob-upload-placeholder').style.display = 'block';
-        const diagBtn = document.getElementById('mob-diagnose-btn');
-        diagBtn.disabled = true;
-        diagBtn.classList.remove('ready');
-        document.getElementById('mob-clear-img-btn').style.display = 'none';
-        document.getElementById('mob-cv-results').style.display = 'none';
-        setMobStepper(1);
-    }
-
-    async function runMobileDiagnosis() {
-        if (!mobSelectedFile) {
-            showMobToast('⚠️ اختر صورة أو صوّر بالكاميرا أولاً');
-            return;
-        }
-        const diagBtn = document.getElementById('mob-diagnose-btn');
-        diagBtn.disabled = true;
-        diagBtn.classList.remove('ready');
-        diagBtn.innerText = '⏳ جاري فحص الورقة وتجهيز العلاج...';
-
-        const gov = document.getElementById('m-gov-select').value || 'القاهرة';
-        const area = document.getElementById('m-area-input').value || '1';
-        const irrig = document.getElementById('m-irrig-select').value || 'غمر';
-        const tok = localStorage.getItem('agri_auth_token') || '';
-
-        try {
-            const fd = new FormData();
-            fd.append('image', mobSelectedFile);
-            fd.append('model_choice', mobVisionModel);
-            fd.append('rag_choice', 'agri_rag');
-            fd.append('location', gov);
-            fd.append('area_feddan', String(area));
-            fd.append('irrigation_type', irrig);
-            if (mobSessionId) fd.append('session_id', mobSessionId);
-            fd.append('query', 'ما هو المرض وما هي خطة العلاج والجرعات للفدان؟');
-
-            const res = await fetch('/api/diagnose', {
-                method: 'POST',
-                headers: tok ? { 'Authorization': `Bearer ${tok}` } : {},
-                body: fd
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                if (data.session_id) {
-                    mobSessionId = data.session_id;
-                    try { localStorage.setItem('agri_chat_session_id', mobSessionId); } catch (e) {}
-                }
-                const cv = data.cv_result || {};
-                const topRaw = cv.predicted_class || '';
-                const topAr = cv.predicted_class_ar || topRaw || 'تشخيص النبات';
-                const dEl = document.getElementById('mob-disease-name');
-                dEl.innerText = topAr !== topRaw ? `${topAr} (${topRaw})` : topAr;
-                dEl.style.color = (topAr.includes('سليم') || topRaw.toLowerCase().includes('healthy')) ? '#34d399' : '#f87171';
-
-                document.getElementById('mob-crop-name').innerText = cv.crop_type_ar || cv.crop_type || 'محصول زراعي';
-                document.getElementById('mob-model-used').innerText = cv.model_used || mobVisionModel;
-
-                const preds = cv.predictions || cv.top_predictions || [];
-                const pList = document.getElementById('mob-preds-list');
-                pList.innerHTML = '';
-                preds.slice(0, 3).forEach(p => {
-                    let pct = Number(p.confidence || 0);
-                    if (pct <= 1) pct = pct * 100;
-                    const color = pct >= 75 ? '#10b981' : (pct >= 45 ? '#f59e0b' : '#ef4444');
-                    const name = p.label_ar || p.class || p.label || '';
-                    pList.innerHTML += `
-                        <div class="pred-row">
-                            <div class="pred-lbl"><span>${name}</span><span style="color:${color}">${pct.toFixed(1)}%</span></div>
-                            <div class="pred-track"><div class="pred-fill" style="width:${Math.min(100, pct)}%; background:${color}"></div></div>
-                        </div>
-                    `;
-                });
-
-                document.getElementById('mob-advice-text').innerHTML = formatMobText(data.advice || '');
-                document.getElementById('mob-cv-results').style.display = 'flex';
-                appendMobileMessage(data.advice || '', false, data.sources || []);
-                setMobStepper(3);
-                showMobToast('✅ تم التشخيص وتجهيز خطة العلاج!');
-                setTimeout(() => {
-                    document.getElementById('mob-cv-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
-            } else {
-                showMobToast('⚠️ تعذر فحص الصورة، حاول مرة أخرى');
-            }
-        } catch (e) {
-            showMobToast('⚠️ خطأ في الاتصال بالخادم');
-        } finally {
-            diagBtn.disabled = false;
-            diagBtn.innerText = '🔍 2. ابدأ الفحص وإظهار العلاج';
-        }
-    }
-
-    // ─── Auth & History Hydration ───
-    function applyMobileUser(u) {
-        if (!u || !u.full_name) return;
-        const firstName = u.full_name.split(' ')[0];
-        document.getElementById('hero-user-greeting').innerText = `أهلاً بك يا ${firstName} 🌿`;
-        document.getElementById('mob-auth-top').innerHTML = `
-            <button type="button" class="top-user-btn" onclick="goMobileScreen('farm')" style="border-color:rgba(52,211,153,0.45); color:#6ee7b7;">
-                👤 ${firstName}
-            </button>
-        `;
-        document.getElementById('mob-account-details').innerHTML = `
-            مسجل الدخول باسم: <strong style="color:#fff;">${u.full_name}</strong><br>
-            المحافظة: ${u.governorate || 'القاهرة'} | المحصول: ${u.primary_crop || 'عام'}
-        `;
-        const adminLink = u.role === 'admin'
-            ? `<a href="/dev-panel" style="flex:1; text-align:center; padding:0.7rem; border-radius:12px; background:linear-gradient(135deg,#8b5cf6,#6d28d9); color:#fff; text-decoration:none; font-weight:700; font-size:0.84rem;">🛡️ لوحة المطور</a>`
-            : '';
-        document.getElementById('mob-account-actions').innerHTML = `
-            ${adminLink}
-            <button type="button" onclick="logoutMobile()" style="flex:1; padding:0.7rem; border-radius:12px; border:1px solid rgba(239,68,68,0.4); background:rgba(239,68,68,0.18); color:#fca5a5; font-weight:800; font-size:0.84rem; cursor:pointer;">🚪 تسجيل الخروج</button>
-        `;
-    }
-
-    async function initMobileAuthAndMemory() {
-        try {
-            const raw = localStorage.getItem('agri_user');
-            if (raw) applyMobileUser(JSON.parse(raw));
-        } catch (e) {}
-
-        if (mobSavedMessages.length > 0) {
-            mobSavedMessages.forEach(m => {
-                if (m && m.text) appendMobileMessage(m.text, !!m.isUser, m.sources || [], true);
-            });
-            mobQueryCount = mobSavedMessages.filter(m => m.isUser).length;
-            document.getElementById('m-stat-queries').innerText = mobQueryCount;
+        const chatList = document.getElementById('chatList');
+        if (turns.length > 0) {
+          turns.forEach(t => {
+            if (t.user_query) appendMessage('user', t.user_query);
+            if (t.bot_answer) appendMessage('bot', t.bot_answer);
+          });
         }
 
-        try {
-            const tok = localStorage.getItem('agri_auth_token') || '';
-            const res = await fetch('/api/auth/me', {
-                credentials: 'same-origin',
-                headers: tok ? { 'Authorization': `Bearer ${tok}` } : {}
-            });
-            if (res.ok) {
-                const data = await res.json();
-                if (data.authenticated && data.user) {
-                    localStorage.setItem('agri_user', JSON.stringify(data.user));
-                    if (data.token) localStorage.setItem('agri_auth_token', data.token);
-                    applyMobileUser(data.user);
-                }
-            }
-        } catch (e) {}
+        const histBox = document.getElementById('historyContainer');
+        let html = '';
+        diags.forEach(d => {
+          html += `
+            <div class="history-item">
+              <div class="history-item-head">
+                <span>تشخيص صورة</span>
+                <span>${escHtml(d.created_at || '')}</span>
+              </div>
+              <div class="history-item-title">${escHtml(d.predicted_class_ar || d.predicted_class)} (${escHtml(d.confidence || '')})</div>
+            </div>
+          `;
+        });
+        turns.slice().reverse().forEach(t => {
+          html += `
+            <div class="history-item">
+              <div class="history-item-head">
+                <span>استشارة زراعية • ${escHtml(t.crop || 'عام')}</span>
+                <span>${escHtml(t.created_at || '')}</span>
+              </div>
+              <div class="history-item-title">${escHtml(t.user_query)}</div>
+            </div>
+          `;
+        });
+        histBox.innerHTML = html || '<div style="color:var(--text-muted); font-size:0.84rem; text-align:center; padding:18px 0;">لا توجد سجلات سابقة بعد. ابدأ بفحص ورقة أو طرح سؤال.</div>';
+      } catch (e) {}
     }
 
-    async function logoutMobile() {
-        try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch (e) {}
-        localStorage.removeItem('agri_auth_token');
-        localStorage.removeItem('agri_user');
-        window.location.reload();
+    function clearLocalSession() {
+      SESSION_ID = 's_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now().toString(36);
+      localStorage.setItem('agri_session_id', SESSION_ID);
+      document.getElementById('chatList').innerHTML = `
+        <div class="msg-card bot">
+          <div class="msg-sender"><span>المستشار الزراعي</span><span>جلسة جديدة</span></div>
+          تم فتح جلسة محادثة جديدة مع الاحتفاظ بموقعك المثبت وبيانات أرضك.
+        </div>
+      `;
+      switchMobileTab('assistant');
     }
 
-    function toggleHistorySubTab(tab) {
-        const recBox = document.getElementById('mob-history-records');
-        const pbiBox = document.getElementById('mob-powerbi-box');
-        const bRec = document.getElementById('tab-hist-btn');
-        const bPbi = document.getElementById('tab-pbi-btn');
-        if (tab === 'powerbi') {
-            recBox.style.display = 'none';
-            pbiBox.style.display = 'block';
-            bPbi.style.background = 'rgba(16,185,129,0.22)';
-            bPbi.style.borderColor = '#10b981';
-            bPbi.style.color = '#6ee7b7';
-            bRec.style.background = 'rgba(255,255,255,0.05)';
-            bRec.style.borderColor = 'rgba(255,255,255,0.15)';
-            bRec.style.color = '#94a3b8';
-            const ifr = document.getElementById('mob-pbi-iframe');
-            if (ifr && !ifr.getAttribute('src')) ifr.setAttribute('src', ifr.dataset.src);
-        } else {
-            recBox.style.display = 'flex';
-            pbiBox.style.display = 'none';
-            bRec.style.background = 'rgba(16,185,129,0.22)';
-            bRec.style.borderColor = '#10b981';
-            bRec.style.color = '#6ee7b7';
-            bPbi.style.background = 'rgba(255,255,255,0.05)';
-            bPbi.style.borderColor = 'rgba(255,255,255,0.15)';
-            bPbi.style.color = '#94a3b8';
-        }
-    }
-
-    async function loadMobileHistory() {
-        const box = document.getElementById('mob-history-records');
-        if (!box) return;
-        const tok = localStorage.getItem('agri_auth_token') || '';
-        try {
-            const res = await fetch('/api/auth/my-history', {
-                credentials: 'same-origin',
-                headers: tok ? { 'Authorization': `Bearer ${tok}` } : {}
-            });
-            if (!res.ok) {
-                box.innerHTML = `<div style="text-align:center; padding:1rem; color:var(--text-sub);">يرجى <a href="/login" style="color:#34d399; font-weight:800;">تسجيل الدخول</a> لعرض سجل تشخيصاتك واستشاراتك.</div>`;
-                return;
-            }
-            const data = await res.json();
-            const diags = data.diagnoses || [];
-            const chats = data.chats || [];
-            let html = `<div style="font-weight:800; color:#34d399;">📸 تشخيصات الصور (${diags.length})</div>`;
-            if (diags.length === 0) {
-                html += `<div style="font-size:0.82rem; color:var(--text-sub);">لا توجد صور مفحوصة بعد.</div>`;
-            } else {
-                diags.slice(0, 10).forEach(d => {
-                    html += `
-                        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:0.65rem;">
-                            <div style="display:flex; justify-content:space-between; font-size:0.84rem; font-weight:700; color:#6ee7b7;">
-                                <span>🌿 ${d.predicted_class_ar || d.predicted_class}</span>
-                                <span style="font-size:0.72rem; color:var(--text-sub);">${d.created_at || ''}</span>
-                            </div>
-                            <div style="font-size:0.8rem; color:#cbd5e1; margin-top:0.25rem;">${(d.rag_advice || '').slice(0, 180)}...</div>
-                        </div>
-                    `;
-                });
-            }
-            html += `<div style="font-weight:800; color:#60a5fa; margin-top:0.5rem;">💬 استشاراتي (${chats.length})</div>`;
-            if (chats.length === 0) {
-                html += `<div style="font-size:0.82rem; color:var(--text-sub);">لا توجد استشارات مسجلة بعد.</div>`;
-            } else {
-                chats.slice(0, 10).forEach(c => {
-                    html += `
-                        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:0.65rem;">
-                            <div style="font-size:0.84rem; font-weight:700; color:#93c5fd;">❓ ${c.user_query}</div>
-                            <div style="font-size:0.8rem; color:#cbd5e1; margin-top:0.25rem;">${(c.bot_answer || '').slice(0, 180)}...</div>
-                        </div>
-                    `;
-                });
-            }
-            box.innerHTML = html;
-        } catch (e) {
-            box.innerHTML = 'تعذر تحميل السجل حالياً.';
-        }
-    }
-
-    // Boot Mobile App
-    loadMobileFarmPrefs();
-    fetchMobileWeather();
-    initMobileAuthAndMemory();
-</script>
+    initProfileAndLocation();
+  </script>
 </body>
 </html>

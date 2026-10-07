@@ -329,7 +329,14 @@ def extract_client_info(request: Any) -> Dict[str, str]:
     referer = headers.get("referer") or headers.get("Referer") or ""
     accept_lang = headers.get("accept-language") or headers.get("Accept-Language") or ""
     device_type, browser_os = parse_user_agent(ua)
-    visitor_hash = hashlib.sha256(f"{ip}|{ua}".encode("utf-8", errors="ignore")).hexdigest()[:12]
+
+    cookies = getattr(request, "cookies", {}) or {}
+    state_vid = getattr(getattr(request, "state", None), "visitor_id", "") or ""
+    cookie_vid = (cookies.get("agri_vid") or state_vid).strip()
+    if cookie_vid and len(cookie_vid) >= 6:
+        visitor_hash = cookie_vid[:32]
+    else:
+        visitor_hash = hashlib.sha256(f"{ip}|{ua}".encode("utf-8", errors="ignore")).hexdigest()[:12]
 
     return {
         "client_ip": ip,
@@ -709,8 +716,39 @@ def init_db(force: bool = False) -> None:
         for col, cdef in [
             ("farm_size_feddan", "REAL DEFAULT 1.0"),
             ("irrigation_type", "TEXT DEFAULT 'غمر'"),
+            ("gps_lat", "REAL DEFAULT NULL"),
+            ("gps_lon", "REAL DEFAULT NULL"),
+            ("location_source", "TEXT DEFAULT 'manual'"),
+            ("last_visitor_id", "TEXT DEFAULT ''"),
         ]:
             _ensure_column(conn, "users", col, cdef)
+
+        # 6. Persistent Cookie Visitor Profiles Table (Links anonymous visitors, pinned GPS/governorate, and user accounts)
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS visitor_profiles (
+                visitor_id TEXT PRIMARY KEY,
+                first_seen_at TEXT NOT NULL,
+                last_seen_at TEXT NOT NULL,
+                user_id INTEGER DEFAULT NULL,
+                user_name TEXT DEFAULT '',
+                user_identifier TEXT DEFAULT '',
+                pinned_governorate TEXT DEFAULT '',
+                gps_lat REAL DEFAULT NULL,
+                gps_lon REAL DEFAULT NULL,
+                location_source TEXT DEFAULT 'ip',
+                primary_crop TEXT DEFAULT '',
+                farm_size_feddan REAL DEFAULT 1.0,
+                irrigation_type TEXT DEFAULT 'غمر',
+                last_ip TEXT DEFAULT '',
+                ip_city TEXT DEFAULT '',
+                isp TEXT DEFAULT '',
+                device_type TEXT DEFAULT '',
+                browser_os TEXT DEFAULT '',
+                visit_count INTEGER DEFAULT 1
+            )
+            """
+        )
 
         # Seed default Admin Developer account if none exists
         admin_exists = conn.execute("SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
@@ -743,6 +781,230 @@ def init_db(force: bool = False) -> None:
     except Exception:
         pass
     _DB_INITIALIZED = True
+
+
+def link_visitor_to_user(visitor_id: str, user_dict: Dict[str, Any]) -> None:
+    """Link a persistent browser cookie (visitor_id) to a registered user account and retroactively attribute past logs."""
+    if not visitor_id or not user_dict or not user_dict.get("id"):
+        return
+    init_db()
+    uid = int(user_dict["id"])
+    uname = user_dict.get("full_name", "")
+    uident = user_dict.get("identifier", "")
+    ugov = user_dict.get("governorate", "")
+    ucrop = user_dict.get("primary_crop", "")
+    uarea = float(user_dict.get("farm_size_feddan") or 1.0)
+    uirrig = user_dict.get("irrigation_type") or "غمر"
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    try:
+        with sqlite3.connect(str(DB_PATH), timeout=10.0) as conn:
+            conn.execute("UPDATE users SET last_visitor_id = ? WHERE id = ?", (visitor_id, uid))
+            existing = conn.execute(
+                "SELECT visitor_id, pinned_governorate, location_source FROM visitor_profiles WHERE visitor_id = ?",
+                (visitor_id,),
+            ).fetchone()
+            if existing:
+                conn.execute(
+                    """
+                    UPDATE visitor_profiles
+                    SET last_seen_at = ?,
+                        user_id = ?,
+                        user_name = ?,
+                        user_identifier = ?,
+                        pinned_governorate = CASE WHEN pinned_governorate = '' OR location_source = 'ip' THEN ? ELSE pinned_governorate END,
+                        location_source = CASE WHEN location_source = 'ip' AND ? != '' THEN 'user_profile' ELSE location_source END,
+                        primary_crop = CASE WHEN primary_crop = '' THEN ? ELSE primary_crop END,
+                        farm_size_feddan = COALESCE(farm_size_feddan, ?),
+                        irrigation_type = COALESCE(NULLIF(irrigation_type, ''), ?)
+                    WHERE visitor_id = ?
+                    """,
+                    (now_str, uid, uname, uident, ugov, ugov, ucrop, uarea, uirrig, visitor_id),
+                )
+            else:
+                conn.execute(
+                    """
+                    INSERT INTO visitor_profiles (
+                        visitor_id, first_seen_at, last_seen_at, user_id, user_name, user_identifier,
+                        pinned_governorate, location_source, primary_crop, farm_size_feddan, irrigation_type
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'user_profile', ?, ?, ?)
+                    """,
+                    (visitor_id, now_str, now_str, uid, uname, uident, ugov, ucrop, uarea, uirrig),
+                )
+            # Retroactively link anonymous logs from this cookie to the user account so Developer Dashboard correlates them!
+            conn.execute(
+                "UPDATE uploaded_images SET user_id = ?, user_name = ?, user_identifier = ? WHERE visitor_hash = ? AND (user_id IS NULL OR user_id = 0)",
+                (uid, uname, uident, visitor_id),
+            )
+            conn.execute(
+                "UPDATE chat_logs SET user_id = ?, user_name = ?, user_identifier = ? WHERE visitor_hash = ? AND (user_id IS NULL OR user_id = 0)",
+                (uid, uname, uident, visitor_id),
+            )
+            conn.execute(
+                "UPDATE visitor_logs SET user_id = ?, user_name = ?, user_identifier = ? WHERE visitor_hash = ? AND (user_id IS NULL OR user_id = 0)",
+                (uid, uname, uident, visitor_id),
+            )
+            conn.commit()
+    except Exception:
+        pass
+
+
+def save_pinned_location_and_prefs(
+    visitor_id: str,
+    user_id: Optional[int] = None,
+    governorate: Optional[str] = None,
+    gps_lat: Optional[float] = None,
+    gps_lon: Optional[float] = None,
+    location_source: str = "manual",
+    primary_crop: Optional[str] = None,
+    farm_size_feddan: Optional[float] = None,
+    irrigation_type: Optional[str] = None,
+    client_ip: str = "",
+    device_type: str = "",
+    browser_os: str = "",
+) -> Dict[str, Any]:
+    """Persistently save the user's or visitor's true location (GPS or manual selection) so IP changes never reset it."""
+    init_db()
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    geo = resolve_ip_geo(client_ip) if client_ip else {"city": "", "isp": ""}
+    gov_clean = (governorate or "").strip()
+    if gov_clean and gov_clean not in VALID_EGYPT_GOVERNORATES:
+        gov_clean = ""
+
+    with sqlite3.connect(str(DB_PATH), timeout=10.0) as conn:
+        conn.row_factory = sqlite3.Row
+        if user_id:
+            u_row = conn.execute("SELECT * FROM users WHERE id = ?", (int(user_id),)).fetchone()
+            if u_row:
+                new_gov = gov_clean or u_row["governorate"] or "القاهرة"
+                new_lat = gps_lat if gps_lat is not None else u_row["gps_lat"]
+                new_lon = gps_lon if gps_lon is not None else u_row["gps_lon"]
+                new_src = location_source if (gov_clean or gps_lat is not None) else (u_row["location_source"] or "manual")
+                new_crop = primary_crop if primary_crop is not None else (u_row["primary_crop"] or "")
+                new_area = float(farm_size_feddan) if farm_size_feddan is not None else float(u_row["farm_size_feddan"] or 1.0)
+                new_irrig = irrigation_type if irrigation_type is not None else (u_row["irrigation_type"] or "غمر")
+                conn.execute(
+                    """
+                    UPDATE users
+                    SET governorate = ?, gps_lat = ?, gps_lon = ?, location_source = ?,
+                        primary_crop = ?, farm_size_feddan = ?, irrigation_type = ?,
+                        last_visitor_id = CASE WHEN ? != '' THEN ? ELSE last_visitor_id END
+                    WHERE id = ?
+                    """,
+                    (new_gov, new_lat, new_lon, new_src, new_crop, new_area, new_irrig, visitor_id, visitor_id, int(user_id)),
+                )
+
+        if visitor_id:
+            v_row = conn.execute("SELECT * FROM visitor_profiles WHERE visitor_id = ?", (visitor_id,)).fetchone()
+            if v_row:
+                new_gov = gov_clean or v_row["pinned_governorate"] or "القاهرة"
+                new_lat = gps_lat if gps_lat is not None else v_row["gps_lat"]
+                new_lon = gps_lon if gps_lon is not None else v_row["gps_lon"]
+                new_src = location_source if (gov_clean or gps_lat is not None) else (v_row["location_source"] or "manual")
+                new_crop = primary_crop if primary_crop is not None else (v_row["primary_crop"] or "")
+                new_area = float(farm_size_feddan) if farm_size_feddan is not None else float(v_row["farm_size_feddan"] or 1.0)
+                new_irrig = irrigation_type if irrigation_type is not None else (v_row["irrigation_type"] or "غمر")
+                conn.execute(
+                    """
+                    UPDATE visitor_profiles
+                    SET last_seen_at = ?,
+                        pinned_governorate = ?,
+                        gps_lat = ?,
+                        gps_lon = ?,
+                        location_source = ?,
+                        primary_crop = ?,
+                        farm_size_feddan = ?,
+                        irrigation_type = ?,
+                        last_ip = CASE WHEN ? != '' THEN ? ELSE last_ip END,
+                        ip_city = CASE WHEN ? != '' THEN ? ELSE ip_city END,
+                        isp = CASE WHEN ? != '' THEN ? ELSE isp END
+                    WHERE visitor_id = ?
+                    """,
+                    (
+                        now_str, new_gov, new_lat, new_lon, new_src, new_crop, new_area, new_irrig,
+                        client_ip, client_ip, geo.get("city", ""), geo.get("city", ""),
+                        geo.get("isp", ""), geo.get("isp", ""), visitor_id,
+                    ),
+                )
+            else:
+                conn.execute(
+                    """
+                    INSERT INTO visitor_profiles (
+                        visitor_id, first_seen_at, last_seen_at, user_id,
+                        pinned_governorate, gps_lat, gps_lon, location_source,
+                        primary_crop, farm_size_feddan, irrigation_type,
+                        last_ip, ip_city, isp, device_type, browser_os, visit_count
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                    """,
+                    (
+                        visitor_id, now_str, now_str, user_id,
+                        gov_clean or "القاهرة", gps_lat, gps_lon, location_source,
+                        primary_crop or "", float(farm_size_feddan or 1.0), irrigation_type or "غمر",
+                        client_ip, geo.get("city", ""), geo.get("isp", ""), device_type, browser_os,
+                    ),
+                )
+        conn.commit()
+    return get_pinned_visitor_profile(visitor_id=visitor_id, user_id=user_id)
+
+
+def get_pinned_visitor_profile(visitor_id: str = "", user_id: Optional[int] = None) -> Dict[str, Any]:
+    """Retrieve the saved/pinned location & farm preferences for a visitor cookie or logged-in user."""
+    init_db()
+    out: Dict[str, Any] = {
+        "visitor_id": visitor_id,
+        "user_id": user_id,
+        "user_name": "",
+        "governorate": "القاهرة",
+        "gps_lat": None,
+        "gps_lon": None,
+        "location_source": "default",
+        "primary_crop": "",
+        "farm_size_feddan": 1.0,
+        "irrigation_type": "غمر",
+    }
+    try:
+        with sqlite3.connect(str(DB_PATH), timeout=10.0) as conn:
+            conn.row_factory = sqlite3.Row
+            if visitor_id:
+                v_row = conn.execute("SELECT * FROM visitor_profiles WHERE visitor_id = ?", (visitor_id,)).fetchone()
+                if v_row:
+                    out["user_id"] = user_id or v_row["user_id"]
+                    out["user_name"] = v_row["user_name"] or ""
+                    if v_row["pinned_governorate"]:
+                        out["governorate"] = v_row["pinned_governorate"]
+                    if v_row["gps_lat"] is not None and v_row["gps_lon"] is not None:
+                        out["gps_lat"] = float(v_row["gps_lat"])
+                        out["gps_lon"] = float(v_row["gps_lon"])
+                    if v_row["location_source"]:
+                        out["location_source"] = v_row["location_source"]
+                    if v_row["primary_crop"]:
+                        out["primary_crop"] = v_row["primary_crop"]
+                    if v_row["farm_size_feddan"]:
+                        out["farm_size_feddan"] = float(v_row["farm_size_feddan"])
+                    if v_row["irrigation_type"]:
+                        out["irrigation_type"] = v_row["irrigation_type"]
+
+            effective_uid = out["user_id"]
+            if effective_uid:
+                u_row = conn.execute("SELECT * FROM users WHERE id = ?", (int(effective_uid),)).fetchone()
+                if u_row:
+                    out["user_name"] = u_row["full_name"] or out["user_name"]
+                    if out["location_source"] in ("default", "ip") and u_row["governorate"]:
+                        out["governorate"] = u_row["governorate"]
+                        out["location_source"] = u_row["location_source"] or "user_profile"
+                    if out["gps_lat"] is None and u_row["gps_lat"] is not None:
+                        out["gps_lat"] = float(u_row["gps_lat"])
+                        out["gps_lon"] = float(u_row["gps_lon"])
+                        out["location_source"] = "gps"
+                    if not out["primary_crop"] and u_row["primary_crop"]:
+                        out["primary_crop"] = u_row["primary_crop"]
+                    if u_row["farm_size_feddan"]:
+                        out["farm_size_feddan"] = float(u_row["farm_size_feddan"])
+                    if u_row["irrigation_type"]:
+                        out["irrigation_type"] = u_row["irrigation_type"]
+    except Exception:
+        pass
+    return out
 
 
 def register_user(
@@ -1319,6 +1581,18 @@ def save_visitor_log(
         geo = resolve_ip_geo(client_ip)
 
         with sqlite3.connect(str(DB_PATH)) as conn:
+            conn.row_factory = sqlite3.Row
+            # If visitor_hash is already linked to a user in visitor_profiles, inherit user identity automatically
+            if not user_id and visitor_hash:
+                vp = conn.execute(
+                    "SELECT user_id, user_name, user_identifier FROM visitor_profiles WHERE visitor_id = ?",
+                    (visitor_hash,),
+                ).fetchone()
+                if vp and vp["user_id"]:
+                    user_id = vp["user_id"]
+                    user_name = vp["user_name"] or ""
+                    user_identifier = vp["user_identifier"] or ""
+
             conn.execute(
                 """
                 INSERT INTO visitor_logs (
@@ -1349,6 +1623,55 @@ def save_visitor_log(
                     user_identifier or "",
                 ),
             )
+            if visitor_hash:
+                vp_row = conn.execute(
+                    "SELECT visitor_id FROM visitor_profiles WHERE visitor_id = ?",
+                    (visitor_hash,),
+                ).fetchone()
+                if vp_row:
+                    conn.execute(
+                        """
+                        UPDATE visitor_profiles
+                        SET last_seen_at = ?,
+                            visit_count = COALESCE(visit_count, 0) + 1,
+                            user_id = COALESCE(?, user_id),
+                            user_name = CASE WHEN ? != '' THEN ? ELSE user_name END,
+                            user_identifier = CASE WHEN ? != '' THEN ? ELSE user_identifier END,
+                            last_ip = CASE WHEN ? != '' THEN ? ELSE last_ip END,
+                            ip_city = CASE WHEN ? != '' THEN ? ELSE ip_city END,
+                            isp = CASE WHEN ? != '' THEN ? ELSE isp END,
+                            device_type = CASE WHEN ? != '' THEN ? ELSE device_type END,
+                            browser_os = CASE WHEN ? != '' THEN ? ELSE browser_os END
+                        WHERE visitor_id = ?
+                        """,
+                        (
+                            now_str,
+                            user_id,
+                            user_name or "", user_name or "",
+                            user_identifier or "", user_identifier or "",
+                            client_ip, client_ip,
+                            geo["city"], geo["city"],
+                            geo["isp"], geo["isp"],
+                            device_type, device_type,
+                            browser_os, browser_os,
+                            visitor_hash,
+                        ),
+                    )
+                else:
+                    conn.execute(
+                        """
+                        INSERT INTO visitor_profiles (
+                            visitor_id, first_seen_at, last_seen_at, user_id, user_name, user_identifier,
+                            pinned_governorate, location_source, last_ip, ip_city, isp,
+                            device_type, browser_os, visit_count
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'ip', ?, ?, ?, ?, ?, 1)
+                        """,
+                        (
+                            visitor_hash, now_str, now_str, user_id, user_name or "", user_identifier or "",
+                            geo.get("city", "") or "القاهرة", client_ip, geo.get("city", ""), geo.get("isp", ""),
+                            device_type, browser_os,
+                        ),
+                    )
             conn.commit()
     except Exception:
         pass
@@ -1513,7 +1836,7 @@ def build_rag_finetuning_jsonl() -> bytes:
 
 
 def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
-    """Return full telemetry, KPIs, Active Learning stats, Knowledge Gaps, Peak Hours, and detailed logs."""
+    """Return full telemetry, KPIs, Active Learning stats, Knowledge Gaps, Peak Hours, Cookie Profiles, and detailed logs."""
     init_db()
     with sqlite3.connect(str(DB_PATH)) as conn:
         conn.row_factory = sqlite3.Row
@@ -1561,7 +1884,7 @@ def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
 
         topic_rows = conn.execute(
             """
-            SELECT CASE WHEN topic_category = '' OR topic_category IS NULL THEN '🌾 استشارة عامة' ELSE topic_category END AS topic,
+            SELECT CASE WHEN topic_category = '' OR topic_category IS NULL THEN 'استشارة عامة' ELSE topic_category END AS topic,
                    COUNT(*) AS cnt
             FROM chat_logs
             GROUP BY topic
@@ -1609,14 +1932,15 @@ def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
         ).fetchall()
         top_visitors = [dict(r) for r in ip_rows]
 
-        # 7. Registered Users Table (with activity counts)
+        # 7. Registered Users Table (with activity counts & pinned GPS)
         user_rows = conn.execute(
             """
             SELECT u.id, u.created_at, u.last_login_at, u.full_name, u.identifier,
                    u.phone, u.email, u.governorate, u.primary_crop, u.role,
                    u.login_count, u.client_ip, u.device_type, u.geo_city,
-                   (SELECT COUNT(*) FROM uploaded_images img WHERE img.user_id = u.id) AS images_count,
-                   (SELECT COUNT(*) FROM chat_logs ch WHERE ch.user_id = u.id) AS chats_count
+                   u.farm_size_feddan, u.irrigation_type, u.gps_lat, u.gps_lon, u.location_source, u.last_visitor_id,
+                   (SELECT COUNT(*) FROM uploaded_images img WHERE img.user_id = u.id OR (u.last_visitor_id != '' AND img.visitor_hash = u.last_visitor_id)) AS images_count,
+                   (SELECT COUNT(*) FROM chat_logs ch WHERE ch.user_id = u.id OR (u.last_visitor_id != '' AND ch.visitor_hash = u.last_visitor_id)) AS chats_count
             FROM users u
             ORDER BY u.id DESC
             LIMIT ?
@@ -1625,10 +1949,24 @@ def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
         ).fetchall()
         registered_users = [dict(r) for r in user_rows]
 
+        # 7b. Persistent Cookie-Tracked Visitor & User Profiles
+        cookie_rows = conn.execute(
+            """
+            SELECT vp.*,
+                   (SELECT COUNT(*) FROM uploaded_images img WHERE img.visitor_hash = vp.visitor_id OR (vp.user_id IS NOT NULL AND img.user_id = vp.user_id)) AS images_count,
+                   (SELECT COUNT(*) FROM chat_logs ch WHERE ch.visitor_hash = vp.visitor_id OR (vp.user_id IS NOT NULL AND ch.user_id = vp.user_id)) AS chats_count
+            FROM visitor_profiles vp
+            ORDER BY vp.last_seen_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        cookie_profiles = [dict(r) for r in cookie_rows]
+
         # 8. Recent Chat Logs
         chat_rows = conn.execute(
             """
-            SELECT id, created_at, client_ip, device_type, session_id, location, crop,
+            SELECT id, created_at, client_ip, visitor_hash, device_type, session_id, location, crop,
                    rag_engine, user_query, bot_answer, sources_json, confidence,
                    latency_ms, status, error_message, topic_category, is_knowledge_gap,
                    geo_city, isp, user_id, user_name, user_identifier
@@ -1653,7 +1991,7 @@ def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
             SELECT id, created_at, filename, content_type, file_path, sha256_hash,
                    source_endpoint, model_used, predicted_class, predicted_class_ar,
                    confidence, top_predictions_json, user_query, rag_advice,
-                   client_ip, device_type, latency_ms, width, height, file_size_kb,
+                   client_ip, visitor_hash, device_type, latency_ms, width, height, file_size_kb,
                    blur_score, brightness_score, green_ratio, quality_flag,
                    exif_camera, margin_score, is_uncertain, verified_label,
                    developer_notes, geo_city, isp, weather_snapshot,
@@ -1722,6 +2060,7 @@ def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
         "devices_breakdown": devices_breakdown,
         "top_visitors": top_visitors,
         "registered_users": registered_users,
+        "cookie_profiles": cookie_profiles,
         "recent_chats": recent_chats,
         "recent_images": recent_images,
         "recent_visits": recent_visits,

@@ -12,13 +12,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #040d09;
-            --primary: #10b981;
-            --primary-dark: #059669;
-            --accent: #3b82f6;
-            --text-light: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-glass: rgba(255, 255, 255, 0.14);
+            --bg-dark: #151A17;
+            --primary: #3C7A5B;
+            --primary-dark: #2B5B44;
+            --accent: #D4A359;
+            --text-light: #F3F0E8;
+            --text-muted: #A3ACA5;
+            --border-glass: rgba(226, 221, 209, 0.14);
         }
 
         * {
@@ -36,8 +36,8 @@
         body {
             background-color: var(--bg-dark);
             background-image:
-                radial-gradient(ellipse 80% 50% at 15% 12%, rgba(16, 185, 129, 0.18), transparent 55%),
-                radial-gradient(ellipse 70% 50% at 88% 85%, rgba(59, 130, 246, 0.14), transparent 55%);
+                radial-gradient(ellipse 80% 50% at 15% 12%, rgba(60, 122, 91, 0.09), transparent 55%),
+                radial-gradient(ellipse 70% 50% at 88% 85%, rgba(212, 163, 89, 0.06), transparent 55%);
             color: var(--text-light);
             min-height: 100vh;
             min-height: 100dvh;
@@ -66,21 +66,21 @@
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            color: #e2e8f0;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(226, 221, 209, 0.18);
+            color: #F3F0E8;
             text-decoration: none;
             padding: 0.42rem 0.9rem;
-            border-radius: 13px;
+            border-radius: 12px;
             font-size: 0.85rem;
             font-weight: 700;
             transition: all 0.2s ease;
         }
 
         .hci-back-link:hover {
-            background: rgba(16, 185, 129, 0.18);
-            border-color: rgba(16, 185, 129, 0.45);
-            color: #34d399;
+            background: rgba(60, 122, 91, 0.18);
+            border-color: rgba(60, 122, 91, 0.45);
+            color: #F3F0E8;
             transform: translateX(2px);
         }
 
@@ -93,21 +93,19 @@
             display: inline-flex;
             align-items: center;
             gap: 0.7rem;
-            font-size: 1.55rem;
+            font-size: 1.48rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #6ee7b7 0%, #34d399 45%, #60a5fa 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #F3F0E8;
             text-decoration: none;
         }
 
         .brand-logo img {
-            width: 48px;
-            height: 48px;
-            border-radius: 13px;
+            width: 46px;
+            height: 46px;
+            border-radius: 11px;
             object-fit: cover;
-            border: 1.5px solid rgba(52, 211, 153, 0.5);
-            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+            border: 1px solid rgba(226, 221, 209, 0.25);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
         }
 
         .brand-subtitle {
@@ -117,21 +115,21 @@
         }
 
         .auth-card {
-            background: rgba(15, 29, 23, 0.82);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
+            background: rgba(30, 38, 33, 0.94);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             border: 1px solid var(--border-glass);
-            border-radius: 22px;
+            border-radius: 18px;
             padding: 1.8rem;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.42);
         }
 
         .tabs-bar {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.22);
+            border: 1px solid rgba(226, 221, 209, 0.1);
+            border-radius: 12px;
             padding: 0.3rem;
             margin-bottom: 1.5rem;
         }
@@ -143,15 +141,14 @@
             padding: 0.65rem;
             font-size: 0.95rem;
             font-weight: 700;
-            border-radius: 11px;
+            border-radius: 9px;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
         }
 
         .tab-btn.active {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: var(--primary);
             color: #fff;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
         }
 
         .form-group {

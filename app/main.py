@@ -32,16 +32,20 @@ from computer_vision.db_storage import (
     get_agent_memory_context,
     get_developer_analytics,
     get_image_blob_by_id,
+    get_pinned_visitor_profile,
     get_user_by_id,
     get_user_history,
     init_db,
+    link_visitor_to_user,
     register_user,
     save_chat_log,
     save_error_log,
     save_image_record,
+    save_pinned_location_and_prefs,
     save_visitor_log,
     update_image_ground_truth,
 )
+import secrets as _secrets
 
 load_dotenv()
 init_db()
@@ -94,18 +98,20 @@ class DiagnoseResponse(BaseModel):
 class WeatherResponse(BaseModel):
     temperature: Optional[float] = None
     wind_speed: Optional[float] = None
+    windspeed: Optional[float] = None
     humidity: Optional[float] = None
     governorate: str = "القاهرة"
     season: str = ""
     date: str = ""
     is_gps: bool = False
+    source: str = "governorate"
     lat: Optional[float] = None
     lon: Optional[float] = None
 
 class HealthResponse(BaseModel):
     status: str = "healthy"
     services: Dict[str, str] = {}
-    version: str = "2.7.0-memory-gps"
+    version: str = "2.8.0-cookies-pinned-loc"
 
 
 class RegisterPayload(BaseModel):
@@ -124,6 +130,16 @@ class LoginPayload(BaseModel):
     password: str
 
 
+class UserPrefsPayload(BaseModel):
+    governorate: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    location_source: str = "manual"
+    primary_crop: Optional[str] = None
+    farm_size_feddan: Optional[float] = None
+    irrigation_type: Optional[str] = None
+
+
 # ─── Initialize FastAPI ─────────────────────────────────────────────
 
 from fastapi.middleware.gzip import GZipMiddleware
@@ -131,7 +147,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 app = FastAPI(
     title="الخبير الزراعي — Smart Agriculture AI",
     description="Production Gateway: Agri-RAG + Computer Vision + Authentication + Dashboard",
-    version="2.6.0",
+    version="2.8.0",
 )
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -150,12 +166,19 @@ async def warmup_models_on_startup():
     asyncio.create_task(asyncio.to_thread(get_cv_classifier))
 
 
-
 @app.middleware("http")
 async def silent_telemetry_middleware(request: Request, call_next):
-    """Silently log every visitor request, device, IP, authenticated user, latency, and any unhandled error."""
+    """Assign persistent visitor cookie (agri_vid), link to authenticated user, and log telemetry."""
     start_ts = time.time()
     path = request.url.path
+
+    existing_vid = (request.cookies.get("agri_vid") or "").strip()
+    is_new_vid = False
+    if not existing_vid or len(existing_vid) < 6:
+        existing_vid = "vid_" + _secrets.token_hex(6)
+        is_new_vid = True
+    request.state.visitor_id = existing_vid
+
     client_info = extract_client_info(request)
     auth_user = extract_user_from_request(request)
     status_code = 500
@@ -163,6 +186,15 @@ async def silent_telemetry_middleware(request: Request, call_next):
     try:
         response = await call_next(request)
         status_code = response.status_code
+        if is_new_vid:
+            response.set_cookie(
+                key="agri_vid",
+                value=existing_vid,
+                max_age=365 * 86400,
+                path="/",
+                httponly=False,
+                samesite="lax",
+            )
         return response
     except Exception as exc:
         if not path.startswith("/api/dev") and path != "/dev-panel":
@@ -178,7 +210,7 @@ async def silent_telemetry_middleware(request: Request, call_next):
         raise
     finally:
         # Exclude developer secret endpoints, health checks, and static asset noise
-        ignore_prefixes = ("/api/dev", "/dev-panel", "/static", "/favicon.ico", "/health")
+        ignore_prefixes = ("/api/dev", "/dev-panel", "/static", "/favicon.ico", "/logo.png", "/health")
         if not any(path.startswith(p) for p in ignore_prefixes):
             latency_ms = round((time.time() - start_ts) * 1000, 2)
             asyncio.create_task(
@@ -440,12 +472,14 @@ async def register_endpoint(payload: RegisterPayload, http_request: Request):
     if err or not user_dict:
         raise HTTPException(status_code=400, detail=err or "تعذر إنشاء الحساب.")
 
+    await asyncio.to_thread(link_visitor_to_user, client_info["visitor_hash"], user_dict)
+
     token = create_auth_token(user_dict)
-    resp = JSONResponse(content={"status": "ok", "token": token, "user": user_dict})
+    resp = JSONResponse(content={"status": "ok", "token": token, "user": user_dict, "visitor_id": client_info["visitor_hash"]})
     resp.set_cookie(
         key="agri_auth_token",
         value=token,
-        max_age=30 * 86400,
+        max_age=365 * 86400,
         path="/",
         httponly=True,
         samesite="lax",
@@ -467,12 +501,14 @@ async def login_endpoint(payload: LoginPayload, http_request: Request):
     if err or not user_dict:
         raise HTTPException(status_code=401, detail=err or "بيانات الدخول غير صحيحة.")
 
+    await asyncio.to_thread(link_visitor_to_user, client_info["visitor_hash"], user_dict)
+
     token = create_auth_token(user_dict)
-    resp = JSONResponse(content={"status": "ok", "token": token, "user": user_dict})
+    resp = JSONResponse(content={"status": "ok", "token": token, "user": user_dict, "visitor_id": client_info["visitor_hash"]})
     resp.set_cookie(
         key="agri_auth_token",
         value=token,
-        max_age=30 * 86400,
+        max_age=365 * 86400,
         path="/",
         httponly=True,
         samesite="lax",
@@ -490,23 +526,105 @@ async def logout_endpoint():
 
 @app.get("/api/auth/me", tags=["Authentication"])
 async def auth_me_endpoint(http_request: Request):
-    """Return the currently authenticated user profile and activity counts."""
+    """Return the currently authenticated user profile, linked cookie visitor profile, and pinned location."""
+    client_info = extract_client_info(http_request)
     token_user = extract_user_from_request(http_request)
-    if not token_user or not token_user.get("uid"):
-        return JSONResponse(status_code=401, content={"authenticated": False})
+    u_id = int(token_user["uid"]) if token_user and token_user.get("uid") else None
 
-    user_dict = await asyncio.to_thread(get_user_by_id, int(token_user["uid"]))
-    if not user_dict:
-        return JSONResponse(status_code=401, content={"authenticated": False})
+    user_dict = None
+    if u_id:
+        user_dict = await asyncio.to_thread(get_user_by_id, u_id)
 
-    fresh_token = create_auth_token(user_dict)
-    resp = JSONResponse(content={"authenticated": True, "user": user_dict, "token": fresh_token})
+    if user_dict:
+        await asyncio.to_thread(link_visitor_to_user, client_info["visitor_hash"], user_dict)
+        pinned = await asyncio.to_thread(get_pinned_visitor_profile, client_info["visitor_hash"], u_id)
+        fresh_token = create_auth_token(user_dict)
+        resp = JSONResponse(content={
+            "authenticated": True,
+            "user": user_dict,
+            "token": fresh_token,
+            "visitor_id": client_info["visitor_hash"],
+            "pinned_profile": pinned,
+        })
+        resp.set_cookie(
+            key="agri_auth_token",
+            value=fresh_token,
+            max_age=365 * 86400,
+            path="/",
+            httponly=True,
+            samesite="lax",
+        )
+        return resp
+
+    pinned = await asyncio.to_thread(get_pinned_visitor_profile, client_info["visitor_hash"], None)
+    return JSONResponse(status_code=401, content={
+        "authenticated": False,
+        "visitor_id": client_info["visitor_hash"],
+        "pinned_profile": pinned,
+    })
+
+
+@app.get("/api/user/preferences", tags=["Authentication"])
+async def get_user_preferences_endpoint(http_request: Request):
+    """Return the visitor/user's pinned location (GPS or manual governorate) and farm settings."""
+    client_info = extract_client_info(http_request)
+    token_user = extract_user_from_request(http_request)
+    u_id = int(token_user["uid"]) if token_user and token_user.get("uid") else None
+    pinned = await asyncio.to_thread(get_pinned_visitor_profile, client_info["visitor_hash"], u_id)
+    return {
+        "status": "ok",
+        "visitor_id": client_info["visitor_hash"],
+        "preferences": pinned,
+    }
+
+
+@app.post("/api/user/preferences", tags=["Authentication"])
+async def save_user_preferences_endpoint(payload: UserPrefsPayload, http_request: Request):
+    """Pin the user's location (governorate + optional GPS lat/lon) and farm profile in DB and 1-year cookie."""
+    import urllib.parse
+    client_info = extract_client_info(http_request)
+    token_user = extract_user_from_request(http_request)
+    u_id = int(token_user["uid"]) if token_user and token_user.get("uid") else None
+
+    gov = payload.governorate
+    if payload.lat is not None and payload.lon is not None and not gov:
+        gov = _nearest_governorate(float(payload.lat), float(payload.lon))
+
+    saved = await asyncio.to_thread(
+        save_pinned_location_and_prefs,
+        visitor_id=client_info["visitor_hash"],
+        user_id=u_id,
+        governorate=gov,
+        gps_lat=payload.lat,
+        gps_lon=payload.lon,
+        location_source=payload.location_source or ("gps" if payload.lat is not None else "manual"),
+        primary_crop=payload.primary_crop,
+        farm_size_feddan=payload.farm_size_feddan,
+        irrigation_type=payload.irrigation_type,
+        client_ip=client_info["client_ip"],
+        device_type=client_info["device_type"],
+    )
+
+    resp = JSONResponse(content={
+        "status": "ok",
+        "visitor_id": client_info["visitor_hash"],
+        "preferences": saved,
+    })
+    cookie_json = urllib.parse.quote(json.dumps({
+        "gov": saved.get("governorate") or "القاهرة",
+        "lat": saved.get("gps_lat"),
+        "lon": saved.get("gps_lon"),
+        "src": saved.get("location_source") or "manual",
+        "crop": saved.get("primary_crop") or "",
+        "area": saved.get("farm_size_feddan") or 1.0,
+        "irrig": saved.get("irrigation_type") or "تنقيط",
+    }, ensure_ascii=False))
     resp.set_cookie(
-        key="agri_auth_token",
-        value=fresh_token,
-        max_age=30 * 86400,
+        key="agri_prefs",
+        value=cookie_json,
+        max_age=365 * 86400,
         path="/",
-        httponly=True,
+        httponly=False,
         samesite="lax",
     )
     return resp
@@ -596,22 +714,70 @@ _IRRIG_TO_ENUM = {
 
 @app.get("/api/weather", response_model=WeatherResponse, tags=["Tools"])
 async def get_weather_endpoint(
-    governorate: str = Query("القاهرة"),
+    http_request: Request,
+    governorate: Optional[str] = Query(None),
+    gov: Optional[str] = Query(None),
     lat: Optional[float] = Query(None),
     lon: Optional[float] = Query(None),
+    pin: bool = Query(True),
 ):
-    """Get current weather and agricultural season by Egyptian governorate OR exact GPS (lat, lon) coordinates."""
+    """Get current weather and agricultural season by GPS, manual governorate, or the user's cookie-pinned location."""
     import datetime
     now_ts = time.time()
+    client_info = extract_client_info(http_request)
+    token_user = extract_user_from_request(http_request)
+    u_id = int(token_user["uid"]) if token_user and token_user.get("uid") else None
+
+    explicit_gov = (gov or governorate or "").strip()
     is_gps = lat is not None and lon is not None and (-90 <= lat <= 90) and (-180 <= lon <= 180)
+    loc_source = "manual"
+
     if is_gps:
         gov_key = _nearest_governorate(float(lat), float(lon))
         q_lat, q_lon = round(float(lat), 4), round(float(lon), 4)
         cache_key = f"gps:{q_lat:.2f},{q_lon:.2f}"
-    else:
-        gov_key = governorate.strip() or "القاهرة"
+        loc_source = "gps"
+        if pin:
+            await asyncio.to_thread(
+                save_pinned_location_and_prefs,
+                visitor_id=client_info["visitor_hash"],
+                user_id=u_id,
+                governorate=gov_key,
+                gps_lat=q_lat,
+                gps_lon=q_lon,
+                location_source="gps",
+                client_ip=client_info["client_ip"],
+                device_type=client_info["device_type"],
+            )
+    elif explicit_gov:
+        gov_key = explicit_gov
         q_lat, q_lon = EGYPT_GOV_COORDS.get(gov_key, (30.0444, 31.2357))
         cache_key = f"gov:{gov_key}"
+        loc_source = "manual"
+        if pin:
+            await asyncio.to_thread(
+                save_pinned_location_and_prefs,
+                visitor_id=client_info["visitor_hash"],
+                user_id=u_id,
+                governorate=gov_key,
+                location_source="manual",
+                client_ip=client_info["client_ip"],
+                device_type=client_info["device_type"],
+            )
+    else:
+        # Restore from cookie/DB pinned location so IP never overrides the farmer's real governorate
+        pinned = await asyncio.to_thread(get_pinned_visitor_profile, client_info["visitor_hash"], u_id)
+        if pinned.get("gps_lat") is not None and pinned.get("gps_lon") is not None:
+            q_lat, q_lon = round(float(pinned["gps_lat"]), 4), round(float(pinned["gps_lon"]), 4)
+            gov_key = pinned.get("governorate") or _nearest_governorate(q_lat, q_lon)
+            is_gps = True
+            loc_source = pinned.get("location_source") or "gps"
+            cache_key = f"gps:{q_lat:.2f},{q_lon:.2f}"
+        else:
+            gov_key = pinned.get("governorate") or "القاهرة"
+            q_lat, q_lon = EGYPT_GOV_COORDS.get(gov_key, (30.0444, 31.2357))
+            loc_source = pinned.get("location_source") or "pinned"
+            cache_key = f"gov:{gov_key}"
 
     cached = _WEATHER_CACHE.get(cache_key)
     if cached and (now_ts - cached[0]) < 900:
@@ -636,6 +802,7 @@ async def get_weather_endpoint(
     resp = WeatherResponse(
         temperature=temp,
         wind_speed=wind,
+        windspeed=wind,
         humidity=hum,
         governorate=gov_key,
         season=date_ctx.split("فصل ")[-1].rstrip(".") if "فصل" in date_ctx else "",
@@ -643,6 +810,7 @@ async def get_weather_endpoint(
         is_gps=is_gps,
         lat=q_lat,
         lon=q_lon,
+        source=loc_source,
     )
     _WEATHER_CACHE[cache_key] = (now_ts, resp)
     return resp
