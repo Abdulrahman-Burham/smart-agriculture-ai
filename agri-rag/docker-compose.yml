@@ -1,0 +1,11 @@
+services:
+  assistant:
+    build: .
+    env_file: .env
+    ports: ["8000:8000"]
+    volumes:
+      - chroma:/app/storage          # vector DB persists across restarts
+      - ./data/knowledge:/app/data/knowledge:ro   # drop new guides here, then POST /v1/admin/reindex
+    restart: unless-stopped
+volumes:
+  chroma:

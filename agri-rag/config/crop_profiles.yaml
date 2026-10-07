@@ -1,0 +1,32 @@
+# Crop agronomy profiles used by the proactive alert rules.
+#
+# !!! ADVISORY VALUES — MUST BE VALIDATED BY AN AGRONOMIST BEFORE PRODUCTION !!!
+# Replace with the numbers from the approved Ministry of Agriculture / ARC (مركز البحوث الزراعية)
+# guides for each governorate and season. The rules engine is data-driven: editing this file
+# changes alert behaviour without touching code.
+defaults:
+  rain_skip_mm: 5              # postpone irrigation if >= this much rain is forecast in 48h
+  disease_confidence_min: 0.70 # only raise a disease alert above this vision confidence
+  critical_overdue_ratio: 0.5  # overdue by >50% of the interval => critical
+crops:
+  طماطم:
+    soil: {ph_min: 6.0, ph_max: 7.0, ec_max: 2.5}
+    heat_stress_temp_c: 35
+    stages:
+      "نمو خضري": {irrigation_interval_days: {drip: 2, surface: 7, sprinkler: 4}, fertilization_interval_days: 14}
+      "إزهار": {irrigation_interval_days: {drip: 2, surface: 6, sprinkler: 3}, fertilization_interval_days: 10}
+      "عقد وتكوين الثمار": {irrigation_interval_days: {drip: 1, surface: 5, sprinkler: 3}, fertilization_interval_days: 10}
+  قمح:
+    soil: {ph_min: 6.0, ph_max: 7.5, ec_max: 6.0}
+    heat_stress_temp_c: 32
+    stages:
+      "تفريع": {irrigation_interval_days: {surface: 21, sprinkler: 10}, fertilization_interval_days: 30}
+      "طرد السنابل": {irrigation_interval_days: {surface: 14, sprinkler: 7}, fertilization_interval_days: 30}
+      "امتلاء الحبوب": {irrigation_interval_days: {surface: 14, sprinkler: 7}, fertilization_interval_days: 45}
+  ذرة:
+    soil: {ph_min: 5.8, ph_max: 7.0, ec_max: 1.7}
+    heat_stress_temp_c: 36
+    stages:
+      "نمو خضري": {irrigation_interval_days: {surface: 10, sprinkler: 5}, fertilization_interval_days: 21}
+      "تزهير": {irrigation_interval_days: {surface: 8, sprinkler: 4}, fertilization_interval_days: 21}
+      "امتلاء الحبوب": {irrigation_interval_days: {surface: 10, sprinkler: 5}, fertilization_interval_days: 30}

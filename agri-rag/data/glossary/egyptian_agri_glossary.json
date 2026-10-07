@@ -1,0 +1,34 @@
+{
+  "_note": "Seed glossary. Extend it with terms collected from agronomists/farmers in each governorate; every term added here immediately improves retrieval.",
+  "entries": [
+    {"canonical": "طماطم", "category": "crop", "variants": ["قوطة", "قوطه", "الطماطم", "بندورة"]},
+    {"canonical": "قمح", "category": "crop", "variants": ["القمح", "الغلة", "محصول القمح"]},
+    {"canonical": "ذرة", "category": "crop", "variants": ["درة", "الدرة", "الذره الشامي", "الذرة الشامية"]},
+    {"canonical": "فلفل", "category": "crop", "variants": ["الفلفل", "فلفل رومي"]},
+    {"canonical": "بطاطس", "category": "crop", "variants": ["بطاطا", "البطاطس"]},
+
+    {"canonical": "اللفحة المتأخرة", "category": "disease", "variants": ["لفحة", "لفحه", "الندوة المتأخرة", "الندوة", "لفحة الطماطم", "زغب ابيض تحت الورقة", "بقع مايه", "بقع مائية"]},
+    {"canonical": "الصدأ", "category": "disease", "variants": ["صدا", "الصدا", "الصدأ الأصفر", "الصدا الاصفر", "خطوط صفرا", "بودرة صفرا", "بودرة صفراء"]},
+    {"canonical": "البياض الدقيقي", "category": "disease", "variants": ["بياض دقيقي", "الرماد", "بودرة بيضا", "بودرة بيضاء"]},
+    {"canonical": "تعفن الجذور", "category": "disease", "variants": ["عفن الجذور", "الجذور بتعفن", "الذبول", "النبات دبلان"]},
+
+    {"canonical": "الذبابة البيضاء", "category": "pest", "variants": ["دبانة بيضا", "دبانه بيضا", "الدبان الابيض", "دبان ابيض", "ذبابة بيضاء"]},
+    {"canonical": "المن", "category": "pest", "variants": ["حشرة المن", "القمل", "قمل النبات", "حشرات صغيرة خضرا"]},
+
+    {"canonical": "اصفرار الأوراق", "category": "symptom", "variants": ["الورق بيصفر", "الورق اصفر", "اصفرار", "الورق الاصفر", "الورق السفلي بيصفر"]},
+    {"canonical": "نقص النيتروجين", "category": "symptom", "variants": ["نقص الازوت", "نقص الأزوت", "نقص النتروجين"]},
+
+    {"canonical": "الري بالغمر", "category": "practice", "variants": ["ري غمر", "الغمر", "الري الغرقي", "الري بالراحة"]},
+    {"canonical": "الري بالتنقيط", "category": "practice", "variants": ["ري تنقيط", "التنقيط", "الري بالنقاط", "خراطيم التنقيط"]},
+    {"canonical": "الري بالرش", "category": "practice", "variants": ["ري رش", "الرشاشات", "الري بالرشاشات"]},
+    {"canonical": "التسميد", "category": "practice", "variants": ["سماد", "السماد", "اسمدة", "أسمدة", "تغذية النبات", "اسمد"]},
+    {"canonical": "مكافحة", "category": "practice", "variants": ["رش مبيد", "ارش", "رشة", "علاج المرض", "اعالج"]},
+
+    {"canonical": "ملوحة التربة", "category": "soil", "variants": ["الارض مالحة", "الأرض مالحة", "ارض مالحة", "الملوحة", "الارض بتملح", "ملح في الارض"]},
+    {"canonical": "حموضة التربة pH", "category": "soil", "variants": ["الph", "بي اتش", "درجة الحموضة", "الحموضة", "قلوية التربة"]},
+    {"canonical": "التربة الرملية", "category": "soil", "variants": ["ارض رملية", "الأرض الرملية", "الارض الرملي", "رمل"]},
+    {"canonical": "التربة الطينية", "category": "soil", "variants": ["ارض طينية", "الأرض الطينية", "طمي"]},
+
+    {"canonical": "فدان", "category": "unit", "variants": ["الفدان", "فدانين", "قيراط"]}
+  ]
+}

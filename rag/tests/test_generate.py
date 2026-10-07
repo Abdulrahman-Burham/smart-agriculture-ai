@@ -68,7 +68,7 @@ def test_generate_grounded_answer_mock():
 def test_pipeline_confidence_flag_branching(tmp_path):
     config_file = tmp_path / "config.yaml"
     config_file.write_text(
-        """
+        f"""
 confidence:
   threshold: 0.50
 retrieval:
@@ -77,7 +77,7 @@ retrieval:
 rerank:
   top_k: 3
 logging:
-  requests_log: str(tmp_path / "requests.jsonl")
+  requests_log: {tmp_path / 'requests.jsonl'}
         """,
         encoding="utf-8",
     )

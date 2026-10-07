@@ -1,0 +1,13 @@
+{
+  "farm_id": "farm-001",
+  "governorate": "الدقهلية",
+  "crop": "طماطم",
+  "growth_stage": "إزهار",
+  "area_feddan": 3,
+  "irrigation_method": "drip",
+  "last_irrigation_date": "2026-09-25",
+  "last_fertilization_date": "2026-09-10",
+  "soil": {"ph": 8.1, "ec_ds_m": 3.2, "nitrogen_ppm": 18, "texture": "طميية"},
+  "diagnoses": [{"label": "اللفحة المتأخرة", "confidence": 0.88, "severity": "متوسطة"}],
+  "weather": {"temp_c": 29, "humidity_pct": 92, "forecast_rain_mm_48h": 0}
+}
