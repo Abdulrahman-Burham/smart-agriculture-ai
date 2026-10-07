@@ -639,13 +639,42 @@
 
             document.getElementById('res-model-badge').innerText = `🤖 الموديل: ${modelName}`;
 
+            const diseaseEl = document.getElementById('disease-name');
+            const cropEl = document.getElementById('crop-type');
+            const container = document.getElementById('predictions-container');
+
+            if (data.is_plant === false || cvData.is_plant === false || cvData.predicted_class === 'Not_A_Plant') {
+                const detectedObj = cvData.detected_object_ar || 'صورة غير نباتية';
+                diseaseEl.innerText = `⚠️ تنبيه: الصورة ليست نباتاً (${detectedObj})`;
+                diseaseEl.classList.remove('healthy');
+                diseaseEl.style.color = '#f87171';
+                cropEl.innerText = '❌ هذا النظام يقبل فقط صور أوراق النباتات والمحاصيل الزراعية';
+                cropEl.style.color = '#fca5a5';
+                container.innerHTML = `
+                    <div style="background: rgba(239, 68, 68, 0.16); border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 12px; padding: 0.9rem; color: #fecaca; font-size: 0.9rem; line-height: 1.65;">
+                        <strong>🚫 تم رفض الصورة بواسطة فلتر النباتات الذكي:</strong><br>
+                        تم رصد: <strong>${detectedObj}</strong>.<br>
+                        الرجاء رفع أو تصوير <strong>ورقة نبات حقيقية</strong> عن قرب للحصول على التشخيص والعلاج.
+                    </div>
+                `;
+                if (data.advice) {
+                    const adviceText = data.advice.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+                    document.getElementById('advice-text').innerHTML = adviceText;
+                    document.getElementById('advice-box').style.display = 'block';
+                }
+                resultsSection.style.display = 'block';
+                return;
+            }
+
+            diseaseEl.style.color = '';
+            cropEl.style.color = '';
+
             const topClassRaw = cvData.predicted_class || (cvData.top_predictions && cvData.top_predictions[0] ? cvData.top_predictions[0].class : '');
             const topClassAr = cvData.predicted_class_ar || (cvData.predictions && cvData.predictions[0] ? cvData.predictions[0].label_ar : '');
             const diseaseText = topClassRaw
                 ? (topClassAr && topClassAr !== topClassRaw ? `${topClassRaw} (${topClassAr})` : topClassRaw)
                 : (cvData.disease_name || "تشخيص النبات");
 
-            const diseaseEl = document.getElementById('disease-name');
             diseaseEl.innerText = diseaseText;
             if (diseaseText.includes('سليم') || diseaseText.toLowerCase().includes('healthy')) {
                 diseaseEl.classList.add('healthy');
@@ -653,9 +682,8 @@
                 diseaseEl.classList.remove('healthy');
             }
 
-            document.getElementById('crop-type').innerText = `المحصول: ${cvData.crop_type_ar || cvData.crop_type || 'عام'}`;
+            cropEl.innerText = `المحصول: ${cvData.crop_type_ar || cvData.crop_type || 'عام'}`;
 
-            const container = document.getElementById('predictions-container');
             container.innerHTML = '';
 
             const items = (cvData.predictions && cvData.predictions.length > 0)

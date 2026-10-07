@@ -89,6 +89,8 @@ class CVPrediction(BaseModel):
     confidence: float = 0.0
 
 class DiagnoseResponse(BaseModel):
+    is_plant: bool = True
+    rejection_reason: str = ""
     cv_result: Dict[str, Any] = {}
     advice: str = ""
     sources: List[str] = []
@@ -1111,6 +1113,77 @@ async def chat_endpoint(request: ChatRequest, http_request: Request):
 
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024  # 15 MB
 
+PLANT_GATEKEEPER_PROMPT = (
+    "Look carefully at this uploaded image.\n"
+    "Determine whether the image shows a REAL plant, crop leaf, tree, plant stem, fruit/vegetable on a plant, or agricultural foliage.\n"
+    "If it is NOT a plant (for example: a human face/selfie/person, animal, car, room, furniture, computer/phone screen, screenshot, document, clothing, logo, cartoon, food plate, or random object), reject it.\n"
+    "Reply with ONLY ONE LINE in this exact format:\n"
+    "PLANT|ورقة نبات\n"
+    "OR if it is not a plant:\n"
+    "NOT_PLANT|<short Arabic name of what is in the photo, e.g. صورة شخص / سيارة / قطة / لقطة شاشة / غرفة / ملابس / جسم غير نباتي>"
+)
+
+
+def _verify_plant_image_gemini_sync(image_bytes: bytes, mime_type: str = "image/jpeg") -> Dict[str, Any]:
+    """Fast Gemini Vision gatekeeper (runs in parallel with CV classifier) to reject non-plant images."""
+    global _STT_KEY_RR_IDX
+    import base64
+
+    keys, cfg_model = _get_gemini_key_pool_and_model()
+    if not keys:
+        return {"checked": False, "is_plant": True, "detected_ar": ""}
+
+    n_keys = len(keys)
+    start_idx = _STT_KEY_RR_IDX % n_keys
+    _STT_KEY_RR_IDX += 1
+    ordered_keys = [keys[(start_idx + i) % n_keys] for i in range(n_keys)]
+
+    b64_img = base64.b64encode(image_bytes).decode("ascii")
+    clean_mime = (mime_type or "image/jpeg").split(";")[0].strip()
+    if clean_mime not in ("image/jpeg", "image/png", "image/webp"):
+        clean_mime = "image/jpeg"
+
+    models = [cfg_model, "gemini-2.5-flash", "gemini-2.0-flash"]
+    seen_m: List[str] = []
+    for m in models:
+        if m and m not in seen_m:
+            seen_m.append(m)
+
+    for api_key in ordered_keys[:2]:
+        for m in seen_m[:1]:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
+                payload = {
+                    "contents": [
+                        {
+                            "parts": [
+                                {"text": PLANT_GATEKEEPER_PROMPT},
+                                {"inlineData": {"mimeType": clean_mime, "data": b64_img}},
+                            ]
+                        }
+                    ],
+                    "generationConfig": {"temperature": 0.0, "maxOutputTokens": 40},
+                }
+                r = ext_requests.post(url, json=payload, timeout=3.8)
+                if r.status_code == 200:
+                    candidates = r.json().get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts and parts[0].get("text"):
+                            ans = parts[0]["text"].strip()
+                            upper_ans = ans.upper()
+                            if upper_ans.startswith("NOT_PLANT") or "NOT_PLANT" in upper_ans:
+                                det = "جسم غير نباتي"
+                                if "|" in ans:
+                                    det = ans.split("|", 1)[1].strip() or det
+                                return {"checked": True, "is_plant": False, "detected_ar": det}
+                            if upper_ans.startswith("PLANT"):
+                                return {"checked": True, "is_plant": True, "detected_ar": "نبات"}
+            except Exception:
+                pass
+
+    return {"checked": False, "is_plant": True, "detected_ar": ""}
+
 
 @app.post("/api/diagnose", response_model=DiagnoseResponse, tags=["Vision + RAG"])
 async def diagnose_endpoint(
@@ -1124,7 +1197,7 @@ async def diagnose_endpoint(
     area_feddan: Optional[float] = Form(None),
     irrigation_type: Optional[str] = Form(None),
 ):
-    """Upload a leaf image → CV diagnosis + Agri-RAG grounded treatment advice + Private DB Save."""
+    """Upload a leaf image → Plant-Only Filter → CV diagnosis + Agri-RAG grounded treatment advice + Private DB Save."""
     start_time = time.time()
     client_info = extract_client_info(http_request)
     auth_user = extract_user_from_request(http_request)
@@ -1140,16 +1213,71 @@ async def diagnose_endpoint(
         if len(image_bytes) > MAX_UPLOAD_BYTES:
             raise HTTPException(status_code=413, detail="حجم الصورة يتجاوز الحد المسموح به (15 ميجابايت).")
 
-        # Step 2: Run Computer Vision prediction in thread pool
+        # Step 2: Run Computer Vision prediction + Gemini Plant Gatekeeper in parallel
         cv = get_cv_classifier()
-        cv_result = {}
+        cv_result: Dict[str, Any] = {}
 
         if cv:
             image_stream = io.BytesIO(image_bytes)
-            prediction = await asyncio.to_thread(
-                cv.predict, image_stream, 3, model_choice
+            cv_task = asyncio.to_thread(cv.predict, image_stream, 3, model_choice)
+            gemini_gate_task = asyncio.to_thread(
+                _verify_plant_image_gemini_sync,
+                image_bytes,
+                image.content_type or "image/jpeg",
             )
+            prediction, gemini_gate = await asyncio.gather(cv_task, gemini_gate_task)
             cv_result = prediction
+
+            # Check if EITHER OpenCV Multi-Signal Filter OR Gemini Vision Gatekeeper rejected the non-plant image
+            opencv_is_plant = cv_result.get("is_plant", True)
+            gemini_is_plant = gemini_gate.get("is_plant", True)
+
+            if not opencv_is_plant or not gemini_is_plant:
+                detected_obj = (
+                    gemini_gate.get("detected_ar")
+                    if not gemini_is_plant and gemini_gate.get("detected_ar")
+                    else (cv_result.get("detected_object_ar") or "صورة غير نباتية")
+                )
+                reject_reason = (
+                    f"⚠️ تنبيه: هذه الصورة ليست لنبات! (تم رصد: {detected_obj}) — "
+                    f"النظام يقبل فقط صور أوراق النباتات والمحاصيل الزراعية."
+                )
+                cv_result = {
+                    "is_plant": False,
+                    "rejected": True,
+                    "detected_object_ar": detected_obj,
+                    "rejection_reason_ar": reject_reason,
+                    "top_predictions": [],
+                    "predicted_class": "Not_A_Plant",
+                    "predicted_class_ar": f"⚠️ ليست صورة نبات ({detected_obj})",
+                    "confidence": 0.0,
+                    "confidence_str": "مرفوضة",
+                    "predictions": [],
+                    "crop_type": "Non-Plant",
+                    "crop_type_ar": "❌ يقبل النباتات فقط",
+                    "disease_name": f"Not_A_Plant ({detected_obj})",
+                    "top_confidence": 0.0,
+                    "model_used": cv_result.get("model_used", model_choice),
+                }
+                warning_advice = (
+                    f"⚠️ **تنبيه هام يا هندسة: الصورة اللي رفعتها مش صورة نبات! (تم رصد: {detected_obj})**\n\n"
+                    f"النظام هنا مخصص **فقط لفحص أوراق النباتات والمحاصيل الزراعية** وتشخيص الأمراض والآفات.\n\n"
+                    f"📸 **علشان تحصل على تشخيص وعلاج مظبوط:**\n"
+                    f"1. صوّر **ورقة النبات** المصابة عن قرب وبإضاءة واضحة.\n"
+                    f"2. اتأكد إن الورقة في نص الكادر ومفيش أشخاص أو عناصر تانية غير الزراعات.\n"
+                    f"3. ارفع صورة النبات تاني وهطلعلك التشخيص والروشتة المعتمدة فوراً!"
+                )
+                latency = round(time.time() - start_time, 3)
+                return DiagnoseResponse(
+                    is_plant=False,
+                    rejection_reason=reject_reason,
+                    cv_result=cv_result,
+                    advice=warning_advice,
+                    sources=[],
+                    confidence=0.0,
+                    latency=latency,
+                    session_id=session_id or "",
+                )
 
         # Step 3: Build FarmContext with VisionDiagnosis + Memory and query Agri-RAG
         crop_ar = cv_result.get("crop_type_ar", "")
@@ -1264,6 +1392,8 @@ async def diagnose_endpoint(
             logger.warning(f"Database save warning: {db_err}")
 
         return DiagnoseResponse(
+            is_plant=True,
+            rejection_reason="",
             cv_result=cv_result,
             advice=advice_text,
             sources=sources,

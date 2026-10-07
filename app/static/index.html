@@ -2516,6 +2516,60 @@
             const panelBadge = document.getElementById('panel-model-badge');
             if (cvBadge) cvBadge.innerText = `🤖 ${modelName}`;
             if (panelBadge) panelBadge.innerText = `⚡ ${modelName}`;
+
+            const diseaseEl = document.getElementById('cv-disease-name');
+            const cropEl = document.getElementById('cv-crop-type');
+            const container = document.getElementById('predictions-container');
+            const inlineBox = document.getElementById('cv-inline-advice-box');
+            const inlineText = document.getElementById('cv-inline-advice-text');
+            const inlineSpeakBtn = document.getElementById('cv-inline-speak-btn');
+
+            // Check if the Plant-Only Filter rejected the image as a non-plant
+            if (cvData.is_plant === false || cvData.rejected === true || cvData.predicted_class === 'Not_A_Plant') {
+                const detectedObj = cvData.detected_object_ar || 'صورة غير نباتية';
+                diseaseEl.innerText = `⚠️ تنبيه: الصورة ليست نباتاً (${detectedObj})`;
+                diseaseEl.classList.remove('healthy');
+                diseaseEl.style.color = '#f87171';
+                cropEl.innerText = '❌ هذا النظام يقبل فقط صور أوراق النباتات والمحاصيل الزراعية';
+                cropEl.style.color = '#fca5a5';
+                cvResults.style.borderColor = 'rgba(239, 68, 68, 0.55)';
+                cvResults.style.background = 'rgba(127, 29, 29, 0.22)';
+
+                container.innerHTML = `
+                    <div style="background: rgba(239, 68, 68, 0.16); border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 12px; padding: 0.9rem; color: #fecaca; font-size: 0.9rem; line-height: 1.65; margin-top: 0.5rem;">
+                        <strong>🚫 تم رفض الصورة بواسطة فلتر النباتات الذكي:</strong><br>
+                        تم رصد: <strong>${detectedObj}</strong>.<br>
+                        الرجاء رفع أو تصوير <strong>ورقة نبات حقيقية</strong> عن قرب للحصول على التشخيص والعلاج.
+                    </div>
+                `;
+
+                if (inlineBox && inlineText && adviceText) {
+                    inlineText.innerHTML = formatResponse(adviceText);
+                    inlineText.style.borderRightColor = '#ef4444';
+                    inlineBox.style.display = 'block';
+                    if (inlineSpeakBtn) {
+                        inlineSpeakBtn.innerHTML = '🔊 اسمع التنبيه بالمصري';
+                        inlineSpeakBtn.onclick = function() {
+                            speakArabic(`يا هندسة خلي بالك، الصورة اللي رفعتها مش صورة نبات، دي ${detectedObj}. النظام هنا بيقبل بس صور ورق النباتات والزراعات عشان يشخصها صح.`, inlineSpeakBtn);
+                        };
+                    }
+                }
+                cvResults.style.display = 'block';
+                updateVisionStepper(2);
+                if (btnDiagnoseImage) btnDiagnoseImage.classList.remove('pulse-ready');
+                showToast('⚠️ تنبيه: الصورة المرفوعة ليست نباتاً! النظام يقبل فقط صور النباتات');
+                setTimeout(() => {
+                    cvResults.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+                return;
+            }
+
+            // Reset normal styling for valid plant images
+            diseaseEl.style.color = '';
+            cropEl.style.color = '';
+            cvResults.style.borderColor = '';
+            cvResults.style.background = '';
+            if (inlineText) inlineText.style.borderRightColor = '#10b981';
             
             const topClassRaw = cvData.predicted_class || (cvData.top_predictions && cvData.top_predictions[0] ? cvData.top_predictions[0].class : '');
             const topClassAr = cvData.predicted_class_ar || (cvData.predictions && cvData.predictions[0] ? cvData.predictions[0].label_ar : '');
@@ -2523,7 +2577,6 @@
                 ? (topClassAr && topClassAr !== topClassRaw ? `${topClassAr} (${topClassRaw})` : topClassRaw)
                 : (cvData.disease_name || "تشخيص النبات");
 
-            const diseaseEl = document.getElementById('cv-disease-name');
             diseaseEl.innerText = diseaseText;
             if(diseaseText.includes('سليم') || diseaseText.toLowerCase().includes('healthy')) {
                 diseaseEl.classList.add('healthy');
@@ -2531,9 +2584,7 @@
                 diseaseEl.classList.remove('healthy');
             }
             
-            document.getElementById('cv-crop-type').innerText = cvData.crop_type_ar || cvData.crop_type || "محصول زراعي";
-            
-            const container = document.getElementById('predictions-container');
+            cropEl.innerText = cvData.crop_type_ar || cvData.crop_type || "محصول زراعي";
             container.innerHTML = '';
             
             const items = (cvData.predictions && cvData.predictions.length > 0)
@@ -2572,9 +2623,6 @@
                 `;
             });
 
-            const inlineBox = document.getElementById('cv-inline-advice-box');
-            const inlineText = document.getElementById('cv-inline-advice-text');
-            const inlineSpeakBtn = document.getElementById('cv-inline-speak-btn');
             if (inlineBox && inlineText && adviceText) {
                 inlineText.innerHTML = formatResponse(adviceText);
                 inlineBox.style.display = 'block';
@@ -2725,6 +2773,42 @@
             });
         }
 
+        function quickClientPlantPreCheck(file) {
+            return new Promise((resolve) => {
+                try {
+                    const img = new Image();
+                    const objUrl = URL.createObjectURL(file);
+                    img.onload = () => {
+                        URL.revokeObjectURL(objUrl);
+                        const c = document.createElement('canvas');
+                        c.width = 96;
+                        c.height = 96;
+                        const ctx = c.getContext('2d');
+                        ctx.drawImage(img, 0, 0, 96, 96);
+                        const d = ctx.getImageData(0, 0, 96, 96).data;
+                        let greenCount = 0;
+                        let exgCount = 0;
+                        const total = 96 * 96;
+                        for (let i = 0; i < d.length; i += 4) {
+                            const r = d[i], g = d[i + 1], b = d[i + 2];
+                            if (g > 32 && g > r + 4 && g >= b + 3) greenCount++;
+                            if ((2 * g - r - b) > 18 && g > 35) exgCount++;
+                        }
+                        const greenPct = (greenCount / total) * 100;
+                        const exgPct = (exgCount / total) * 100;
+                        resolve({ looksLikePlant: (greenPct >= 1.5 || exgPct >= 2.0), greenPct });
+                    };
+                    img.onerror = () => {
+                        URL.revokeObjectURL(objUrl);
+                        resolve({ looksLikePlant: true, greenPct: 50 });
+                    };
+                    img.src = objUrl;
+                } catch (e) {
+                    resolve({ looksLikePlant: true, greenPct: 50 });
+                }
+            });
+        }
+
         async function handleFile(file) {
             if (!file.type.startsWith('image/')) {
                 showToast('⚠️ الرجاء رفع ملف صورة صالح');
@@ -2742,8 +2826,11 @@
             };
             reader.readAsDataURL(file);
 
-            // Compress large phone camera photos in background (<100ms)
-            selectedFile = await compressImageIfNeeded(file);
+            const [compressed, preCheck] = await Promise.all([
+                compressImageIfNeeded(file),
+                quickClientPlantPreCheck(file)
+            ]);
+            selectedFile = compressed;
             
             if (btnClearImage) btnClearImage.style.display = 'inline-flex';
             if (btnDiagnoseImage) {
@@ -2753,7 +2840,11 @@
                 btnDiagnoseImage.classList.add('pulse-ready');
             }
             updateVisionStepper(2);
-            showToast('📸 تم تجهيز الصورة! اضغط على زر «فحص وإظهار العلاج»');
+            if (!preCheck.looksLikePlant) {
+                showToast('⚠️ تنبيه: يبدو أن الصورة لا تحتوي على نبات! النظام يقبل فقط صور النباتات');
+            } else {
+                showToast('📸 تم تجهيز الصورة! اضغط على زر «فحص وإظهار العلاج»');
+            }
         }
 
         async function handleDiagnoseOnly() {

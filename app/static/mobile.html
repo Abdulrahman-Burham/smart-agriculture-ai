@@ -1432,7 +1432,7 @@
       } catch (e) {}
     }
 
-    // ── Leaf Image Diagnosis ──
+    // ── Leaf Image Diagnosis (with Plant-Only Filter Warning) ──
     async function handleLeafImage(file) {
       if (!file) return;
       switchMobileTab('assistant');
@@ -1441,12 +1441,19 @@
       const titleEl = document.getElementById('scanDiseaseTitle');
       const badgeEl = document.getElementById('scanConfidenceBadge');
       const adviceEl = document.getElementById('scanAdviceText');
+      const scanSpeakBtn = document.getElementById('scanSpeakBtn');
 
       box.classList.add('visible');
+      box.style.borderColor = '';
+      box.style.background = '';
       imgEl.src = URL.createObjectURL(file);
-      titleEl.textContent = 'جاري الفحص والتشخيص...';
-      badgeEl.textContent = 'تحليل الشبكة العصبية';
-      adviceEl.textContent = 'يتم الآن مطابقة الأعراض مع قاعدة البيانات الزراعية...';
+      titleEl.textContent = 'جاري التحقق من صورة النبات والفحص...';
+      titleEl.style.color = '';
+      badgeEl.textContent = 'فلتر النباتات الذكي';
+      badgeEl.style.background = '';
+      badgeEl.style.color = '';
+      adviceEl.textContent = 'يتم التأكد من أن الصورة لورقة نبات ومطابقة الأعراض مع قاعدة البيانات الزراعية...';
+      if (scanSpeakBtn) scanSpeakBtn.style.display = 'none';
 
       const fd = new FormData();
       fd.append('image', file);
@@ -1466,6 +1473,27 @@
         if (!res.ok) throw new Error(data.detail || 'تعذر تحليل الصورة');
 
         const cv = data.cv_result || {};
+        if (data.is_plant === false || cv.is_plant === false || cv.predicted_class === 'Not_A_Plant') {
+          const detectedObj = cv.detected_object_ar || 'صورة غير نباتية';
+          const warnText = data.advice || `⚠️ تنبيه: هذه الصورة ليست لنبات (${detectedObj})! النظام يقبل فقط صور أوراق النباتات والمحاصيل الزراعية.`;
+          box.style.borderColor = 'rgba(220, 38, 38, 0.55)';
+          box.style.background = 'rgba(254, 242, 242, 0.92)';
+          titleEl.textContent = `⚠️ تنبيه: الصورة ليست نباتاً (${detectedObj})`;
+          titleEl.style.color = '#b91c1c';
+          badgeEl.textContent = '❌ يقبل النباتات فقط';
+          badgeEl.style.background = '#fee2e2';
+          badgeEl.style.color = '#b91c1c';
+          adviceEl.innerHTML = formatMarkdown(warnText);
+
+          window._lastScanSpeechText = `يا هندسة خلي بالك، الصورة دي مش صورة نبات، دي ${detectedObj}. النظام هنا بيقبل بس صور ورق النباتات والزراعات عشان يشخصها صح.`;
+          if (scanSpeakBtn) {
+            scanSpeakBtn.style.display = 'inline-flex';
+            scanSpeakBtn.innerHTML = '<span>🔊 اسمع التنبيه بالمصري</span>';
+          }
+          appendMessage('bot', warnText, [], true);
+          return;
+        }
+
         const predAr = cv.predicted_class_ar || cv.predicted_class || data.disease_name_ar || 'تم الفحص';
         const confStr = cv.confidence_str || (cv.confidence ? (cv.confidence * 100).toFixed(1) + '%' : '');
         const adviceText = data.advice || data.rag_recommendations || 'تم التشخيص بنجاح.';
@@ -1475,8 +1503,10 @@
         adviceEl.innerHTML = formatMarkdown(adviceText);
 
         window._lastScanSpeechText = `نتيجة فحص الورقة: ${predAr} بنسبة تأكيد ${confStr}. ${adviceText}`;
-        const scanSpeakBtn = document.getElementById('scanSpeakBtn');
-        if (scanSpeakBtn) scanSpeakBtn.style.display = 'inline-flex';
+        if (scanSpeakBtn) {
+          scanSpeakBtn.style.display = 'inline-flex';
+          scanSpeakBtn.innerHTML = '<span>🔊 اسمع التشخيص والعلاج بالمصري</span>';
+        }
 
         lastDiagnosisSummary = `${predAr} (${confStr})`;
         localStorage.setItem('agri_last_diag', lastDiagnosisSummary);
