@@ -1,198 +1,288 @@
-import os
+import io
 import json
+import os
 import numpy as np
-from PIL import Image
-
-# Ensure KERAS_BACKEND is set to torch for fast PyTorch execution
-os.environ["KERAS_BACKEND"] = "torch"
 
 try:
-    import keras
-    HAS_KERAS = True
+    import tensorflow as tf
+    import cv2
+    HAS_TF_CV2 = True
 except Exception:
-    HAS_KERAS = False
+    HAS_TF_CV2 = False
 
-import torch
-from torchvision import transforms
-from transformers import AutoModelForImageClassification, AutoImageProcessor, AutoFeatureExtractor
+# Exact 30 MVP classes from Zawolf-Corpus-Classifiction.ipynb / HuggingFace Space
+DEFAULT_CLASS_NAMES = [
+    "Apple___Apple_scab",
+    "Apple___Black_rot",
+    "Apple___Cedar_apple_rust",
+    "Apple___healthy",
+    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",
+    "Corn_(maize)___Common_rust_",
+    "Corn_(maize)___Northern_Leaf_Blight",
+    "Corn_(maize)___healthy",
+    "Grape___Black_rot",
+    "Grape___Esca_(Black_Measles)",
+    "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)",
+    "Grape___healthy",
+    "Orange___Haunglongbing_(Citrus_greening)",
+    "Pepper,_bell___Bacterial_spot",
+    "Pepper,_bell___healthy",
+    "Potato___Early_blight",
+    "Potato___Late_blight",
+    "Potato___healthy",
+    "Strawberry___Leaf_scorch",
+    "Strawberry___healthy",
+    "Tomato___Bacterial_spot",
+    "Tomato___Early_blight",
+    "Tomato___Late_blight",
+    "Tomato___Leaf_Mold",
+    "Tomato___Septoria_leaf_spot",
+    "Tomato___Spider_mites Two-spotted_spider_mite",
+    "Tomato___Target_Spot",
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+    "Tomato___Tomato_mosaic_virus",
+    "Tomato___healthy",
+]
+
+ARABIC_CLASS_MAP = {
+    "Apple___Apple_scab": "تفاح — جرب التفاح",
+    "Apple___Black_rot": "تفاح — العفن الأسود",
+    "Apple___Cedar_apple_rust": "تفاح — صدأ أرز التفاح",
+    "Apple___healthy": "تفاح — سليم",
+    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "ذرة — تبقع الأوراق الرمادي (سيركوسبورا)",
+    "Corn_(maize)___Common_rust_": "ذرة — الصدأ الشائع",
+    "Corn_(maize)___Northern_Leaf_Blight": "ذرة — لفحة الأوراق الشمالية",
+    "Corn_(maize)___healthy": "ذرة — سليم",
+    "Grape___Black_rot": "عنب — العفن الأسود",
+    "Grape___Esca_(Black_Measles)": "عنب — مرض إسكا (الحصبة السوداء)",
+    "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": "عنب — تبقع أوراق إيساريوبسيس",
+    "Grape___healthy": "عنب — سليم",
+    "Orange___Haunglongbing_(Citrus_greening)": "برتقال — مرض التخضير (تخضير الحمضيات)",
+    "Pepper,_bell___Bacterial_spot": "فلفل حلو — التبقع البكتيري",
+    "Pepper,_bell___healthy": "فلفل حلو — سليم",
+    "Potato___Early_blight": "بطاطس — اللفحة المبكرة",
+    "Potato___Late_blight": "بطاطس — اللفحة المتأخرة",
+    "Potato___healthy": "بطاطس — سليم",
+    "Strawberry___Leaf_scorch": "فراولة — حرق الأوراق",
+    "Strawberry___healthy": "فراولة — سليم",
+    "Tomato___Bacterial_spot": "طماطم — التبقع البكتيري",
+    "Tomato___Early_blight": "طماطم — اللفحة المبكرة",
+    "Tomato___Late_blight": "طماطم — اللفحة المتأخرة",
+    "Tomato___Leaf_Mold": "طماطم — عفن الأوراق",
+    "Tomato___Septoria_leaf_spot": "طماطم — تبقع أوراق سبتوريا",
+    "Tomato___Spider_mites Two-spotted_spider_mite": "طماطم — العنكبوت الأحمر ذو البقعتين",
+    "Tomato___Target_Spot": "طماطم — البقعة المستهدفة (التارجت)",
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus": "طماطم — فيروس تجعد أوراق الطماطم الصفراء (TYLCV)",
+    "Tomato___Tomato_mosaic_virus": "طماطم — فيروس الموزاييك",
+    "Tomato___healthy": "طماطم — سليم",
+}
 
 
 class PlantDiseaseClassifier:
-    """Plant disease classifier supporting custom fine-tuned EfficientNetV2B2 and MobileNetV2 fallback."""
+    """Plant disease classifier matching AhmedHassan72/Zawolf_Agriculture HuggingFace Space 100%."""
 
-    HF_MODEL_NAME = "linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
+    HF_SPACE_API = "https://ahmedhassan72-zawolf-agriculture.hf.space/predict"
 
     def __init__(self):
         self.use_keras_model = False
-        self.keras_model = None
-        self.hf_model = None
-        self.processor = None
-        self.transform = None
-        self.class_names_ar = {}
+        self.best_model = None
+        self.resnet_model = None
+        self.resnet_classes = []
+        self.resnet_tfm = None
+        self.class_names = list(DEFAULT_CLASS_NAMES)
+        self.class_names_ar = dict(ARABIC_CLASS_MAP)
         self._load_model()
 
     @property
     def model(self):
-        """Property for backwards compatibility with health checks."""
-        return self.keras_model if self.use_keras_model else self.hf_model
+        return self.best_model if self.best_model is not None else True
 
     def _load_model(self):
-        """Load fine-tuned EfficientNetV2B2 Keras model if available, otherwise HuggingFace model."""
-        # 1. Load Arabic class names mapping
-        class_names_path = os.path.join(os.path.dirname(__file__), '..', 'models', 'class_names.json')
-        if os.path.exists(class_names_path):
-            try:
-                with open(class_names_path, 'r', encoding='utf-8') as f:
-                    self.class_names_ar = json.load(f)
-            except Exception as e:
-                print(f"Warning: Failed loading class_names.json: {e}")
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        json_path = os.path.join(base_dir, "..", "models", "class_names.json")
+        model_path = os.path.join(base_dir, "..", "models", "EfficientNetV2B2_best.keras")
 
-        # 2. Try loading local custom Keras EfficientNetV2B2 model
-        keras_model_path = os.path.join(os.path.dirname(__file__), '..', 'models', 'EfficientNetV2B2_best.keras')
-        if HAS_KERAS and os.path.exists(keras_model_path):
-            try:
-                print(f"Loading custom fine-tuned EfficientNetV2B2 model from {keras_model_path}...")
-                self.keras_model = keras.models.load_model(keras_model_path, compile=False)
-                self.use_keras_model = True
-                print("✅ EfficientNetV2B2 Keras model loaded successfully!")
-                return
-            except Exception as e:
-                print(f"Warning: Failed to load custom Keras model: {e}")
-                self.keras_model = None
-                self.use_keras_model = False
+        if os.path.exists(json_path):
+            with open(json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list) and len(data) == 30:
+                    self.class_names = data
 
-        # 3. Fallback: Load HuggingFace MobileNetV2 model
-        try:
-            print("Loading HuggingFace MobileNetV2 fallback model...")
-            self.hf_model = AutoModelForImageClassification.from_pretrained(self.HF_MODEL_NAME)
-            self.hf_model.eval()
+        if HAS_TF_CV2 and os.path.exists(model_path):
+            original_from_config = tf.keras.layers.Dense.from_config
+            @classmethod
+            def patched_from_config(cls, config):
+                if isinstance(config, dict):
+                    config.pop("quantization_config", None)
+                return original_from_config(config)
+            tf.keras.layers.Dense.from_config = patched_from_config
 
+            self.best_model = tf.keras.models.load_model(model_path)
+            self.use_keras_model = True
             try:
-                self.processor = AutoImageProcessor.from_pretrained(self.HF_MODEL_NAME)
+                self.best_model.predict(np.zeros((1, 224, 224, 3), dtype=np.float32), verbose=0)
             except Exception:
-                try:
-                    self.processor = AutoFeatureExtractor.from_pretrained(self.HF_MODEL_NAME)
-                except Exception:
-                    self.processor = None
+                pass
 
-            self.transform = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            ])
-        except Exception as e:
-            print(f"Warning: Could not load HuggingFace fallback model: {e}")
-            self.hf_model = None
-
-    def predict(self, image_path_or_bytes, top_k=3):
-        """Predict plant disease from an image payload.
-        
-        Args:
-            image_path_or_bytes: File path string or BytesIO/bytes file object
-            top_k: Number of top predictions to return
-            
-        Returns:
-            dict with keys: predictions (list of {label, label_ar, confidence}), crop_type, disease_name
-        """
-        if not self.use_keras_model and self.hf_model is None:
-            return self._fallback_prediction()
-
+        # Optional secondary model: ResNet18
+        resnet_path = "/home/azureuser/plant-api/resnet18_plant_disease.pth"
+        resnet_json = "/home/azureuser/plant-api/class_names.json"
         try:
-            # Load PIL Image
-            if isinstance(image_path_or_bytes, str):
-                image = Image.open(image_path_or_bytes).convert('RGB')
-            elif isinstance(image_path_or_bytes, bytes):
-                import io
-                image = Image.open(io.BytesIO(image_path_or_bytes)).convert('RGB')
-            else:
-                image = Image.open(image_path_or_bytes).convert('RGB')
+            if os.path.exists(resnet_path) and os.path.exists(resnet_json):
+                import torch
+                import torch.nn as nn
+                from torchvision import models, transforms
+                with open(resnet_json, encoding="utf-8") as rf:
+                    self.resnet_classes = json.load(rf)["class_names"]
+                _rm = models.resnet18(weights=None)
+                _rm.fc = nn.Linear(_rm.fc.in_features, len(self.resnet_classes))
+                _rm.load_state_dict(torch.load(resnet_path, map_location="cpu"))
+                _rm.eval()
+                self.resnet_model = _rm
+                self.resnet_tfm = transforms.Compose([
+                    transforms.Resize((224, 224)),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+                ])
+        except Exception:
+            pass
 
-            if self.use_keras_model and self.keras_model is not None:
-                # EfficientNetV2B2 Keras prediction
-                resized_img = image.resize((224, 224))
-                img_array = np.array(resized_img, dtype=np.float32)
-                img_batch = np.expand_dims(img_array, axis=0) # (1, 224, 224, 3)
+    def predict(self, image_path_or_bytes, top_k=3, model_choice="EfficientNetV2B2"):
+        if isinstance(image_path_or_bytes, str):
+            with open(image_path_or_bytes, "rb") as f:
+                contents = f.read()
+        elif isinstance(image_path_or_bytes, bytes):
+            contents = image_path_or_bytes
+        else:
+            if hasattr(image_path_or_bytes, "seek"):
+                image_path_or_bytes.seek(0)
+            contents = image_path_or_bytes.read()
 
-                probs = self.keras_model.predict(img_batch, verbose=0)[0]
-                top_indices = np.argsort(probs)[::-1][:top_k]
+        if model_choice == "ResNet18" and self.resnet_model is not None:
+            import torch
+            from PIL import Image
+            img = Image.open(io.BytesIO(contents)).convert("RGB")
+            with torch.inference_mode():
+                probs = torch.softmax(self.resnet_model(self.resnet_tfm(img).unsqueeze(0)), dim=1)[0]
+            conf, idx = torch.topk(probs, min(top_k, len(probs)))
+            top_3_results = []
+            detailed_predictions = []
+            for c, i in zip(conf, idx):
+                raw_label = self.resnet_classes[int(i)]
+                label_ar = self.class_names_ar.get(raw_label, raw_label)
+                prob_val = float(c.item())
+                confidence_val = float(prob_val * 100.0)
+                top_3_results.append({
+                    "class": raw_label,
+                    "confidence": f"{confidence_val:.2f}%"
+                })
+                detailed_predictions.append({
+                    "class": raw_label,
+                    "label": raw_label,
+                    "label_ar": label_ar,
+                    "name": f"{raw_label} ({label_ar})",
+                    "confidence": round(prob_val, 4),
+                    "confidence_percent": round(confidence_val, 2),
+                    "confidence_str": f"{confidence_val:.2f}%"
+                })
+            top_pred = detailed_predictions[0]
+            crop_type, _ = self._parse_label(top_pred["label"])
+            crop_ar, disease_ar = self._parse_label(top_pred["label_ar"])
+            return {
+                "top_predictions": top_3_results,
+                "predicted_class": top_pred["label"],
+                "predicted_class_ar": top_pred["label_ar"],
+                "confidence": top_pred["confidence_percent"],
+                "confidence_str": top_pred["confidence_str"],
+                "predictions": detailed_predictions,
+                "crop_type": crop_type,
+                "crop_type_ar": crop_ar,
+                "disease_name": f"{top_pred['label']} ({disease_ar})",
+                "top_confidence": top_pred["confidence"],
+                "model_used": "ResNet18",
+            }
 
-                predictions = []
-                for idx in top_indices:
-                    prob = float(probs[idx])
-                    label = f"class_{idx}"
-                    label_ar = self.class_names_ar.get(label, self.class_names_ar.get(str(idx), f"فئة زراعية #{idx}"))
-                    predictions.append({
-                        'label': label_ar if label_ar else label,
-                        'label_ar': label_ar,
-                        'confidence': round(prob, 4)
-                    })
+        if self.best_model is not None and HAS_TF_CV2:
+            nparr = np.frombuffer(contents, np.uint8)
+            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if image is None:
+                raise ValueError("Invalid image file.")
 
-                top_label = predictions[0]['label_ar'] if predictions else 'unknown'
-                crop_type, disease_name = self._parse_label(top_label)
+            image_resized = cv2.resize(image, (224, 224))
+            image_rgb = cv2.cvtColor(image_resized, cv2.COLOR_BGR2RGB)
 
-                return {
-                    'predictions': predictions,
-                    'crop_type': crop_type,
-                    'disease_name': disease_name,
-                    'top_confidence': predictions[0]['confidence'] if predictions else 0.0,
-                    'model_used': 'EfficientNetV2B2_best'
-                }
-            else:
-                # HuggingFace MobileNetV2 prediction
-                if self.processor is not None:
-                    inputs = self.processor(images=image, return_tensors='pt')
-                else:
-                    inputs = {'pixel_values': self.transform(image).unsqueeze(0)}
+            img_array = np.expand_dims(image_rgb, axis=0).astype(np.float32)
+            predictions = self.best_model.predict(img_array, verbose=0)
 
-                with torch.no_grad():
-                    outputs = self.hf_model(**inputs)
-                    logits = outputs.logits
-                    probs = torch.nn.functional.softmax(logits, dim=-1)
+            score = tf.nn.softmax(predictions[0]) if np.max(predictions[0]) > 1.0 else predictions[0]
+            score_np = score.numpy() if hasattr(score, "numpy") else np.array(score)
 
-                top_probs, top_indices = torch.topk(probs[0], min(top_k, len(probs[0])))
+            top_indices = np.argsort(score_np)[::-1][:top_k]
 
-                predictions = []
-                for prob, idx in zip(top_probs, top_indices):
-                    label = self.hf_model.config.id2label.get(idx.item(), f"class_{idx.item()}")
-                    label_ar = self.class_names_ar.get(label, label)
-                    predictions.append({
-                        'label': label,
-                        'label_ar': label_ar,
-                        'confidence': round(prob.item(), 4)
-                    })
+            top_3_results = []
+            detailed_predictions = []
+            for idx in top_indices:
+                raw_label = self.class_names[int(idx)]
+                label_ar = self.class_names_ar.get(raw_label, raw_label)
+                prob_val = float(score_np[idx])
+                confidence_val = float(score_np[idx] * 100)
+                top_3_results.append({
+                    "class": raw_label,
+                    "confidence": f"{confidence_val:.2f}%"
+                })
+                detailed_predictions.append({
+                    "class": raw_label,
+                    "label": raw_label,
+                    "label_ar": label_ar,
+                    "name": f"{raw_label} ({label_ar})",
+                    "confidence": round(prob_val, 4),
+                    "confidence_percent": round(confidence_val, 2),
+                    "confidence_str": f"{confidence_val:.2f}%"
+                })
+        else:
+            import requests
+            r = requests.post(self.HF_SPACE_API, files={"file": ("image.jpg", contents, "image/jpeg")}, timeout=20)
+            r.raise_for_status()
+            top_3_results = r.json().get("top_predictions", [])
+            detailed_predictions = []
+            for item in top_3_results:
+                raw_label = item["class"]
+                conf_str = item["confidence"]
+                conf_pct = float(conf_str.replace("%", ""))
+                label_ar = self.class_names_ar.get(raw_label, raw_label)
+                detailed_predictions.append({
+                    "class": raw_label,
+                    "label": raw_label,
+                    "label_ar": label_ar,
+                    "name": f"{raw_label} ({label_ar})",
+                    "confidence": round(conf_pct / 100.0, 4),
+                    "confidence_percent": round(conf_pct, 2),
+                    "confidence_str": conf_str
+                })
 
-                top_label = predictions[0]['label'] if predictions else 'unknown'
-                crop_type, disease_name = self._parse_label(top_label)
+        top_pred = detailed_predictions[0]
+        crop_type, _ = self._parse_label(top_pred["label"])
+        crop_ar, disease_ar = self._parse_label(top_pred["label_ar"])
 
-                return {
-                    'predictions': predictions,
-                    'crop_type': crop_type,
-                    'disease_name': disease_name,
-                    'top_confidence': predictions[0]['confidence'] if predictions else 0.0,
-                    'model_used': 'MobileNetV2_HuggingFace'
-                }
-        except Exception as e:
-            print(f"Prediction error: {e}")
-            return self._fallback_prediction()
+        return {
+            "top_predictions": top_3_results,
+            "predicted_class": top_pred["label"],
+            "predicted_class_ar": top_pred["label_ar"],
+            "confidence": top_pred["confidence_percent"],
+            "confidence_str": top_pred["confidence_str"],
+            "predictions": detailed_predictions,
+            "crop_type": crop_type,
+            "crop_type_ar": crop_ar,
+            "disease_name": f"{top_pred['label']} ({disease_ar})",
+            "top_confidence": top_pred["confidence"],
+            "model_used": "EfficientNetV2B2_best.keras",
+        }
 
     def _parse_label(self, label):
-        """Parse PlantVillage label format 'Crop___Disease' into (crop, disease)."""
-        if '—' in label:
-            parts = label.split('—')
+        if "—" in label:
+            parts = label.split("—")
             return parts[0].strip(), parts[1].strip()
-        elif '___' in label:
-            parts = label.split('___')
-            return parts[0].strip(), parts[1].strip().replace('_', ' ')
-        elif '__' in label:
-            parts = label.split('__')
-            return parts[0].strip(), parts[1].strip().replace('_', ' ')
-        return label, 'unknown'
-
-    def _fallback_prediction(self):
-        """Return a safe fallback when model is unavailable."""
-        return {
-            'predictions': [{'label': 'model_unavailable', 'label_ar': 'النموذج غير متاح', 'confidence': 0.0}],
-            'crop_type': 'unknown',
-            'disease_name': 'unknown',
-            'top_confidence': 0.0
-        }
+        elif "___" in label:
+            parts = label.split("___")
+            return parts[0].strip(), parts[1].strip().replace("_", " ")
+        return label, "unknown"

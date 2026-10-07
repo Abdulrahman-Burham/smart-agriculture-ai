@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>لوحة مراقبة المطور السرية — Developer Telemetry & Active Learning</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0b1120;
+            --bg-card: #111827;
+            --bg-card-hover: #1e293b;
+            --border-color: #1f2937;
+            --accent-green: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 60px;
+        }
+        header {
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            border-bottom: 1px solid rgba(16, 185, 129, 0.25);
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-badge {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid var(--accent-green);
+            color: #34d399;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background: #1e293b;
+            color: var(--text-main);
+            border: 1px solid #334155;
+            padding: 7px 13px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { background: #334155; }
+        .btn-primary {
+            background: var(--accent-green);
+            color: #052e16;
+            border-color: var(--accent-green);
+            font-weight: 700;
+        }
+        .btn-primary:hover { background: #34d399; }
+        .btn-purple {
+            background: rgba(139, 92, 246, 0.2);
+            color: #c4b5fd;
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+        .btn-purple:hover { background: rgba(139, 92, 246, 0.35); }
+        .btn-blue {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+        .btn-blue:hover { background: rgba(59, 130, 246, 0.35); }
+
+        .container {
+            max-width: 1500px;
+            margin: 24px auto;
+            padding: 0 20px;
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px 18px;
+        }
+        .kpi-label {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            margin-bottom: 4px;
+        }
+        .kpi-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+        .kpi-sub {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Analytics Panels Grid */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 18px 20px;
+        }
+        .panel-title {
+            font-size: 0.96rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .bar-row { margin-bottom: 9px; }
+        .bar-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            margin-bottom: 3px;
+        }
+        .bar-track {
+            background: #1e293b;
+            height: 7px;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            height: 100%;
+            border-radius: 99px;
+        }
+
+        /* Tabs */
+        .tabs-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tabs-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: #111827;
+            color: var(--text-muted);
+            border: 1px solid #1f2937;
+            padding: 9px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.88rem;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: rgba(16, 185, 129, 0.16);
+            color: #34d399;
+            border-color: var(--accent-green);
+        }
+        .search-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-family: inherit;
+            min-width: 260px;
+            font-size: 0.86rem;
+        }
+
+        /* Tables */
+        .table-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: right;
+            font-size: 0.84rem;
+        }
+        th, td {
+            padding: 11px 12px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+        th {
+            background: #0f172a;
+            color: var(--text-muted);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        tr:hover td {
+            background: rgba(30, 41, 59, 0.45);
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .badge-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .badge-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-red { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-purple { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3); }
+
+        .thumb-img {
+            width: 78px;
+            height: 78px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid #334155;
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+        .thumb-img:hover {
+            transform: scale(1.08);
+            border-color: var(--accent-green);
+        }
+        .text-scroll {
+            max-height: 105px;
+            overflow-y: auto;
+            max-width: 400px;
+            white-space: pre-wrap;
+            font-size: 0.81rem;
+            color: #cbd5e1;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 7px 9px;
+            border-radius: 8px;
+            border: 1px solid #1e293b;
+        }
+        .mono {
+            font-family: monospace;
+            direction: ltr;
+            display: inline-block;
+            color: #93c5fd;
+        }
+        .verify-input {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #f8fafc;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.78rem;
+            width: 155px;
+        }
+        .tab-section { display: none; }
+        .tab-section.active { display: block; }
+
+        /* Lightbox Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: #111827;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        /* Multi-device Responsive Styles */
+        @media (max-width: 1024px) {
+            header {
+                padding: 14px 18px;
+                position: static;
+            }
+            .container {
+                margin: 16px auto;
+                padding: 0 14px;
+            }
+            .kpi-grid {
+                grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+                gap: 10px;
+            }
+            .insights-grid {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 12px 14px;
+                gap: 10px;
+            }
+            .brand {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .brand h1 {
+                font-size: 0.98rem !important;
+                line-height: 1.4;
+            }
+            .header-actions {
+                width: 100%;
+                justify-content: flex-start;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+            }
+            .header-actions .btn {
+                white-space: nowrap;
+                flex-shrink: 0;
+                font-size: 0.78rem;
+                padding: 6px 10px;
+            }
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .kpi-card {
+                padding: 12px 14px;
+            }
+            .kpi-value {
+                font-size: 1.38rem;
+            }
+            .insights-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .panel {
+                padding: 14px;
+            }
+            .tabs-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            .tabs-group {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+            }
+            .tab-btn {
+                white-space: nowrap;
+                flex-shrink: 0;
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+            .search-box {
+                width: 100%;
+                min-width: 0;
+                font-size: 16px;
+            }
+            .table-wrap {
+                border-radius: 10px;
+                -webkit-overflow-scrolling: touch;
+            }
+            th, td {
+                padding: 9px 10px;
+                font-size: 0.78rem;
+            }
+            .modal-overlay {
+                padding: 12px;
+            }
+            .modal-box {
+                padding: 14px;
+                max-height: 92dvh;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <span style="font-size: 1.6rem;">🛡️</span>
+        <div>
+            <h1 style="font-size: 1.15rem; font-weight: 800;">لوحة المراقبة، التحليل الجنائي للصور، والتعلم النشط (Developer Telemetry & Active Learning)</h1>
+            <div style="font-size: 0.76rem; color: var(--text-muted);">تسجيل سري 100% للزوار، الشبكات، جودة الصور، فجوات الـ RAG، وتصدير مجموعات التدريب</div>
+        </div>
+        <span class="brand-badge">🔒 وضع المطور فقط</span>
+    </div>
+    <div class="header-actions">
+        <span id="lastUpdated" style="font-size: 0.78rem; color: var(--text-muted);"></span>
+        <button class="btn btn-primary" onclick="loadAnalytics()">🔄 تحديث</button>
+        <a id="exportDatasetZipBtn" class="btn btn-purple" href="#" target="_blank">📦 تحميل Dataset الصور للتدريب (ZIP)</a>
+        <a id="exportFinetuneBtn" class="btn btn-blue" href="#" target="_blank">🤖 تحميل تدريب الشات (JSONL)</a>
+        <a id="exportCsvUsersBtn" class="btn" href="#" target="_blank">👥 المسجلين CSV</a>
+        <a id="exportCsvChatsBtn" class="btn" href="#" target="_blank">📊 الشات CSV</a>
+        <a id="exportCsvImagesBtn" class="btn" href="#" target="_blank">🖼️ الصور CSV</a>
+        <a id="exportJsonBtn" class="btn" href="#" target="_blank">📥 JSON</a>
+    </div>
+</header>
+
+<div class="container">
+    <!-- KPIs -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-label">🌐 إجمالي الزيارات والمستخدمين المسجلين</div>
+            <div class="kpi-value" id="kpiTotalVisits">-</div>
+            <div class="kpi-sub">حسابات مسجلة: <strong id="kpiTotalUsers" style="color:#34d399;">0</strong> | زوار فريدون: <strong id="kpiUniqueVisitors">-</strong> (<span id="kpiUniqueIps">-</span> IP)</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">💬 محادثات الشات الزراعي</div>
+            <div class="kpi-value" id="kpiTotalChats" style="color: #34d399;">-</div>
+            <div class="kpi-sub">متوسط الرد: <strong id="kpiAvgChatMs">-</strong> | فجوات المراجع: <strong id="kpiKnowledgeGaps" style="color:#fbbf24;">0</strong></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">📸 الصور المحفوظة للتدريب</div>
+            <div class="kpi-value" id="kpiTotalImages" style="color: #60a5fa;">-</div>
+            <div class="kpi-sub">متوسط الفحص: <strong id="kpiAvgImgMs">-</strong> | تم تأكيدها: <strong id="kpiVerifiedImages" style="color:#34d399;">0</strong></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">🎯 صور تحتاج مراجعة (Active Learning)</div>
+            <div class="kpi-value" id="kpiUncertainImages" style="color: #fbbf24;">-</div>
+            <div class="kpi-sub">ثقة منخفضة أو تشابه بين مرضين | أخطاء: <strong id="kpiTotalErrors" style="color:#f87171;">0</strong></div>
+        </div>
+    </div>
+
+    <!-- Insights -->
+    <div class="insights-grid">
+        <div class="panel">
+            <div class="panel-title">⏰ أوقات الذروة والضغط (حسب الساعة)</div>
+            <div id="peakHoursList">جاري التحميل...</div>
+        </div>
+        <div class="panel">
+            <div class="panel-title">🌾 تصنيف موضوعات الأسئلة وأكثر الأمراض</div>
+            <div id="topTopicsList">جاري التحميل...</div>
+        </div>
+        <div class="panel">
+            <div class="panel-title">📱 أجهزة الزوار، المدن، وشركات الإنترنت (ISP)</div>
+            <div id="devicesAndIpsList">جاري التحميل...</div>
+        </div>
+        <div class="panel">
+            <div class="panel-title">🔑 تدوير مفاتيح Gemini API (Key Rotation Pool)</div>
+            <div id="geminiKeysStatus" style="font-size:0.84rem; color:#cbd5e1; margin-bottom:10px;">جاري فحص المفاتيح...</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <input type="password" id="newGeminiKeyInput" class="verify-input" style="flex:1; min-width:160px;" placeholder="أضف مفتاح احتياطي AIzaSy...">
+                <button type="button" class="btn btn-primary" onclick="addBackupGeminiKey()">➕ إضافة للتدوير</button>
+            </div>
+            <div style="font-size:0.74rem; color:var(--text-muted); margin-top:6px;">
+                يتم التبديل التلقائي (Round-Robin + Failover) بين المفاتيح في محرك Agri-RAG وتحويل الصوت المصري STT لمنع توقف الخدمة عند زيادة الضغط.
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs & Search -->
+    <div class="tabs-bar">
+        <div class="tabs-group">
+            <button class="tab-btn active" onclick="switchTab('chats', this)">💬 سجل أسئلة الشات (<span id="countChats">0</span>)</button>
+            <button class="tab-btn" id="tabBtnImages" onclick="switchTab('images', this)">🖼️ الصور المرفوعة + فحص الجودة والتدريب (<span id="countImages">0</span>)</button>
+            <button class="tab-btn" onclick="switchTab('users', this)">👥 المستخدمين المسجلين (<span id="countUsers">0</span>)</button>
+            <button class="tab-btn" onclick="switchTab('visits', this)">🌐 حركة الزوار والشبكات (<span id="countVisits">0</span>)</button>
+            <button class="tab-btn" onclick="switchTab('errors', this)">⚠️ سجل الأخطاء (<span id="countErrors">0</span>)</button>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button class="btn" onclick="filterUncertainOnly()" id="uncertainFilterBtn">🎯 عرض الصور غير المؤكدة فقط</button>
+            <input type="text" id="globalSearch" class="search-box" placeholder="🔍 ابحث (اسم، موبايل، إيميل، سؤال، مرض، IP...)" oninput="filterTables()">
+        </div>
+    </div>
+
+    <!-- Tab 1: Chats -->
+    <div id="tab-chats" class="tab-section active">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الوقت</th>
+                        <th>المستخدم / الزائر (IP / المدينة / الجهاز)</th>
+                        <th>الموضوع والمحصول</th>
+                        <th>سؤال المستخدم</th>
+                        <th>إجابة الموديل والمراجع</th>
+                        <th>التقييم والأداء</th>
+                    </tr>
+                </thead>
+                <tbody id="chatsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab 2: Images -->
+    <div id="tab-images" class="tab-section">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الصورة</th>
+                        <th>المستخدم / الزائر والشبكة</th>
+                        <th>فحص جودة الصورة (Forensics)</th>
+                        <th>تشخيص الموديل وهامش الثقة</th>
+                        <th>التعلم النشط (تأكيد / تصحيح الفئة للتدريب)</th>
+                        <th>التوصية العلاجية</th>
+                    </tr>
+                </thead>
+                <tbody id="imagesTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab 3: Registered Users -->
+    <div id="tab-users" class="tab-section">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الاسم والصلاحية</th>
+                        <th>رقم الموبايل / البريد الإلكتروني</th>
+                        <th>المحافظة والمحصول الأساسي</th>
+                        <th>النشاط (صور مفحوصة / استشارات)</th>
+                        <th>مرات الدخول وآخر ظهور</th>
+                        <th>الجهاز وعنوان IP</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab 4: Visits -->
+    <div id="tab-visits" class="tab-section">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الوقت</th>
+                        <th>المستخدم / عنوان IP والمدينة والشبكة (ISP)</th>
+                        <th>نوع الجهاز والمتصفح</th>
+                        <th>المسار (Endpoint)</th>
+                        <th>الحالة</th>
+                        <th>زمن الاستجابة</th>
+                    </tr>
+                </thead>
+                <tbody id="visitsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab 5: Errors -->
+    <div id="tab-errors" class="tab-section">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الوقت</th>
+                        <th>المسار (Endpoint)</th>
+                        <th>الزائر (IP / الجهاز)</th>
+                        <th>نوع الخطأ والرسالة</th>
+                        <th>التفاصيل التقنية (Traceback)</th>
+                    </tr>
+                </thead>
+                <tbody id="errorsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Image Preview Modal -->
+<div class="modal-overlay" id="imgModal" onclick="closeModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 id="modalTitle" style="font-size:1.05rem;">معاينة الصورة المرفوعة</h3>
+            <button class="btn" onclick="closeModal()">✕ إغلاق</button>
+        </div>
+        <div style="text-align:center;">
+            <img id="modalImg" src="" style="max-width:100%; max-height:65vh; border-radius:12px; border:1px solid #334155;">
+        </div>
+        <div id="modalMeta" style="margin-top:12px; font-size:0.9rem; color:#cbd5e1;"></div>
+    </div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const DEV_KEY = urlParams.get('key') || '';
+    let onlyUncertainMode = false;
+
+    document.getElementById('exportDatasetZipBtn').href = `/api/dev/export/dataset_zip?key=${encodeURIComponent(DEV_KEY)}`;
+    document.getElementById('exportFinetuneBtn').href = `/api/dev/export/finetune_jsonl?key=${encodeURIComponent(DEV_KEY)}`;
+    document.getElementById('exportJsonBtn').href = `/api/dev/export/json?key=${encodeURIComponent(DEV_KEY)}`;
+    document.getElementById('exportCsvUsersBtn').href = `/api/dev/export/users_csv?key=${encodeURIComponent(DEV_KEY)}`;
+    document.getElementById('exportCsvChatsBtn').href = `/api/dev/export/chats_csv?key=${encodeURIComponent(DEV_KEY)}`;
+    document.getElementById('exportCsvImagesBtn').href = `/api/dev/export/images_csv?key=${encodeURIComponent(DEV_KEY)}`;
+
+    function esc(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function switchTab(name, btn) {
+        document.querySelectorAll('.tab-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    function openImageModal(imgId, title, metaText) {
+        document.getElementById('modalImg').src = `/api/dev/image/${imgId}?key=${encodeURIComponent(DEV_KEY)}`;
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalMeta').innerHTML = metaText;
+        document.getElementById('imgModal').classList.add('open');
+    }
+
+    function closeModal() {
+        document.getElementById('imgModal').classList.remove('open');
+    }
+
+    async function saveVerifiedLabel(imgId, defaultClass) {
+        const inputEl = document.getElementById(`verify-input-${imgId}`);
+        const notesEl = document.getElementById(`verify-notes-${imgId}`);
+        const labelVal = (inputEl && inputEl.value.trim()) ? inputEl.value.trim() : defaultClass;
+        const notesVal = notesEl ? notesEl.value.trim() : '';
+
+        const res = await fetch(`/api/dev/verify-image?key=${encodeURIComponent(DEV_KEY)}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                image_id: imgId,
+                verified_label: labelVal,
+                developer_notes: notesVal
+            })
+        });
+        if (res.ok) {
+            loadAnalytics();
+        }
+    }
+
+    function filterUncertainOnly() {
+        onlyUncertainMode = !onlyUncertainMode;
+        const btn = document.getElementById('uncertainFilterBtn');
+        btn.style.borderColor = onlyUncertainMode ? '#f59e0b' : '#334155';
+        btn.style.color = onlyUncertainMode ? '#fbbf24' : '#f8fafc';
+        if (onlyUncertainMode) {
+            const imgTabBtn = document.getElementById('tabBtnImages');
+            if (imgTabBtn) switchTab('images', imgTabBtn);
+        }
+        filterTables();
+    }
+
+    async function loadGeminiKeys() {
+        const box = document.getElementById('geminiKeysStatus');
+        if (!box) return;
+        try {
+            const res = await fetch(`/api/dev/gemini-keys?key=${encodeURIComponent(DEV_KEY)}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            const badges = (data.masked_keys || []).map(k => `<span class="badge badge-green mono" style="margin:2px;">${esc(k)}</span>`).join(' ');
+            box.innerHTML = `عدد المفاتيح النشطة: <strong>${data.count || 0}</strong> | الموديل: <span class="badge badge-blue">${esc(data.primary_model || 'gemini-2.5-flash')}</span><div style="margin-top:6px;">${badges}</div>`;
+        } catch (e) {}
+    }
+
+    async function addBackupGeminiKey() {
+        const inp = document.getElementById('newGeminiKeyInput');
+        if (!inp || !inp.value.trim()) return;
+        const res = await fetch(`/api/dev/gemini-keys?key=${encodeURIComponent(DEV_KEY)}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ api_key: inp.value.trim() })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            alert(data.detail || 'مفتاح غير صالح');
+            return;
+        }
+        inp.value = '';
+        loadGeminiKeys();
+    }
+
+    function renderBars(items, labelKey, countKey) {
+        if (!items || !items.length) return '<div style="color:var(--text-muted); font-size:0.82rem;">لا توجد بيانات مسجلة بعد</div>';
+        const maxVal = Math.max(...items.map(i => i[countKey] || 1), 1);
+        return items.map(item => {
+            const pct = Math.round(((item[countKey] || 0) / maxVal) * 100);
+            return `
+                <div class="bar-row">
+                    <div class="bar-header">
+                        <span>${esc(item[labelKey])}</span>
+                        <strong>${item[countKey]}</strong>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:${pct}%"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function loadAnalytics() {
+        try {
+            const res = await fetch(`/api/dev/analytics?limit=150&key=${encodeURIComponent(DEV_KEY)}`);
+            if (!res.ok) throw new Error('Failed to load telemetry');
+            const data = await res.json();
+
+            // KPIs
+            const k = data.kpis || {};
+            document.getElementById('kpiTotalVisits').textContent = k.total_visits ?? 0;
+            document.getElementById('kpiTotalUsers').textContent = k.total_users ?? 0;
+            document.getElementById('kpiUniqueVisitors').textContent = k.unique_visitors ?? 0;
+            document.getElementById('kpiUniqueIps').textContent = k.unique_ips ?? 0;
+            document.getElementById('kpiTotalChats').textContent = k.total_chats ?? 0;
+            document.getElementById('kpiAvgChatMs').textContent = ((k.avg_chat_latency_ms || 0) / 1000).toFixed(2) + 's';
+            document.getElementById('kpiKnowledgeGaps').textContent = k.knowledge_gaps ?? 0;
+            document.getElementById('kpiTotalImages').textContent = k.total_images ?? 0;
+            document.getElementById('kpiAvgImgMs').textContent = ((k.avg_image_latency_ms || 0) / 1000).toFixed(2) + 's';
+            document.getElementById('kpiVerifiedImages').textContent = k.verified_images ?? 0;
+            document.getElementById('kpiUncertainImages').textContent = k.uncertain_images ?? 0;
+            document.getElementById('kpiTotalErrors').textContent = k.total_errors ?? 0;
+
+            // Insights
+            document.getElementById('peakHoursList').innerHTML = renderBars(data.peak_hours || [], 'hour', 'count');
+
+            const topicsHtml = renderBars((data.top_chat_topics || []).slice(0, 4), 'topic', 'count');
+            const diseasesHtml = renderBars((data.top_diseases || []).slice(0, 4), 'disease', 'count');
+            document.getElementById('topTopicsList').innerHTML = `
+                <div style="font-size:0.78rem; color:#34d399; margin-bottom:5px; font-weight:700;">توزيع موضوعات أسئلة المزارعين:</div>
+                ${topicsHtml}
+                <div style="font-size:0.78rem; color:#60a5fa; margin:10px 0 5px; font-weight:700;">أكثر الأمراض المكتشفة بالصور:</div>
+                ${diseasesHtml}
+            `;
+
+            const devHtml = renderBars((data.devices_breakdown || []).slice(0, 4), 'device', 'count');
+            const ipsHtml = (data.top_visitors || []).slice(0, 5).map(v =>
+                `<div style="display:flex; justify-content:space-between; font-size:0.78rem; padding:4px 0; border-bottom:1px dashed #1e293b;">
+                    <span>
+                        <span class="mono">${esc(v.client_ip)}</span>
+                        <span style="color:#34d399;">${v.geo_city ? '📍 ' + esc(v.geo_city) : ''}</span>
+                        <span style="color:var(--text-muted);">${v.isp ? '(' + esc(v.isp) + ')' : ''}</span>
+                    </span>
+                    <span class="badge badge-blue">${v.hits} طلب</span>
+                </div>`
+            ).join('');
+            document.getElementById('devicesAndIpsList').innerHTML = `
+                ${devHtml}
+                <div style="font-size:0.78rem; color:#fbbf24; margin:10px 0 5px; font-weight:700;">أنشط الزوار ومواقعهم الجغرافية:</div>
+                ${ipsHtml || '<div style="color:var(--text-muted); font-size:0.8rem;">لا توجد عناوين IP بعد</div>'}
+            `;
+
+            const chats = data.recent_chats || [];
+            const images = data.recent_images || [];
+            const users = data.registered_users || [];
+            const visits = data.recent_visits || [];
+            const errors = data.recent_errors || [];
+
+            document.getElementById('countChats').textContent = chats.length;
+            document.getElementById('countImages').textContent = images.length;
+            document.getElementById('countUsers').textContent = users.length;
+            document.getElementById('countVisits').textContent = visits.length;
+            document.getElementById('countErrors').textContent = errors.length;
+
+            // Render Registered Users Table
+            document.getElementById('usersTableBody').innerHTML = users.map(u => `
+                <tr class="searchable-row">
+                    <td><strong>#${u.id}</strong></td>
+                    <td>
+                        <div style="font-weight:700; color:#f8fafc;">👤 ${esc(u.full_name)}</div>
+                        <span class="badge ${u.role === 'admin' ? 'badge-purple' : 'badge-green'}">${u.role === 'admin' ? '🛡️ Admin Developer' : '🌾 مزارع مسجل'}</span>
+                    </td>
+                    <td>
+                        <div class="mono" style="font-weight:700;">${esc(u.identifier)}</div>
+                        ${u.phone ? `<div style="font-size:0.75rem; color:#34d399;">📱 ${esc(u.phone)}</div>` : ''}
+                        ${u.email ? `<div style="font-size:0.75rem; color:#60a5fa;">✉️ ${esc(u.email)}</div>` : ''}
+                    </td>
+                    <td>
+                        <span class="badge badge-blue">📍 ${esc(u.governorate || 'القاهرة')}</span>
+                        ${u.primary_crop ? `<div style="margin-top:4px;"><span class="badge badge-green">🌾 ${esc(u.primary_crop)}</span></div>` : ''}
+                    </td>
+                    <td>
+                        <span class="badge badge-blue">📸 صور: ${u.images_count || 0}</span>
+                        <span class="badge badge-green" style="margin-right:4px;">💬 شات: ${u.chats_count || 0}</span>
+                    </td>
+                    <td style="font-size:0.76rem;">
+                        <div>مرات الدخول: <strong>${u.login_count || 1}</strong></div>
+                        <div style="color:var(--text-muted);">آخر دخول: ${esc(u.last_login_at)}</div>
+                        <div style="color:var(--text-muted);">تاريخ التسجيل: ${esc(u.created_at)}</div>
+                    </td>
+                    <td style="font-size:0.75rem;">
+                        <div class="mono">${esc(u.client_ip || '-')}</div>
+                        <div style="color:#34d399;">${u.geo_city ? '📍 ' + esc(u.geo_city) : ''}</div>
+                        <div style="color:var(--text-muted);">${esc(u.device_type || '')}</div>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="7" style="text-align:center; padding:24px;">لا يوجد مستخدمون مسجلون بعد</td></tr>';
+
+            // Render Chats Table
+            document.getElementById('chatsTableBody').innerHTML = chats.map(c => `
+                <tr class="searchable-row">
+                    <td><strong>#${c.id}</strong></td>
+                    <td style="white-space:nowrap;">${esc(c.created_at)}</td>
+                    <td>
+                        ${c.user_name ? `<div style="margin-bottom:3px;"><span class="badge badge-green">👤 ${esc(c.user_name)} (${esc(c.user_identifier)})</span></div>` : ''}
+                        <div class="mono">${esc(c.client_ip || 'local')}</div>
+                        <div style="font-size:0.75rem; color:#34d399;">${c.geo_city ? '📍 ' + esc(c.geo_city) : ''} ${c.isp ? '— ' + esc(c.isp) : ''}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">${esc(c.device_type)}</div>
+                    </td>
+                    <td>
+                        <span class="badge badge-purple">${esc(c.topic_category || '🌾 استشارة عامة')}</span>
+                        <div style="margin-top:4px;"><span class="badge badge-green">${esc(c.crop || 'عام')}</span></div>
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:3px;">محافظة: ${esc(c.location || 'القاهرة')}</div>
+                    </td>
+                    <td><div class="text-scroll" style="color:#fef08a; font-weight:600;">${esc(c.user_query)}</div></td>
+                    <td>
+                        <div class="text-scroll">${esc(c.bot_answer || c.error_message)}</div>
+                        <div style="font-size:0.73rem; color:#34d399; margin-top:4px;">${esc((c.sources || []).join(' | '))}</div>
+                    </td>
+                    <td style="white-space:nowrap;">
+                        <span class="badge ${c.status === 'success' ? 'badge-green' : 'badge-red'}">${esc(c.rag_engine)}</span>
+                        ${c.is_knowledge_gap ? '<div style="margin-top:4px;"><span class="badge badge-amber">⚠️ فجوة مراجع</span></div>' : ''}
+                        <div style="font-size:0.78rem; margin-top:4px;">⏱️ ${((c.latency_ms || 0)/1000).toFixed(2)}s</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">ثقة: ${Math.round((c.confidence || 0)*100)}%</div>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="7" style="text-align:center; padding:24px;">لا توجد محادثات مسجلة بعد</td></tr>';
+
+            // Render Images Table
+            document.getElementById('imagesTableBody').innerHTML = images.map(img => {
+                const top3 = (img.top_predictions || []).map(p => `${p.class_ar || p.class}: ${p.confidence || (p.probability ? (p.probability*100).toFixed(1)+'%' : '')}`).join(' | ');
+                const isUncertain = img.is_uncertain === 1;
+                const verified = img.verified_label || '';
+                return `
+                <tr class="searchable-row" data-uncertain="${isUncertain ? '1' : '0'}">
+                    <td>
+                        <strong>#${img.id}</strong>
+                        <div style="font-size:0.72rem; color:var(--text-muted); white-space:nowrap;">${esc(img.created_at)}</div>
+                    </td>
+                    <td>
+                        <img class="thumb-img" src="/api/dev/image/${img.id}?key=${encodeURIComponent(DEV_KEY)}"
+                             onclick="openImageModal(${img.id}, '${esc(img.predicted_class_ar || img.predicted_class)}', '${esc(top3)}')"
+                             alt="leaf">
+                    </td>
+                    <td>
+                        ${img.user_name ? `<div style="margin-bottom:3px;"><span class="badge badge-green">👤 ${esc(img.user_name)} (${esc(img.user_identifier)})</span></div>` : ''}
+                        <div class="mono">${esc(img.client_ip || 'local')}</div>
+                        <div style="font-size:0.75rem; color:#34d399;">${img.geo_city ? '📍 ' + esc(img.geo_city) : ''}</div>
+                        <div style="font-size:0.73rem; color:var(--text-muted);">${esc(img.isp || '')}</div>
+                        <div style="font-size:0.74rem; color:var(--text-muted);">${esc(img.device_type)}</div>
+                    </td>
+                    <td style="font-size:0.76rem;">
+                        <div>📐 <strong>${img.width || '?'}×${img.height || '?'}</strong> (${img.file_size_kb || '?'} KB)</div>
+                        <div>🔍 حدة (Blur): <strong>${img.blur_score ?? '-'}</strong> | ☀️ إضاءة: <strong>${img.brightness_score ?? '-'}</strong></div>
+                        <div>🌿 نسبة النبات: <strong>${img.green_ratio ?? '-'}%</strong></div>
+                        <div style="margin-top:3px;"><span class="badge ${String(img.quality_flag).includes('ممتازة') ? 'badge-green' : 'badge-amber'}">${esc(img.quality_flag || 'تم الفحص')}</span></div>
+                        ${img.exif_camera ? `<div style="margin-top:3px; color:#93c5fd;">📷 ${esc(img.exif_camera)}</div>` : ''}
+                    </td>
+                    <td>
+                        <span class="badge badge-blue">${esc(img.model_used)}</span>
+                        <div style="font-weight:700; color:#34d399; margin-top:4px;">${esc(img.predicted_class_ar || img.predicted_class)}</div>
+                        <div class="mono" style="font-size:0.75rem;">${esc(img.predicted_class)}</div>
+                        <div style="margin-top:3px;">
+                            <span class="badge badge-amber">الثقة: ${esc(img.confidence)}</span>
+                            <span class="badge ${isUncertain ? 'badge-red' : 'badge-green'}">هامش: ${img.margin_score ?? 100}%</span>
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">${esc(top3)}</div>
+                    </td>
+                    <td>
+                        ${verified
+                            ? `<div style="margin-bottom:6px;"><span class="badge badge-green">✅ معتمد للتدريب: ${esc(verified)}</span></div>`
+                            : (isUncertain ? `<div style="margin-bottom:6px;"><span class="badge badge-red">⚠️ يحتاج مراجعة المطور</span></div>` : '')
+                        }
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <input id="verify-input-${img.id}" class="verify-input" type="text"
+                                   value="${esc(verified || img.predicted_class)}"
+                                   placeholder="اسم الفئة الصحيح (Ground Truth)">
+                            <input id="verify-notes-${img.id}" class="verify-input" type="text"
+                                   value="${esc(img.developer_notes || '')}"
+                                   placeholder="ملاحظات المطور (اختياري)">
+                            <button class="btn btn-primary" style="padding:4px 10px; font-size:0.76rem; justify-content:center;"
+                                    onclick="saveVerifiedLabel(${img.id}, '${esc(img.predicted_class)}')">
+                                💾 تأكيد وحفظ في Dataset التدريب
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="text-scroll">${esc(img.rag_advice || 'تم الفحص عبر /cv/predict')}</div>
+                    </td>
+                </tr>
+            `}).join('') || '<tr><td colspan="7" style="text-align:center; padding:24px;">لا توجد صور مرفوعة بعد</td></tr>';
+
+            // Render Visits Table
+            document.getElementById('visitsTableBody').innerHTML = visits.map(v => `
+                <tr class="searchable-row">
+                    <td>#${v.id}</td>
+                    <td style="white-space:nowrap;">${esc(v.created_at)}</td>
+                    <td>
+                        ${v.user_name ? `<div style="margin-bottom:3px;"><span class="badge badge-green">👤 ${esc(v.user_name)} (${esc(v.user_identifier)})</span></div>` : ''}
+                        <span class="mono">${esc(v.client_ip)}</span>
+                        <div style="font-size:0.75rem; color:#34d399;">${v.geo_city ? '📍 ' + esc(v.geo_city) : ''} ${v.isp ? '— ' + esc(v.isp) : ''}</div>
+                    </td>
+                    <td>
+                        <div>${esc(v.device_type)}</div>
+                        <div style="font-size:0.74rem; color:var(--text-muted);">${esc(v.browser_os)}</div>
+                    </td>
+                    <td>
+                        <span class="badge badge-blue">${esc(v.method)}</span>
+                        <span class="mono" style="margin-right:6px;">${esc(v.path)}</span>
+                    </td>
+                    <td>
+                        <span class="badge ${v.status_code < 400 ? 'badge-green' : 'badge-red'}">${v.status_code}</span>
+                    </td>
+                    <td>${v.latency_ms} ms</td>
+                </tr>
+            `).join('') || '<tr><td colspan="7" style="text-align:center; padding:24px;">لا توجد زيارات مسجلة بعد</td></tr>';
+
+            // Render Errors Table
+            document.getElementById('errorsTableBody').innerHTML = errors.map(e => `
+                <tr class="searchable-row">
+                    <td>#${e.id}</td>
+                    <td style="white-space:nowrap;">${esc(e.created_at)}</td>
+                    <td><span class="mono">${esc(e.endpoint)}</span> (${e.status_code})</td>
+                    <td>
+                        <div class="mono">${esc(e.client_ip)}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">${esc(e.device_type)}</div>
+                    </td>
+                    <td>
+                        <span class="badge badge-red">${esc(e.error_type)}</span>
+                        <div style="margin-top:4px; font-weight:600;">${esc(e.error_message)}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">${esc(e.request_summary)}</div>
+                    </td>
+                    <td><div class="text-scroll mono" style="font-size:0.74rem;">${esc(e.traceback_text || 'No traceback')}</div></td>
+                </tr>
+            `).join('') || '<tr><td colspan="6" style="text-align:center; padding:24px; color:#34d399;">✅ لا توجد أي أخطاء مسجلة حتى الآن</td></tr>';
+
+            document.getElementById('lastUpdated').textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar-EG');
+            filterTables();
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function filterTables() {
+        const q = (document.getElementById('globalSearch').value || '').toLowerCase().trim();
+        document.querySelectorAll('.searchable-row').forEach(row => {
+            const matchText = !q || row.textContent.toLowerCase().includes(q);
+            const matchUncertain = !onlyUncertainMode || !row.hasAttribute('data-uncertain') || row.getAttribute('data-uncertain') === '1';
+            row.style.display = (matchText && matchUncertain) ? '' : 'none';
+        });
+    }
+
+    loadAnalytics();
+    loadGeminiKeys();
+    setInterval(loadAnalytics, 15000);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+{"id":"q01","question":"الورق بتاع القوطة عليه بقع مايه غامقة وتحت الورقة زغب أبيض، ده إيه؟","crop":"قوطة","expected_sources":["tomato_late_blight.md"],"expected_keywords":["لفحة","رطوبة"],"in_scope":true}
+{"id":"q02","question":"القمح طلع عليه خطوط صفرا زي البودرة","crop":"قمح","expected_sources":["wheat_rust.md"],"expected_keywords":["الصدأ"],"in_scope":true}
+{"id":"q03","question":"أروي الأرض الرملية كل قد إيه؟","crop":null,"expected_sources":["irrigation_scheduling.md"],"expected_keywords":["الرملية","الري"],"in_scope":true}
+{"id":"q04","question":"الورق السفلي بيصفر، هل ده نقص نيتروجين؟","crop":null,"expected_sources":["npk_fertilization.md"],"expected_keywords":["النيتروجين"],"in_scope":true}
+{"id":"q05","question":"الأرض عندي مالحة أعمل إيه؟","crop":null,"expected_sources":["soil_ph_salinity.md"],"expected_keywords":["غسيل"],"in_scope":true}
+{"id":"q06","question":"في دبانة بيضا على الفلفل","crop":"فلفل","expected_sources":["aphids_whitefly.md"],"expected_keywords":["الذبابة البيضاء"],"in_scope":true}
+{"id":"q07","question":"الـ pH بتاع التربة 8.2 ده مشكلة؟","crop":null,"expected_sources":["soil_ph_salinity.md"],"expected_keywords":["قلوية"],"in_scope":true}
+{"id":"q08","question":"هل أروي لو متوقع مطر بكرة؟","crop":null,"expected_sources":["irrigation_scheduling.md"],"expected_keywords":["تأجيل","الأمطار"],"in_scope":true}
+{"id":"q09","question":"إيه أحسن موبايل أشتريه السنة دي؟","crop":null,"expected_sources":[],"expected_keywords":[],"in_scope":false}
+{"id":"q10","question":"سعر الدولار النهاردة كام؟","crop":null,"expected_sources":[],"expected_keywords":[],"in_scope":false}
