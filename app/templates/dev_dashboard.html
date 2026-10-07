@@ -501,14 +501,19 @@
             <div id="devicesAndIpsList">جاري التحميل...</div>
         </div>
         <div class="panel">
-            <div class="panel-title">🔑 تدوير مفاتيح Gemini API (Key Rotation Pool)</div>
+            <div class="panel-title">🔑 تدوير مفاتيح Gemini API + ربط Google OAuth</div>
             <div id="geminiKeysStatus" style="font-size:0.84rem; color:#cbd5e1; margin-bottom:10px;">جاري فحص المفاتيح...</div>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
                 <input type="password" id="newGeminiKeyInput" class="verify-input" style="flex:1; min-width:160px;" placeholder="أضف مفتاح احتياطي AIzaSy...">
                 <button type="button" class="btn btn-primary" onclick="addBackupGeminiKey()">➕ إضافة للتدوير</button>
             </div>
-            <div style="font-size:0.74rem; color:var(--text-muted); margin-top:6px;">
-                يتم التبديل التلقائي (Round-Robin + Failover) بين المفاتيح في محرك Agri-RAG وتحويل الصوت المصري STT لمنع توقف الخدمة عند زيادة الضغط.
+            <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #334155;">
+                <div style="font-size:0.78rem; font-weight:700; color:#60a5fa; margin-bottom:5px;">🔗 معرّف Google OAuth Client ID (لسحب اسم وإيميل وصورة جوجل تلقائياً):</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <input type="text" id="devGoogleClientIdInput" class="verify-input" style="flex:1; min-width:160px; direction:ltr;" placeholder="xxxx.apps.googleusercontent.com">
+                    <button type="button" class="btn btn-blue" onclick="saveDevGoogleClientId()">💾 حفظ Google ID</button>
+                </div>
+                <div id="devGoogleClientIdStatus" style="font-size:0.74rem; color:var(--text-muted); margin-top:4px;"></div>
             </div>
         </div>
     </div>
@@ -761,6 +766,40 @@
         }
         inp.value = '';
         loadGeminiKeys();
+    }
+
+    async function loadDevOAuthConfig() {
+        try {
+            const res = await fetch('/api/auth/oauth-config');
+            if (!res.ok) return;
+            const cfg = await res.json();
+            const inp = document.getElementById('devGoogleClientIdInput');
+            const st = document.getElementById('devGoogleClientIdStatus');
+            if (inp && cfg.google_client_id) inp.value = cfg.google_client_id;
+            if (st) {
+                st.innerHTML = cfg.google_client_id
+                    ? `<span style="color:#34d399;">✅ مفعّل: نافذة حسابات Google الرسمية تسحب الاسم والإيميل والصورة أوتوماتيكياً</span>`
+                    : `<span style="color:#fbbf24;">⚠️ غير مضبوط بعد — الصق Client ID من Google Cloud Console لتفعيل النافذة الرسمية</span>`;
+            }
+        } catch (e) {}
+    }
+
+    async function saveDevGoogleClientId() {
+        const inp = document.getElementById('devGoogleClientIdInput');
+        const st = document.getElementById('devGoogleClientIdStatus');
+        if (!inp || !inp.value.trim()) return;
+        const res = await fetch(`/api/dev/oauth-config?key=${encodeURIComponent(DEV_KEY)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ google_client_id: inp.value.trim(), dev_key: DEV_KEY })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            alert(data.detail || 'معرّف غير صالح');
+            return;
+        }
+        if (st) st.innerHTML = `<span style="color:#34d399;">✅ تم الحفظ والتفعيل الفوري بنجاح!</span>`;
+        loadDevOAuthConfig();
     }
 
     function renderBars(items, labelKey, countKey) {
@@ -1101,6 +1140,7 @@
 
     loadAnalytics();
     loadGeminiKeys();
+    loadDevOAuthConfig();
     setInterval(loadAnalytics, 15000);
 </script>
 

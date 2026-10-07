@@ -142,6 +142,7 @@ class SocialQuickAuthPayload(BaseModel):
     farm_size_feddan: float = 1.0
     irrigation_type: str = "تنقيط"
     credential_jwt: str = ""
+    access_token: str = ""
     avatar_url: str = ""
 
 
@@ -531,32 +532,57 @@ async def login_endpoint(payload: LoginPayload, http_request: Request):
     return resp
 
 
+_OAUTH_CONFIG_FILE = Path("data/oauth_config.json")
+
+
+def _load_oauth_config() -> Dict[str, str]:
+    """Load Google/Microsoft OAuth Client IDs from data/oauth_config.json or environment variables."""
+    cfg = {
+        "google_client_id": os.environ.get("GOOGLE_CLIENT_ID", "").strip(),
+        "microsoft_client_id": os.environ.get("MICROSOFT_CLIENT_ID", "").strip(),
+    }
+    if _OAUTH_CONFIG_FILE.exists():
+        try:
+            saved = json.loads(_OAUTH_CONFIG_FILE.read_text(encoding="utf-8"))
+            if saved.get("google_client_id"):
+                cfg["google_client_id"] = str(saved["google_client_id"]).strip()
+            if saved.get("microsoft_client_id"):
+                cfg["microsoft_client_id"] = str(saved["microsoft_client_id"]).strip()
+        except Exception:
+            pass
+    return cfg
+
+
 @app.get("/api/auth/oauth-config", tags=["Authentication"])
 async def get_oauth_config_endpoint():
     """Return configured OAuth client IDs (if any) for Google/Microsoft client SDKs."""
+    cfg = _load_oauth_config()
     return {
-        "google_client_id": os.environ.get("GOOGLE_CLIENT_ID", "").strip(),
-        "microsoft_client_id": os.environ.get("MICROSOFT_CLIENT_ID", "").strip(),
+        "google_client_id": cfg["google_client_id"],
+        "microsoft_client_id": cfg["microsoft_client_id"],
+        "is_google_configured": bool(cfg["google_client_id"]),
         "providers": ["google", "microsoft", "apple", "quick_phone", "passkey"],
     }
 
 
 @app.post("/api/auth/social", tags=["Authentication"])
 async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_request: Request):
-    """Sign in or auto-register with Google, Microsoft, Apple, One-Tap Phone (no password), or Passkey/Biometrics."""
+    """Sign in or auto-register with Google (OAuth2 userinfo / GSI ID Token), Microsoft, Apple, One-Tap Phone, or Passkey."""
     client_info = extract_client_info(http_request)
     identifier = (payload.identifier or "").strip()
     full_name = (payload.full_name or "").strip()
     avatar_url = (payload.avatar_url or "").strip()
     provider = (payload.provider or "google").strip().lower()
 
-    # If a real Google Identity Services (GSI) JWT credential is provided, verify it via Google tokeninfo
-    if payload.credential_jwt:
-        def _verify_google_jwt(jwt_str: str):
+    # 1. If a real Google OAuth2 access_token is provided (from google.accounts.oauth2.initTokenClient popup),
+    #    fetch the user's real email, full name, and profile photo directly from Google's userinfo API!
+    if payload.access_token and provider == "google":
+        def _fetch_google_userinfo(token_str: str):
             try:
                 r = ext_requests.get(
-                    f"https://oauth2.googleapis.com/tokeninfo?id_token={jwt_str}",
-                    timeout=5,
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {token_str}"},
+                    timeout=6,
                 )
                 if r.status_code == 200:
                     return r.json()
@@ -564,12 +590,56 @@ async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_re
                 pass
             return None
 
-        g_info = await asyncio.to_thread(_verify_google_jwt, payload.credential_jwt)
-        if g_info and g_info.get("email"):
-            identifier = g_info["email"]
-            full_name = g_info.get("name") or full_name
-            avatar_url = g_info.get("picture") or avatar_url
-            provider = "google"
+        g_user = await asyncio.to_thread(_fetch_google_userinfo, payload.access_token.strip())
+        if not g_user or not g_user.get("email"):
+            raise HTTPException(status_code=400, detail="تعذر التحقق من رمز دخول حساب Google. يرجى المحاولة مرة أخرى.")
+        identifier = g_user["email"]
+        full_name = g_user.get("name") or g_user.get("given_name") or full_name
+        avatar_url = g_user.get("picture") or avatar_url
+        provider = "google"
+
+    # 2. If a real Google Identity Services (GSI) JWT credential (id_token) is provided, verify via Google tokeninfo
+    elif payload.credential_jwt:
+        def _verify_google_jwt(jwt_str: str):
+            try:
+                r = ext_requests.get(
+                    f"https://oauth2.googleapis.com/tokeninfo?id_token={jwt_str}",
+                    timeout=6,
+                )
+                if r.status_code == 200:
+                    return r.json()
+            except Exception:
+                pass
+            return None
+
+        g_info = await asyncio.to_thread(_verify_google_jwt, payload.credential_jwt.strip())
+        if not g_info or not g_info.get("email"):
+            raise HTTPException(status_code=400, detail="تعذر التحقق من جلسة Google. يرجى المحاولة مرة أخرى.")
+        identifier = g_info["email"]
+        full_name = g_info.get("name") or g_info.get("given_name") or full_name
+        avatar_url = g_info.get("picture") or avatar_url
+        provider = "google"
+
+    # 3. If a real Microsoft Graph access_token is provided
+    elif payload.access_token and provider == "microsoft":
+        def _fetch_ms_userinfo(token_str: str):
+            try:
+                r = ext_requests.get(
+                    "https://graph.microsoft.com/v1.0/me",
+                    headers={"Authorization": f"Bearer {token_str}"},
+                    timeout=6,
+                )
+                if r.status_code == 200:
+                    return r.json()
+            except Exception:
+                pass
+            return None
+
+        ms_user = await asyncio.to_thread(_fetch_ms_userinfo, payload.access_token.strip())
+        if ms_user and (ms_user.get("mail") or ms_user.get("userPrincipalName")):
+            identifier = ms_user.get("mail") or ms_user.get("userPrincipalName")
+            full_name = ms_user.get("displayName") or full_name
+            provider = "microsoft"
 
     # Inherit any cookie-pinned governorate/crop if not explicitly specified
     pinned = await asyncio.to_thread(get_pinned_visitor_profile, client_info["visitor_hash"], None)
@@ -1948,6 +2018,49 @@ async def developer_add_gemini_key(payload: GeminiKeyPayload, request: Request, 
     keys, model_name = _get_gemini_key_pool_and_model()
     masked = [f"{k[:7]}...{k[-4:]}" if len(k) > 12 else "***" for k in keys]
     return {"status": "ok", "count": len(keys), "masked_keys": masked, "primary_model": model_name}
+
+
+class OAuthConfigPayload(BaseModel):
+    google_client_id: str = ""
+    microsoft_client_id: str = ""
+    dev_key: str = ""
+
+
+@app.post("/api/dev/oauth-config", include_in_schema=False)
+async def developer_save_oauth_config(payload: OAuthConfigPayload, request: Request, key: str = Query("")):
+    """Save Google / Microsoft OAuth Client IDs persistently to data/oauth_config.json."""
+    current_cfg = _load_oauth_config()
+    # Allow first-time setup of a valid .apps.googleusercontent.com Client ID, or require dev_key/admin to modify
+    effective_key = key or payload.dev_key
+    if current_cfg.get("google_client_id"):
+        _verify_dev_key(effective_key, request)
+
+    g_cid = (payload.google_client_id or "").strip()
+    m_cid = (payload.microsoft_client_id or "").strip()
+
+    if g_cid and not g_cid.endswith(".apps.googleusercontent.com"):
+        raise HTTPException(
+            status_code=400,
+            detail="معرّف Google Client ID يجب أن ينتهي بـ .apps.googleusercontent.com (من Google Cloud Console).",
+        )
+
+    new_cfg = {
+        "google_client_id": g_cid if g_cid else current_cfg.get("google_client_id", ""),
+        "microsoft_client_id": m_cid if m_cid else current_cfg.get("microsoft_client_id", ""),
+    }
+    _OAUTH_CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _OAUTH_CONFIG_FILE.write_text(json.dumps(new_cfg, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        os.chmod(str(_OAUTH_CONFIG_FILE), 0o600)
+    except Exception:
+        pass
+
+    return {
+        "status": "ok",
+        "google_client_id": new_cfg["google_client_id"],
+        "microsoft_client_id": new_cfg["microsoft_client_id"],
+        "is_google_configured": bool(new_cfg["google_client_id"]),
+    }
 
 
 @app.post("/api/dev/verify-image", include_in_schema=False)

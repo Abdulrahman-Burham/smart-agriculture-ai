@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root {
       /* Editorial Botanical & Warm Stone Palette — Human-Crafted, Zero Neon */
@@ -1208,7 +1209,11 @@
           localStorage.setItem('agri_session_id', SESSION_ID);
 
           const userPill = document.getElementById('topUserPill');
-          userPill.textContent = u.full_name.split(' ')[0];
+          if (u.avatar_url) {
+            userPill.innerHTML = `<img src="${escHtml(u.avatar_url)}" alt="" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-left:4px;object-fit:cover;">${escHtml(u.full_name.split(' ')[0])}`;
+          } else {
+            userPill.textContent = u.full_name.split(' ')[0];
+          }
           userPill.classList.add('logged-in');
           userPill.href = '#';
           userPill.onclick = (e) => { e.preventDefault(); switchMobileTab('history'); };
@@ -1253,7 +1258,58 @@
       await loadMemoryAndHistory();
     }
 
+    let mobGoogleTokenClient = null;
+    (async function initMobileGoogleOAuth() {
+      try {
+        const res = await fetch('/api/auth/oauth-config');
+        if (!res.ok) return;
+        const cfg = await res.json();
+        if (!cfg.google_client_id) return;
+        let tries = 0;
+        const t = setInterval(() => {
+          tries++;
+          if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+            clearInterval(t);
+            mobGoogleTokenClient = window.google.accounts.oauth2.initTokenClient({
+              client_id: cfg.google_client_id,
+              scope: 'openid email profile',
+              callback: async (tokenResponse) => {
+                if (tokenResponse && tokenResponse.access_token) {
+                  const resAuth = await fetch('/api/auth/social', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      provider: 'google',
+                      access_token: tokenResponse.access_token,
+                      governorate: document.getElementById('govSelect').value || 'القاهرة',
+                      primary_crop: document.getElementById('cropSelect').value || ''
+                    })
+                  });
+                  const d = await resAuth.json();
+                  if (resAuth.ok && d.token) {
+                    localStorage.setItem('agri_token', d.token);
+                    localStorage.setItem('agri_auth_token', d.token);
+                    localStorage.setItem('agri_user', JSON.stringify(d.user));
+                    await initProfileAndLocation();
+                  }
+                }
+              }
+            });
+          } else if (tries > 30) {
+            clearInterval(t);
+          }
+        }, 150);
+      } catch (e) {}
+    })();
+
     function openMobileQuickAuth(provider) {
+      if (provider === 'google' && mobGoogleTokenClient) {
+        try {
+          mobGoogleTokenClient.requestAccessToken({ prompt: 'select_account' });
+          return;
+        } catch (e) {}
+      }
       const form = document.getElementById('mobileQuickAuthForm');
       const provInput = document.getElementById('mobAuthProvider');
       const lbl = document.getElementById('mobAuthIdentLabel');
