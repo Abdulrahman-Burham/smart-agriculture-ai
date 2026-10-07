@@ -1467,32 +1467,271 @@ async def egyptian_stt_endpoint(
     }
 
 
-@app.get("/api/tts", tags=["Speech (Egyptian Dialect)"])
-async def egyptian_tts_endpoint(
-    text: str = Query(..., description="النص المراد نطقه باللهجة المصرية"),
-    voice: str = Query("ar-EG-ShakirNeural", description="ar-EG-ShakirNeural أو ar-EG-SalmaNeural"),
-):
-    """Synthesize natural Egyptian Arabic speech (MP3) using Microsoft Neural Egyptian voices."""
+# Phrase-level and word-level transformations to make TTS sound 100% authentic Egyptian Arabic (عامية مصرية زراعية)
+_SPOKEN_EGYPTIAN_PHRASE_MAP = [
+    ("تم تشخيص:", "بص يا هندسة، نتيجة الفحص هي:"),
+    ("نتيجة التشخيص:", "بص يا ريس، نتيجة الفحص هي:"),
+    ("بناءً على التشخيص", "على حسب الفحص"),
+    ("بناءً على ", "على حسب "),
+    ("وفقاً لـ", "على حسب "),
+    ("بثقة ", "بنسبة تأكيد "),
+    ("خطة العلاج والجرعات الموصى بها:", "ودلوقتي دي خطة العلاج والجرعات المظبوطة:"),
+    ("خطوات العلاج والمكافحة:", "خطوات العلاج اللي هتعملها في الأرض:"),
+    ("المكافحة الكيميائية:", "بالنسبة للرش والمبيدات:"),
+    ("المكافحة الزراعية:", "وبالنسبة للمعاملات في الأرض:"),
+    ("الوقاية والاحتياطات:", "وعشان تحمي زرعك:"),
+    ("يجب عليك ", "لازم "),
+    ("يجب أن ", "لازم "),
+    ("يجب ", "لازم "),
+    ("ينبغي عليك ", "لازم "),
+    ("ينبغي ", "لازم "),
+    ("يتوجب عليك ", "لازم "),
+    ("لا بد من ", "لازم "),
+    ("لابد من ", "لازم "),
+    ("يلزم ", "لازم "),
+    ("يُنصح بـ", "بننصحك بـ"),
+    ("ينصح بـ", "بننصحك بـ"),
+    ("يُنصح ", "بننصحك "),
+    ("ينصح ", "بننصحك "),
+    ("يوصى بـ", "الأحسن "),
+    ("يُوصى بـ", "الأحسن "),
+    ("نوصي بـ", "بننصحك بـ"),
+    ("الموصى بها", "اللي بننصح بيها"),
+    ("الموصى به", "اللي بننصح بيه"),
+    ("يفضل ", "الأحسن "),
+    ("يُفضل ", "الأحسن "),
+    ("من الأفضل ", "الأحسن "),
+    ("قم برش ", "رش "),
+    ("قم بإزالة ", "شيل "),
+    ("قم بري ", "اروي "),
+    ("قم بتقليل ", "قلل "),
+    ("قم بـ", "اعمل "),
+    ("يتم رش ", "هترش "),
+    ("يُرش ", "هترش "),
+    ("يتم استخدام ", "استخدم "),
+    ("يُستخدم ", "تستخدم "),
+    ("يتم إضافة ", "ضيف "),
+    ("تُضاف ", "تضيف "),
+    ("إزالة الأوراق المصابة", "تشيل الورق المصاب"),
+    ("التخلص من الأوراق المصابة", "تشيل الورق المصاب وتتخلص منه"),
+    ("الأوراق المصابة", "الورق المصاب"),
+    ("الأوراق السفلية", "الورق اللي تحت"),
+    ("الأوراق", "الورق"),
+    ("النباتات المصابة", "الزرع المصاب"),
+    ("النباتات السليمة", "الزرع السليم"),
+    ("النباتات", "الزرع"),
+    ("النبات", "الزرع"),
+    ("الأجزاء المصابة", "الأجزاء المصابة من الزرع"),
+    ("خارج الحقل", "بره الأرض"),
+    ("في الحقل", "في الأرض"),
+    ("داخل الحقل", "جوه الأرض"),
+    ("الحقل", "الأرض"),
+    ("المزارع", "الفلاح"),
+    ("هذا المرض", "المرض ده"),
+    ("هذه الآفة", "الآفة دي"),
+    ("هذه الحشرة", "الحشرة دي"),
+    ("هذا المحصول", "المحصول ده"),
+    ("هذا المبيد", "المبيد ده"),
+    ("هذه الأعراض", "الأعراض دي"),
+    ("هذا العرض", "العرض ده"),
+    ("هذه المشكلة", "المشكلة دي"),
+    ("هذه الحالة", "الحالة دي"),
+    ("هذا الوقت", "الوقت ده"),
+    ("هذه الفترة", "الفترة دي"),
+    ("الخطوات التالية", "الخطوات الجاية دي"),
+    ("النقاط التالية", "النقط دي"),
+    ("على الفور", "فوراً"),
+    ("في الحال", "دلوقتي علطول"),
+    ("الآن", "دلوقتي"),
+    ("حالياً", "دلوقتي"),
+    ("في الوقت الحالي", "في الوقت ده"),
+    ("من أجل ", "عشان "),
+    ("لكي ", "عشان "),
+    ("كي لا ", "عشان ما "),
+    ("لئلا ", "عشان ما "),
+    ("حتى لا ", "عشان ما "),
+    ("بهدف ", "عشان "),
+    ("بسبب ", "عشان "),
+    ("نظراً لـ", "عشان "),
+    ("نتيجة لـ", "بسبب "),
+    ("في حالة وجود ", "لو لقيت "),
+    ("في حالة ظهور ", "لو ظهرت "),
+    ("في حال ", "لو "),
+    ("في حالة ", "لو "),
+    ("إذا كان ", "لو كان "),
+    ("إذا كانت ", "لو كانت "),
+    ("إذا لاحظت ", "لو لاحظت "),
+    ("إذا ظهرت ", "لو ظهرت "),
+    ("إذا ", "لو "),
+    ("عند ملاحظة ", "أول ما تلاحظ "),
+    ("عند ظهور ", "أول ما يظهر "),
+    ("عندما ", "لما "),
+    ("الذي ", "اللي "),
+    ("التي ", "اللي "),
+    ("الذين ", "اللي "),
+    ("اللاتي ", "اللي "),
+    ("اللذان ", "اللي "),
+    ("اللتان ", "اللي "),
+    ("أيضاً", "كمان"),
+    ("ايضاً", "كمان"),
+    ("ايضا", "كمان"),
+    ("كذلك ", "وكمان "),
+    ("بالإضافة إلى ذلك", "وغير كده كمان"),
+    ("بالإضافة إلى ", "وكمان "),
+    ("علاوة على ذلك", "وفوق ده كله"),
+    ("ومع ذلك", "وبردو"),
+    ("لذلك ", "عشان كده "),
+    ("لذا ", "عشان كده "),
+    ("وبالتالي ", "وعشان كده "),
+    ("لا تقم بـ", "بلاش "),
+    ("لا تستخدم ", "بلاش تستخدم "),
+    ("لا تفرط في ", "بلاش تكتر من "),
+    ("الإفراط في ", "كتر "),
+    ("تجنب ", "ابعد عن "),
+    ("الامتناع عن ", "إنك تبعد عن "),
+    ("احرص على ", "خلي بالك من "),
+    ("التأكد من ", "تتأكد من "),
+    ("تأكد من ", "اتأكد من "),
+    ("في الصباح الباكر", "الصبح بدري قبل الحر"),
+    ("صباحاً", "الصبح بدري"),
+    ("مساءً", "آخر النهار"),
+    ("في المساء", "آخر النهار"),
+    ("قبل الغروب", "آخر النهار قبل المغرب"),
+    ("جيداً", "كويس قوي"),
+    ("جيدا", "كويس قوي"),
+    ("جداً", "قوي"),
+    ("جدا", "قوي"),
+    ("كثيراً", "كتير"),
+    ("كثيرة", "كتير"),
+    ("قليلاً", "شوية"),
+    ("أولاً:", "أول حاجة،"),
+    ("ثانياً:", "تاني حاجة،"),
+    ("ثالثاً:", "تالت حاجة،"),
+    ("رابعاً:", "رابع حاجة،"),
+    ("خامساً:", "خامس حاجة،"),
+    ("أولاً", "أول حاجة"),
+    ("ثانياً", "تاني حاجة"),
+    ("ثالثاً", "تالت حاجة"),
+    ("بعد ذلك", "وبعد كده"),
+    ("ثم ", "وبعدين "),
+    ("لتر ماء", "لتر مية"),
+    ("لتر من الماء", "لتر مية"),
+    ("الماء", "المية"),
+    ("مياه الري", "مية الري"),
+    ("درجة مئوية", "درجة"),
+    ("بمعدل ", "بمعدل "),
+    ("الندوة المتأخرة", "الندوة المتأخرة"),
+    ("الندوة المبكرة", "الندوة المبكرة"),
+]
+
+
+def to_spoken_egyptian_arabic(raw_text: str) -> str:
+    """Convert formal Arabic agricultural advice into natural, warm Spoken Egyptian Arabic (عامية مصرية زراعية) for TTS."""
     import re
-    clean_text = re.sub(r"\[\d+\]", "", text or "")
-    clean_text = re.sub(r"[*#_`~>]", "", clean_text).strip()
-    if not clean_text:
+    if not raw_text:
+        return ""
+
+    text = raw_text
+    # 1. Remove citation brackets like [1], [2] and page refs like (صفحة 14)
+    text = re.sub(r"\[\d+\]", "", text)
+    text = re.sub(r"\(\s*صفحة\s*\d+[^)]*\)", "", text)
+    # 2. Remove parenthetical English disease/model codes like (Tomato___Late_blight) or (EfficientNetV2B2_best.keras)
+    text = re.sub(r"\([A-Za-z0-9_.\-\s/]+\)", "", text)
+    # 3. Remove standalone English technical tokens with underscores
+    text = re.sub(r"\b[A-Za-z0-9]+_[A-Za-z0-9_]+\b", "", text)
+    # 4. Strip markdown formatting characters & excess emojis that confuse TTS
+    text = re.sub(r"[*#_`~>|•]", " ", text)
+    text = re.sub(r"[🔬🌿🌾🚜💧🌊🚿🌡️💨📍🎯✅⚠️❌💊📚🤖⚡📸📷🎤🔊📋💬🔄🏠👤🔒🔑🗣️]", " ", text)
+
+    # 5. Normalize agricultural units & numbers into natural Egyptian spoken words
+    text = re.sub(r"(\d+)\s*-\s*(\d+)", r"من \1 لـ \2", text)
+    text = re.sub(r"(\d+)\s*(?:سم3|سم³|مل|ملي)\b", r"\1 سنتي", text)
+    text = re.sub(r"(\d+)\s*(?:جم|غ|جرام)\b", r"\1 جرام", text)
+    text = re.sub(r"(\d+)\s*(?:كجم|كغ|كيلوجرام)\b", r"\1 كيلو", text)
+    text = re.sub(r"/\s*100\s*لتر", " على كل مية لتر", text)
+    text = re.sub(r"لكل\s*100\s*لتر", "على كل مية لتر", text)
+    text = re.sub(r"/\s*فدان", " للفدان", text)
+    text = re.sub(r"/\s*الفدان", " للفدان", text)
+    text = re.sub(r"(\d+(?:\.\d+)?)\s*%", r"\1 في المية", text)
+    text = re.sub(r"(\d+(?:\.\d+)?)\s*°\s*C?", r"\1 درجة", text, flags=re.IGNORECASE)
+
+    # 6. Convert numbered bullet points (1. , 2. , 3. ) into natural Egyptian spoken transitions
+    text = re.sub(r"(?:^|\n)\s*1[\.\-\)]\s*", " . أول حاجة: ", text)
+    text = re.sub(r"(?:^|\n)\s*2[\.\-\)]\s*", " . وتاني حاجة: ", text)
+    text = re.sub(r"(?:^|\n)\s*3[\.\-\)]\s*", " . وتالت حاجة: ", text)
+    text = re.sub(r"(?:^|\n)\s*4[\.\-\)]\s*", " . ورابع حاجة: ", text)
+    text = re.sub(r"(?:^|\n)\s*5[\.\-\)]\s*", " . وخامس حاجة: ", text)
+
+    # 7. Apply Egyptian agricultural dialect phrase & vocabulary replacements
+    for formal, egyptian in _SPOKEN_EGYPTIAN_PHRASE_MAP:
+        text = text.replace(formal, egyptian)
+
+    # 8. Add a warm Egyptian agricultural greeting if not already conversational
+    text = re.sub(r"—|--", "، ", text)
+    text = re.sub(r"\n+", " ، ", text)
+    text = re.sub(r"\s{2,}", " ", text).strip()
+    if text and not any(text.startswith(p) for p in ("بص يا", "يا هندسة", "يا حاج", "يا ريس", "أهلاً")):
+        text = "بص يا هندسة، " + text
+    return text
+
+
+_TTS_AUDIO_CACHE: Dict[tuple[str, str], bytes] = {}
+
+
+class TTSPayload(BaseModel):
+    text: str
+    voice: str = "ar-EG-ShakirNeural"
+    colloquial: bool = True
+
+
+async def _synthesize_egyptian_tts_mp3(raw_text: str, voice: str = "ar-EG-ShakirNeural") -> bytes:
+    """Convert text to authentic Spoken Egyptian Arabic and synthesize MP3 via Microsoft Edge Neural Egyptian voices."""
+    import hashlib
+    base_spoken = to_spoken_egyptian_arabic(raw_text)
+    if not base_spoken:
         raise HTTPException(status_code=400, detail="Empty text")
 
     selected_voice = voice if voice in ("ar-EG-ShakirNeural", "ar-EG-SalmaNeural") else "ar-EG-ShakirNeural"
+    clipped_text = base_spoken[:1800]
+    raw_hash = hashlib.md5(clipped_text.encode("utf-8")).hexdigest()
+    cache_key = (raw_hash, selected_voice)
+    if cache_key in _TTS_AUDIO_CACHE:
+        return _TTS_AUDIO_CACHE[cache_key]
+
     try:
         import edge_tts
-        communicate = edge_tts.Communicate(clean_text[:1500], selected_voice, rate="+2%")
+        communicate = edge_tts.Communicate(clipped_text, selected_voice, rate="+3%", pitch="+0Hz")
         audio_chunks = bytearray()
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 audio_chunks.extend(chunk["data"])
         if audio_chunks:
-            return Response(content=bytes(audio_chunks), media_type="audio/mpeg")
+            mp3_bytes = bytes(audio_chunks)
+            if len(_TTS_AUDIO_CACHE) > 120:
+                _TTS_AUDIO_CACHE.clear()
+            _TTS_AUDIO_CACHE[cache_key] = mp3_bytes
+            return mp3_bytes
     except Exception as e:
         logger.warning(f"Edge TTS notice: {e}")
 
     raise HTTPException(status_code=503, detail="TTS service fallback")
+
+
+@app.get("/api/tts", tags=["Speech (Egyptian Dialect)"])
+async def egyptian_tts_get_endpoint(
+    text: str = Query(..., description="النص المراد نطقه باللهجة المصرية"),
+    voice: str = Query("ar-EG-ShakirNeural", description="ar-EG-ShakirNeural (رجالي مصري) أو ar-EG-SalmaNeural (نسائي مصري)"),
+):
+    """Synthesize natural Egyptian Arabic speech (MP3) via GET."""
+    mp3_bytes = await _synthesize_egyptian_tts_mp3(text, voice)
+    return Response(content=mp3_bytes, media_type="audio/mpeg", headers={"Cache-Control": "public, max-age=3600"})
+
+
+@app.post("/api/tts", tags=["Speech (Egyptian Dialect)"])
+async def egyptian_tts_post_endpoint(payload: TTSPayload):
+    """Synthesize natural Egyptian Arabic speech (MP3) via POST (supports long agricultural prescriptions)."""
+    mp3_bytes = await _synthesize_egyptian_tts_mp3(payload.text, payload.voice)
+    return Response(content=mp3_bytes, media_type="audio/mpeg")
 
 
 # ─── Camouflaged Developer-Only Telemetry Endpoints (Hidden from Schema & Returns 404 without Key) ───

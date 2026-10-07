@@ -1419,8 +1419,13 @@
                 </div>
                 <!-- Inline AI Treatment Advice so Mobile Users Immediately See the Full Prescription -->
                 <div id="cv-inline-advice-box" style="display:none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.12);">
-                    <div style="font-weight: 700; color: #34d399; margin-bottom: 0.45rem; font-size: 0.95rem;">
-                        💊 خطة العلاج والجرعات الموصى بها من الخبير الزراعي:
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom: 0.55rem;">
+                        <div style="font-weight: 700; color: #34d399; font-size: 0.95rem;">
+                            💊 خطة العلاج والجرعات الموصى بها من الخبير الزراعي:
+                        </div>
+                        <button type="button" id="cv-inline-speak-btn" style="background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.45); color:#6ee7b7; border-radius:10px; padding:4px 11px; font-size:0.78rem; font-weight:800; font-family:'Cairo',sans-serif; cursor:pointer;">
+                            🔊 اسمع الروشتة بالمصري
+                        </button>
                     </div>
                     <div id="cv-inline-advice-text" style="font-size: 0.9rem; line-height: 1.65; color: #e2e8f0; background: rgba(0,0,0,0.25); padding: 0.85rem; border-radius: 12px; border-right: 3px solid #10b981;"></div>
                     <button type="button" onclick="switchMobileTab('chat')" style="width: 100%; margin-top: 0.75rem; padding: 0.75rem; border-radius: 12px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; font-weight: 700; font-size: 0.9rem; cursor: pointer;">
@@ -1465,6 +1470,14 @@
                         </button>
                     </div>
                     <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
+                        <select id="desktop-egy-voice" onchange="localStorage.setItem('agri_egy_voice', this.value)" title="اختر صوت المهندس الزراعي باللهجة المصرية" style="background:rgba(16,185,129,0.14); border:1px solid rgba(16,185,129,0.35); color:#34d399; border-radius:10px; padding:0.24rem 0.5rem; font-size:0.74rem; font-weight:700; font-family:'Cairo',sans-serif; cursor:pointer; outline:none;">
+                            <option value="ar-EG-ShakirNeural">🗣️ م. شاكر (مصري)</option>
+                            <option value="ar-EG-SalmaNeural">🗣️ م. سلمى (مصرية)</option>
+                        </select>
+                        <label title="تشغيل الرد بصوت مصري تلقائياً" style="display:inline-flex; align-items:center; gap:4px; background:rgba(59,130,246,0.14); border:1px solid rgba(59,130,246,0.35); color:#93c5fd; border-radius:10px; padding:0.24rem 0.55rem; font-size:0.73rem; font-weight:700; cursor:pointer;">
+                            <input type="checkbox" id="desktop-auto-speak" onchange="localStorage.setItem('agri_auto_speak', this.checked ? '1' : '0')" style="accent-color:#10b981; cursor:pointer;">
+                            🔊 نطق تلقائي
+                        </label>
                         <span id="memory-status-badge" title="المساعد الذكي يتذكر محادثاتك وتشخيصاتك السابقة ليكمل عليها" style="background:rgba(16,185,129,0.14); border:1px solid rgba(16,185,129,0.35); color:#34d399; border-radius:10px; padding:0.26rem 0.6rem; font-size:0.74rem; font-weight:700;">
                             🧠 الذاكرة متصلة
                         </span>
@@ -2119,25 +2132,82 @@
         }
 
         let currentAudioPlayer = null;
-        function speakArabic(rawText) {
+        let currentAudioBtn = null;
+        let lastQueryWasVoice = false;
+
+        // Restore saved Egyptian voice preferences on desktop
+        (function initDesktopVoicePrefs() {
+            const vSel = document.getElementById('desktop-egy-voice');
+            const aChk = document.getElementById('desktop-auto-speak');
+            const savedV = localStorage.getItem('agri_egy_voice');
+            if (vSel && savedV) vSel.value = savedV;
+            const savedA = localStorage.getItem('agri_auto_speak');
+            if (aChk) aChk.checked = (savedA === '1');
+        })();
+
+        async function speakArabic(rawText, btnEl = null) {
+            if (currentAudioPlayer && currentAudioBtn && currentAudioBtn === btnEl) {
+                currentAudioPlayer.pause();
+                currentAudioPlayer = null;
+                btnEl.innerHTML = '🔊 اسمع بالمصري';
+                currentAudioBtn = null;
+                return;
+            }
             if (currentAudioPlayer) {
                 currentAudioPlayer.pause();
                 currentAudioPlayer = null;
             }
+            if (currentAudioBtn) {
+                currentAudioBtn.innerHTML = '🔊 اسمع بالمصري';
+                currentAudioBtn = null;
+            }
             if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
-            const cleanText = rawText.replace(/\[\d+\]/g, '').trim();
-            const ttsUrl = `/api/tts?voice=ar-EG-ShakirNeural&text=${encodeURIComponent(cleanText)}`;
-            const audio = new Audio(ttsUrl);
-            currentAudioPlayer = audio;
-            audio.play().catch(() => {
+            const cleanText = (rawText || '').replace(/\[\d+\]/g, '').trim();
+            if (!cleanText) return;
+
+            const vSel = document.getElementById('desktop-egy-voice');
+            const chosenVoice = (vSel && vSel.value) ? vSel.value : (localStorage.getItem('agri_egy_voice') || 'ar-EG-ShakirNeural');
+
+            if (btnEl) {
+                currentAudioBtn = btnEl;
+                btnEl.innerHTML = '⏳ جاري تجهيز الصوت المصري...';
+            }
+
+            try {
+                const res = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: cleanText,
+                        voice: chosenVoice,
+                        colloquial: true
+                    })
+                });
+                if (!res.ok) throw new Error('TTS POST failed');
+                const blob = await res.blob();
+                const objUrl = URL.createObjectURL(blob);
+                const audio = new Audio(objUrl);
+                currentAudioPlayer = audio;
+                if (btnEl) btnEl.innerHTML = '⏹️ إيقاف الصوت المصري';
+
+                audio.onended = () => {
+                    URL.revokeObjectURL(objUrl);
+                    if (btnEl) btnEl.innerHTML = '🔊 اسمع بالمصري';
+                    if (currentAudioPlayer === audio) currentAudioPlayer = null;
+                    if (currentAudioBtn === btnEl) currentAudioBtn = null;
+                };
+                await audio.play();
+            } catch (e) {
+                if (btnEl) btnEl.innerHTML = '🔊 اسمع بالمصري';
+                currentAudioBtn = null;
                 if ('speechSynthesis' in window) {
                     const utter = new SpeechSynthesisUtterance(cleanText);
                     utter.lang = 'ar-EG';
                     utter.rate = 0.98;
                     window.speechSynthesis.speak(utter);
                 }
-            });
+            }
         }
 
         // Add message to chat
@@ -2159,9 +2229,9 @@
                 const safeText = text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
                 content += `
                     <div style="display:flex; gap:0.4rem; margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08); flex-wrap:wrap;">
+                        <button type="button" class="egy-tts-btn" onclick="speakArabic('${safeText}', this)" style="background:rgba(16,185,129,0.16); border:1px solid rgba(16,185,129,0.35); color:#6ee7b7; border-radius:10px; padding:3px 10px; font-size:0.74rem; font-weight:700; cursor:pointer;">🔊 اسمع بالمصري</button>
                         <button type="button" onclick="copyBotMessage(this, '${safeText}')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; border-radius:10px; padding:3px 9px; font-size:0.74rem; cursor:pointer;">📋 نسخ</button>
                         <button type="button" onclick="shareWhatsApp('${safeText}')" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#34d399; border-radius:10px; padding:3px 9px; font-size:0.74rem; cursor:pointer;">💬 واتساب</button>
-                        <button type="button" onclick="speakArabic('${safeText}')" style="background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); color:#93c5fd; border-radius:10px; padding:3px 9px; font-size:0.74rem; cursor:pointer;">🔊 استماع</button>
                     </div>
                 `;
             }
@@ -2184,6 +2254,7 @@
                 } catch (e) {}
                 updateMemoryBadge();
             }
+            return div;
         }
 
         // Mobile-Safe Egyptian Dialect Speech-to-Text (MediaRecorder primary, WebSpeech fallback — never both at once)
@@ -2231,7 +2302,7 @@
                     vBtn.style.background = 'rgba(239, 68, 68, 0.35)';
                     vBtn.style.color = '#f87171';
                     vBtn.innerText = '⏹️';
-                    chatInput.placeholder = '🔴 اتكلم دلوقتي... (اضغط ⏹️ للإرسال)';
+                    chatInput.placeholder = '🔴 اتكلم دلوقتي بالعامية المصرية... (اضغط ⏹️ للإرسال)';
 
                     mediaRecorder.ondataavailable = (e) => {
                         if (e.data && e.data.size > 0) audioChunks.push(e.data);
@@ -2258,7 +2329,8 @@
                                 const finalText = (data.text || '').trim();
                                 if (finalText) {
                                     chatInput.value = (chatInput.value + ' ' + finalText).trim();
-                                    chatInput.focus();
+                                    lastQueryWasVoice = true;
+                                    handleSend();
                                 }
                             }
                         } catch (err) {
@@ -2307,6 +2379,8 @@
                         chatInput.placeholder = origPlaceholder;
                         if (browserFallbackTranscript) {
                             chatInput.value = (chatInput.value + ' ' + browserFallbackTranscript).trim();
+                            lastQueryWasVoice = true;
+                            handleSend();
                         }
                     };
                     recognition.start();
@@ -2330,6 +2404,8 @@
             const cropVal = cropEl && cropEl.value ? cropEl.value : null;
             const areaVal = areaEl && areaEl.value ? parseFloat(areaEl.value) : 1.0;
             const irrigVal = irrigEl && irrigEl.value ? irrigEl.value : 'غمر';
+            const shouldSpeakReply = lastQueryWasVoice || (document.getElementById('desktop-auto-speak') && document.getElementById('desktop-auto-speak').checked);
+            lastQueryWasVoice = false;
 
             queryCount++;
             statQueries.innerText = queryCount;
@@ -2371,7 +2447,11 @@
                         imageAlreadyDiagnosed = true;
                         if (data.session_id) persistSessionId(data.session_id);
                         displayCVResults(data.cv_result, data.advice);
-                        addMessage(data.advice, false, data.sources);
+                        const msgDiv = addMessage(data.advice, false, data.sources);
+                        if (shouldSpeakReply && data.advice) {
+                            const spkBtn = msgDiv ? msgDiv.querySelector('.egy-tts-btn') : null;
+                            speakArabic(data.advice, spkBtn);
+                        }
                         const topConf = (data.cv_result && data.cv_result.confidence) ? data.cv_result.confidence : data.confidence;
                         updateStats(topConf, (data.latency ? data.latency * 1000 : performance.now() - startTime));
                     }
@@ -2398,7 +2478,12 @@
                     if (res.ok) {
                         const data = await res.json();
                         if (data.session_id) persistSessionId(data.session_id);
-                        addMessage(data.answer || data.response || "عذراً، لم أتمكن من معالجة طلبك.", false, data.sources);
+                        const replyTxt = data.answer || data.response || "عذراً، لم أتمكن من معالجة طلبك.";
+                        const msgDiv = addMessage(replyTxt, false, data.sources);
+                        if (shouldSpeakReply && (data.answer || data.response)) {
+                            const spkBtn = msgDiv ? msgDiv.querySelector('.egy-tts-btn') : null;
+                            speakArabic(replyTxt, spkBtn);
+                        }
                         updateStats(data.confidence, (data.latency ? data.latency * 1000 : performance.now() - startTime));
                     }
                 }
@@ -2489,9 +2574,16 @@
 
             const inlineBox = document.getElementById('cv-inline-advice-box');
             const inlineText = document.getElementById('cv-inline-advice-text');
+            const inlineSpeakBtn = document.getElementById('cv-inline-speak-btn');
             if (inlineBox && inlineText && adviceText) {
                 inlineText.innerHTML = formatResponse(adviceText);
                 inlineBox.style.display = 'block';
+                if (inlineSpeakBtn) {
+                    inlineSpeakBtn.innerHTML = '🔊 اسمع الروشتة بالمصري';
+                    inlineSpeakBtn.onclick = function() {
+                        speakArabic(adviceText, inlineSpeakBtn);
+                    };
+                }
             }
             
             cvResults.style.display = 'block';

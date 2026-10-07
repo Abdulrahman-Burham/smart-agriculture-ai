@@ -813,8 +813,28 @@
           </div>
         </div>
         <div class="scan-advice-text" id="scanAdviceText">يقوم النظام بفحص الأنسجة النباتية واسترجاع التوصية المعتمدة...</div>
+        <div style="margin-top:8px; display:flex; gap:6px;">
+          <button type="button" id="scanSpeakBtn" onclick="speakMobileEgyptian(this, window._lastScanSpeechText || '')" style="display:none; align-items:center; gap:5px; padding:6px 11px; border-radius:9px; border:1px solid rgba(45,106,79,0.3); background:var(--brand-mint-tint); color:var(--brand-forest); font-family:inherit; font-size:0.76rem; font-weight:800; cursor:pointer;">
+            <span>🔊 اسمع التشخيص والعلاج بالمصري</span>
+          </button>
+        </div>
       </div>
     </section>
+
+    <!-- Egyptian Voice Settings Strip -->
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:10px; background:var(--bg-surface); border:1px solid var(--border-soft); border-radius:12px; padding:7px 11px;">
+      <div style="display:flex; align-items:center; gap:6px; font-size:0.76rem; font-weight:700; color:var(--brand-forest);">
+        <span>🎙️ الصوت المصري:</span>
+        <select id="egyVoiceSelect" onchange="localStorage.setItem('agri_egy_voice', this.value)" style="border:1px solid var(--border-strong); background:var(--bg-subtle); color:var(--text-primary); border-radius:8px; padding:3px 7px; font-family:inherit; font-size:0.74rem; font-weight:700;">
+          <option value="ar-EG-ShakirNeural">م. شاكر (لهجة مصرية)</option>
+          <option value="ar-EG-SalmaNeural">م. سلمى (لهجة مصرية)</option>
+        </select>
+      </div>
+      <label style="display:flex; align-items:center; gap:5px; font-size:0.74rem; font-weight:700; color:var(--text-secondary); cursor:pointer;">
+        <input type="checkbox" id="autoSpeakToggle" onchange="localStorage.setItem('agri_auto_speak', this.checked ? '1' : '0')" style="accent-color:var(--brand-forest);" />
+        <span>نطق تلقائي</span>
+      </label>
+    </div>
 
     <!-- Quick Question Chips -->
     <div class="quick-strip">
@@ -828,10 +848,13 @@
     <div class="chat-list" id="chatList">
       <div class="msg-card bot">
         <div class="msg-sender">
-          <span>المستشار الزراعي</span>
+          <span>المستشار الزراعي (صوت مصري)</span>
           <span id="welcomePinStatus">موقعك محفوظ بالكوكيز</span>
         </div>
-        أهلاً بك. يمكنك تصوير أي ورقة نبات لفحصها فوراً أو كتابة سؤالك أو التسجيل بصوتك، وسأتذكر بيانات أرضك وموقعك المثبت ومحادثاتك السابقة تلقائياً.
+        <div>أهلاً بيك يا هندسة. تقدر تصوّر أي ورقة نبات لفحصها فوراً أو تسأل بصوتك باللهجة المصرية وهرد عليك كتابةً وبصوت مصري واضح.</div>
+        <div style="margin-top:8px; padding-top:7px; border-top:1px solid var(--border-soft); display:flex; gap:6px;">
+          <button type="button" onclick="speakMobileEgyptian(this, 'أهلاً بيك يا حاج في الخبير الزراعي الذكي، تقدر تصور أي ورقة نبات أو تسألني بصوتك باللهجة المصرية وهقولك العلاج والجرعة المظبوطة لأرضك فوراً.')" style="border:1px solid rgba(45,106,79,0.28); background:var(--brand-mint-tint); color:var(--brand-forest); border-radius:8px; padding:4px 10px; font-family:inherit; font-size:0.74rem; font-weight:800; cursor:pointer;">🔊 اسمع الترحيب بالمصري</button>
+        </div>
       </div>
     </div>
   </main>
@@ -1451,9 +1474,14 @@
         badgeEl.textContent = confStr ? `درجة الثقة: ${confStr}` : 'مكتمل';
         adviceEl.innerHTML = formatMarkdown(adviceText);
 
+        window._lastScanSpeechText = `نتيجة فحص الورقة: ${predAr} بنسبة تأكيد ${confStr}. ${adviceText}`;
+        const scanSpeakBtn = document.getElementById('scanSpeakBtn');
+        if (scanSpeakBtn) scanSpeakBtn.style.display = 'inline-flex';
+
         lastDiagnosisSummary = `${predAr} (${confStr})`;
         localStorage.setItem('agri_last_diag', lastDiagnosisSummary);
-        appendMessage('bot', `**نتيجة فحص الورقة:** ${predAr} (${confStr})\n\n${adviceText}`, data.sources || []);
+        const msgText = `**نتيجة فحص الورقة:** ${predAr} (${confStr})\n\n${adviceText}`;
+        appendMessage('bot', msgText, data.sources || [], true);
       } catch (err) {
         titleEl.textContent = 'تعذر إتمام الفحص';
         badgeEl.textContent = 'تنبيه';
@@ -1461,8 +1489,91 @@
       }
     }
 
+    // ── Authentic Egyptian Voice TTS Player ──
+    let activeMobAudio = null;
+    let activeMobSpeakBtn = null;
+    let lastQueryWasVoice = false;
+
+    // Restore voice preferences
+    (function initVoicePrefs() {
+      const savedVoice = localStorage.getItem('agri_egy_voice');
+      const vSel = document.getElementById('egyVoiceSelect');
+      if (savedVoice && vSel) vSel.value = savedVoice;
+      const autoSpk = localStorage.getItem('agri_auto_speak');
+      const aChk = document.getElementById('autoSpeakToggle');
+      if (aChk && autoSpk === '1') aChk.checked = true;
+    })();
+
+    async function speakMobileEgyptian(btnEl, rawText) {
+      if (!rawText) return;
+
+      // If clicking the currently playing button, stop playback
+      if (activeMobAudio && activeMobSpeakBtn === btnEl) {
+        activeMobAudio.pause();
+        activeMobAudio = null;
+        if (activeMobSpeakBtn) activeMobSpeakBtn.innerHTML = '🔊 اسمع بالمصري';
+        activeMobSpeakBtn = null;
+        return;
+      }
+
+      if (activeMobAudio) {
+        activeMobAudio.pause();
+        activeMobAudio = null;
+      }
+      if (activeMobSpeakBtn) {
+        activeMobSpeakBtn.innerHTML = '🔊 اسمع بالمصري';
+      }
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+      const voiceSel = document.getElementById('egyVoiceSelect');
+      const chosenVoice = (voiceSel && voiceSel.value) ? voiceSel.value : (localStorage.getItem('agri_egy_voice') || 'ar-EG-ShakirNeural');
+
+      activeMobSpeakBtn = btnEl;
+      if (btnEl) btnEl.innerHTML = '⏳ جاري تجهيز الصوت المصري...';
+
+      try {
+        const res = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: rawText, voice: chosenVoice })
+        });
+        if (!res.ok) throw new Error('TTS fallback');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        activeMobAudio = audio;
+        if (btnEl) btnEl.innerHTML = '⏹️ إيقاف الصوت المصري';
+
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          if (activeMobSpeakBtn === btnEl && btnEl) btnEl.innerHTML = '🔊 اسمع بالمصري';
+          activeMobAudio = null;
+          activeMobSpeakBtn = null;
+        };
+        await audio.play();
+      } catch (e) {
+        if ('speechSynthesis' in window) {
+          const u = new SpeechSynthesisUtterance(rawText.replace(/[*#_]/g, ''));
+          u.lang = 'ar-EG';
+          u.rate = 1.0;
+          u.onend = () => {
+            if (btnEl) btnEl.innerHTML = '🔊 اسمع بالمصري';
+          };
+          if (btnEl) btnEl.innerHTML = '⏹️ إيقاف الصوت';
+          window.speechSynthesis.speak(u);
+        } else if (btnEl) {
+          btnEl.innerHTML = '🔊 اسمع بالمصري';
+        }
+      }
+    }
+
+    function shareMobileWhatsApp(rawText) {
+      const url = `https://wa.me/?text=${encodeURIComponent('توصية الخبير الزراعي الذكي:\n\n' + rawText)}`;
+      window.open(url, '_blank');
+    }
+
     // ── Chat & Voice Assistant ──
-    function appendMessage(role, text, sources = []) {
+    function appendMessage(role, text, sources = [], isLiveReply = false) {
       const list = document.getElementById('chatList');
       const div = document.createElement('div');
       div.className = `msg-card ${role}`;
@@ -1470,7 +1581,30 @@
         const srcHtml = (sources && sources.length)
           ? `<div class="msg-sources">المصادر: ${sources.slice(0, 2).map(escHtml).join(' • ')}</div>`
           : '';
-        div.innerHTML = `<div class="msg-sender"><span>المستشار الزراعي</span></div><div>${formatMarkdown(text)}</div>${srcHtml}`;
+        const isLoadingMsg = text.startsWith('جاري تحضير');
+        let actionsHtml = '';
+        if (!isLoadingMsg) {
+          actionsHtml = `
+            <div style="margin-top:9px; padding-top:7px; border-top:1px solid var(--border-soft); display:flex; gap:6px; flex-wrap:wrap;">
+              <button type="button" class="mob-speak-btn" style="border:1px solid rgba(45,106,79,0.28); background:var(--brand-mint-tint); color:var(--brand-forest); border-radius:8px; padding:4px 10px; font-family:inherit; font-size:0.74rem; font-weight:800; cursor:pointer;">🔊 اسمع بالمصري</button>
+              <button type="button" class="mob-wa-btn" style="border:1px solid var(--border-strong); background:var(--bg-subtle); color:var(--text-secondary); border-radius:8px; padding:4px 9px; font-family:inherit; font-size:0.73rem; font-weight:700; cursor:pointer;">مشاركة واتساب</button>
+            </div>
+          `;
+        }
+        div.innerHTML = `<div class="msg-sender"><span>المستشار الزراعي</span></div><div>${formatMarkdown(text)}</div>${srcHtml}${actionsHtml}`;
+
+        if (!isLoadingMsg) {
+          const spkBtn = div.querySelector('.mob-speak-btn');
+          const waBtn = div.querySelector('.mob-wa-btn');
+          if (spkBtn) spkBtn.onclick = () => speakMobileEgyptian(spkBtn, text);
+          if (waBtn) waBtn.onclick = () => shareMobileWhatsApp(text);
+
+          const autoChk = document.getElementById('autoSpeakToggle');
+          if (isLiveReply && ((autoChk && autoChk.checked) || lastQueryWasVoice)) {
+            lastQueryWasVoice = false;
+            setTimeout(() => speakMobileEgyptian(spkBtn, text), 150);
+          }
+        }
       } else {
         div.innerHTML = `<div>${escHtml(text)}</div>`;
       }
@@ -1516,13 +1650,14 @@
             area_feddan: area,
             irrigation_type: irrig,
             session_id: SESSION_ID,
-            last_diagnosis: lastDiagnosisSummary || null
+            lat: pinnedLat,
+            lon: pinnedLon
           })
         });
         const data = await res.json();
         loadingCard.remove();
         if (!res.ok) throw new Error(data.detail || 'حدث خطأ في الاتصال');
-        appendMessage('bot', data.answer || 'تم استلام سؤالك.', data.sources || []);
+        appendMessage('bot', data.answer || 'تم استلام سؤالك.', data.sources || [], true);
       } catch (err) {
         loadingCard.remove();
         appendMessage('bot', 'عذراً، تعذر الاتصال بالخادم حالياً. يرجى المحاولة مرة أخرى.');
@@ -1539,47 +1674,99 @@
       }
     });
 
-    // ── Voice Recording (STT) ──
+    // ── Egyptian Dialect Voice Recording (STT) ──
     let mediaRecorder = null;
     let audioChunks = [];
     let isRecording = false;
+    let mobSpeechRec = null;
+
+    function getSupportedMobAudioMime() {
+      if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) return '';
+      const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus', 'audio/aac'];
+      for (const t of types) {
+        try { if (MediaRecorder.isTypeSupported(t)) return t; } catch (e) {}
+      }
+      return '';
+    }
 
     async function toggleVoiceRecording() {
       const btn = document.getElementById('voiceBtn');
-      if (isRecording && mediaRecorder) {
-        mediaRecorder.stop();
+      const inp = document.getElementById('chatInput');
+
+      if (isRecording) {
         isRecording = false;
         btn.classList.remove('recording');
+        if (mobSpeechRec) { try { mobSpeechRec.stop(); } catch (e) {} }
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
         return;
       }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioChunks = [];
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
-        mediaRecorder.onstop = async () => {
-          stream.getTracks().forEach(t => t.stop());
-          const blob = new Blob(audioChunks, { type: 'audio/webm' });
-          const fd = new FormData();
-          fd.append('audio', blob, 'voice.webm');
-          const inp = document.getElementById('chatInput');
-          inp.placeholder = 'جاري تحويل صوتك إلى نص...';
-          try {
-            const res = await fetch('/api/stt', { method: 'POST', body: fd, credentials: 'same-origin' });
-            const data = await res.json();
-            if (data.text) {
-              inp.value = data.text;
+
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && typeof MediaRecorder !== 'undefined') {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const mime = getSupportedMobAudioMime();
+          audioChunks = [];
+          mediaRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
+          mediaRecorder.onstop = async () => {
+            stream.getTracks().forEach(t => t.stop());
+            const actualMime = (mediaRecorder.mimeType || mime || 'audio/webm').split(';')[0];
+            const ext = actualMime.includes('mp4') || actualMime.includes('m4a') || actualMime.includes('aac') ? 'm4a' : 'webm';
+            const blob = new Blob(audioChunks, { type: actualMime });
+            const fd = new FormData();
+            fd.append('audio', blob, `voice_egypt.${ext}`);
+            inp.placeholder = 'جاري فهم كلامك باللهجة المصرية...';
+            try {
+              const res = await fetch('/api/stt', { method: 'POST', body: fd, credentials: 'same-origin' });
+              const data = await res.json();
+              if (data.text) {
+                inp.value = data.text;
+                lastQueryWasVoice = true;
+                sendChatMessage();
+              }
+            } catch (e) {}
+            inp.placeholder = 'اسأل عن مرض، جرعة مبيد، أو جدول ري...';
+          };
+          mediaRecorder.start();
+          isRecording = true;
+          btn.classList.add('recording');
+          inp.placeholder = '🔴 اتكلم بالمصري دلوقتي... (اضغط للإرسال)';
+          return;
+        } catch (e) {}
+      }
+
+      // Fallback to browser ar-EG SpeechRecognition
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRec) {
+        try {
+          mobSpeechRec = new SpeechRec();
+          mobSpeechRec.lang = 'ar-EG';
+          mobSpeechRec.continuous = false;
+          mobSpeechRec.interimResults = false;
+          isRecording = true;
+          btn.classList.add('recording');
+          inp.placeholder = '🎙️ اتكلم باللهجة المصرية...';
+          mobSpeechRec.onresult = (ev) => {
+            const transcript = ev.results[0][0].transcript;
+            if (transcript) {
+              inp.value = transcript;
+              lastQueryWasVoice = true;
               sendChatMessage();
             }
-          } catch (e) {}
-          inp.placeholder = 'اسأل عن مرض، جرعة مبيد، أو جدول ري...';
-        };
-        mediaRecorder.start();
-        isRecording = true;
-        btn.classList.add('recording');
-      } catch (e) {
-        alert('يرجى السماح بصلاحية الميكروفون للتسجيل الصوتي.');
+          };
+          mobSpeechRec.onend = () => {
+            isRecording = false;
+            btn.classList.remove('recording');
+            inp.placeholder = 'اسأل عن مرض، جرعة مبيد، أو جدول ري...';
+          };
+          mobSpeechRec.start();
+          return;
+        } catch (e) {}
       }
+
+      alert('يرجى السماح بصلاحية الميكروفون للتحدث باللهجة المصرية.');
     }
 
     // ── Load Persistent Memory & History ──
