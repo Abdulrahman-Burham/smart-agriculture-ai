@@ -581,7 +581,7 @@ async def google_oauth_redirect_login(request: Request, next: str = Query("/")):
     cfg = _load_oauth_config()
     client_id = cfg.get("google_client_id", "").strip()
     if not client_id:
-        return RedirectResponse(url=f"/api/auth/google/callback?setup=1&next={next}", status_code=302)
+        return RedirectResponse(url=f"/auth/choose-account?provider=google&next={next}", status_code=302)
 
     proto = request.headers.get("x-forwarded-proto") or request.url.scheme or "https"
     host = request.headers.get("x-forwarded-host") or request.headers.get("host") or "plantapi-abdo.uaenorth.cloudapp.azure.com"
