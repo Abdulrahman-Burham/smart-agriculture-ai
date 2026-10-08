@@ -481,36 +481,54 @@
             .form-input, .form-select {
                 font-size: 16px !important;
             }
+            .btn-google-main, .btn-provider, .submit-btn {
+                min-height: 50px;
+                touch-action: manipulation;
+            }
+            .btn-google-main:active, .btn-provider:active, .submit-btn:active {
+                transform: scale(0.985);
+            }
         }
 
         @media (max-width: 480px) {
             body {
-                padding: 0.85rem;
+                padding: max(0.85rem, env(safe-area-inset-top)) 0.85rem max(1.2rem, env(safe-area-inset-bottom));
                 justify-content: flex-start;
-                padding-top: 1.2rem;
+                min-height: 100dvh;
             }
             .brand-logo {
                 font-size: 1.35rem;
             }
             .brand-subtitle {
-                font-size: 0.82rem;
+                font-size: 0.84rem;
             }
             .auth-card {
-                padding: 1.2rem 1.05rem;
-                border-radius: 18px;
+                padding: 1.25rem 1.05rem;
+                border-radius: 20px;
             }
             .tab-btn {
-                font-size: 0.85rem;
-                padding: 0.56rem 0.4rem;
+                font-size: 0.86rem;
+                padding: 0.62rem 0.4rem;
             }
             .row-2col {
                 grid-template-columns: 1fr;
                 gap: 0;
             }
+            .oauth-modal-backdrop {
+                align-items: flex-end;
+                padding: 0;
+            }
+            .oauth-modal-card {
+                max-width: 100%;
+                border-radius: 22px 22px 0 0;
+                padding: 1.35rem 1.15rem max(1.5rem, env(safe-area-inset-bottom));
+                max-height: 90dvh;
+                overflow-y: auto;
+            }
             .footer-links {
                 flex-direction: column;
                 text-align: center;
-                gap: 0.5rem;
+                gap: 0.55rem;
             }
         }
 
@@ -998,21 +1016,27 @@
             }
         });
 
+        function isMobileViewport() {
+            return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+        }
+
         function openSocialProviderFlow(provider) {
             hideAlert();
             const params = new URLSearchParams(window.location.search);
             const nextUrl = params.get('next') || '/';
 
             if (provider === 'google') {
-                // 1. If Google Identity Services TokenClient is ready, open the REAL accounts.google.com popup window
                 if (googleTokenClient) {
                     try {
                         googleTokenClient.requestAccessToken({ prompt: 'select_account' });
                         return;
                     } catch (e) {}
                 }
-                // 2. Otherwise open /api/auth/google/login (which redirects to real https://accounts.google.com/o/oauth2/v2/auth)
                 const realGoogleUrl = `/api/auth/google/login?next=${encodeURIComponent(nextUrl)}`;
+                if (isMobileViewport()) {
+                    window.location.href = realGoogleUrl;
+                    return;
+                }
                 const win = window.open(realGoogleUrl, '_blank');
                 if (!win) {
                     window.location.href = realGoogleUrl;
@@ -1022,6 +1046,10 @@
 
             if (provider === 'facebook' || provider === 'yahoo') {
                 const chooserUrl = `/auth/choose-account?provider=${encodeURIComponent(provider)}&next=${encodeURIComponent(nextUrl)}`;
+                if (isMobileViewport()) {
+                    window.location.href = chooserUrl;
+                    return;
+                }
                 const win = window.open(chooserUrl, '_blank');
                 if (!win) {
                     window.location.href = chooserUrl;

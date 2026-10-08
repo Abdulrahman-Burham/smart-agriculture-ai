@@ -2,8 +2,11 @@
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/logo.png">
     <title>Sign in - Google Accounts</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,6 +16,11 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
         }
 
         body {
@@ -20,11 +28,12 @@
             color: #1f1f1f;
             font-family: 'Roboto', 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
         }
 
         .outer-wrap {
@@ -75,12 +84,41 @@
         .card-header {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
             padding: 16px 36px;
             border-bottom: 1px solid #e0e3e7;
             font-size: 14px;
             color: #444746;
             font-weight: 500;
+        }
+
+        .card-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .back-pill-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f0f4f9;
+            border: 1px solid #dce1e8;
+            color: #1f1f1f;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: 'Cairo', 'Roboto', sans-serif;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .back-pill-btn:hover,
+        .back-pill-btn:active {
+            background: #e2e8f0;
         }
 
         .card-body {
@@ -124,7 +162,6 @@
         .choose-subtitle strong {
             color: #0b57d0;
             font-weight: 500;
-            cursor: pointer;
         }
 
         .right-col {
@@ -142,10 +179,12 @@
             display: flex;
             align-items: center;
             gap: 14px;
-            padding: 14px 12px;
+            padding: 15px 12px;
+            min-height: 62px;
             border-bottom: 1px solid #e0e3e7;
             cursor: pointer;
-            transition: background-color 0.15s ease, border-radius 0.15s ease;
+            user-select: none;
+            transition: background-color 0.15s ease, border-radius 0.15s ease, transform 0.1s ease;
         }
 
         .account-item:hover {
@@ -153,14 +192,20 @@
             border-radius: 12px;
         }
 
+        .account-item:active {
+            background-color: #e8f0fe;
+            border-radius: 12px;
+            transform: scale(0.99);
+        }
+
         .acc-avatar {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 500;
             color: #ffffff;
             flex-shrink: 0;
@@ -179,28 +224,35 @@
         }
 
         .acc-name {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 500;
             color: #1f1f1f;
             line-height: 1.35;
         }
 
         .acc-email {
-            font-size: 12px;
+            font-size: 13px;
             color: #444746;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
+        .acc-arrow {
+            color: #747775;
+            font-size: 18px;
+            padding-left: 4px;
+        }
+
         .use-another-icon {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #444746;
+            background: #f0f4f9;
             flex-shrink: 0;
         }
 
@@ -225,7 +277,7 @@
         .another-account-form {
             display: none;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
             padding-top: 6px;
         }
 
@@ -240,9 +292,9 @@
         .g-input {
             width: 100%;
             padding: 15px 16px;
-            font-size: 16px;
+            font-size: 16px; /* 16px prevents iOS Safari auto-zoom */
             border: 1px solid #747775;
-            border-radius: 4px;
+            border-radius: 8px;
             color: #1f1f1f;
             outline: none;
             font-family: inherit;
@@ -259,7 +311,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 12px;
+            margin-top: 8px;
+            gap: 10px;
         }
 
         .btn-g-text {
@@ -268,12 +321,14 @@
             color: #0b57d0;
             font-size: 14px;
             font-weight: 500;
-            padding: 10px 16px;
-            border-radius: 20px;
+            padding: 12px 16px;
+            min-height: 44px;
+            border-radius: 22px;
             cursor: pointer;
         }
 
-        .btn-g-text:hover {
+        .btn-g-text:hover,
+        .btn-g-text:active {
             background: #f0f4f9;
         }
 
@@ -281,15 +336,17 @@
             background: #0b57d0;
             color: #ffffff;
             border: none;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 500;
-            padding: 10px 24px;
-            border-radius: 20px;
+            padding: 12px 28px;
+            min-height: 46px;
+            border-radius: 23px;
             cursor: pointer;
             transition: background 0.15s;
         }
 
-        .btn-g-primary:hover {
+        .btn-g-primary:hover,
+        .btn-g-primary:active {
             background: #0842a0;
         }
 
@@ -312,44 +369,96 @@
             font-size: 12px;
             cursor: pointer;
             outline: none;
-            padding: 4px 8px;
+            padding: 6px 8px;
             border-radius: 4px;
         }
 
         .footer-links {
             display: flex;
-            gap: 24px;
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
         .footer-links a {
             color: #444746;
             text-decoration: none;
+            padding: 4px 0;
         }
 
         .footer-links a:hover {
             text-decoration: underline;
         }
 
+        /* ── Mobile Responsive Optimization (Phones & Small Tablets) ── */
         @media (max-width: 680px) {
             body {
-                padding: 12px;
+                padding: 0;
                 background: #ffffff;
-                justify-content: flex-start;
+                justify-content: space-between;
+            }
+            .outer-wrap {
+                max-width: 100%;
+                min-height: 100dvh;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
             }
             .oauth-card {
                 box-shadow: none;
                 border-radius: 0;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
             }
             .card-header {
-                padding: 14px 16px;
+                padding: max(14px, env(safe-area-inset-top)) 18px 14px;
             }
             .card-body {
                 grid-template-columns: 1fr;
                 gap: 20px;
-                padding: 24px 16px;
+                padding: 24px 20px 20px;
+                min-height: auto;
+                flex: 1;
+            }
+            .left-col {
+                align-items: center;
+                text-align: center;
+            }
+            .app-logo {
+                width: 46px;
+                height: 46px;
+                margin-bottom: 14px;
             }
             .choose-title {
-                font-size: 26px;
+                font-size: 25px;
+                margin-bottom: 6px;
+            }
+            .choose-subtitle {
+                font-size: 14.5px;
+            }
+            .account-item {
+                padding: 15px 10px;
+                min-height: 66px;
+            }
+            .acc-avatar, .use-another-icon {
+                width: 42px;
+                height: 42px;
+            }
+            .acc-name {
+                font-size: 15.5px;
+            }
+            .acc-email {
+                font-size: 13.5px;
+            }
+            .policy-note {
+                margin-top: 20px;
+                text-align: center;
+                font-size: 12px;
+            }
+            .page-footer {
+                padding: 14px 20px max(16px, env(safe-area-inset-bottom));
+                border-top: 1px solid #f0f4f9;
+                background: #ffffff;
             }
         }
     </style>
@@ -361,15 +470,21 @@
         <div class="loading-bar active" id="loadingBar"></div>
 
         <div class="card-header" id="providerHeader">
-            <span id="providerLogo">
-                <svg width="18" height="18" viewBox="0 0 48 48">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                </svg>
-            </span>
-            <span id="providerHeaderText">Sign in with Google</span>
+            <div class="card-header-left">
+                <span id="providerLogo">
+                    <svg width="18" height="18" viewBox="0 0 48 48">
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                    </svg>
+                </span>
+                <span id="providerHeaderText">Sign in with Google</span>
+            </div>
+
+            <button type="button" class="back-pill-btn" onclick="handleBackClick()">
+                <span>← رجوع</span>
+            </button>
         </div>
 
         <div class="card-body">
@@ -397,6 +512,7 @@
                         </div>
                         <div class="acc-info">
                             <div class="acc-name">Use another account</div>
+                            <div class="acc-email" style="font-family:'Cairo',sans-serif;">استخدام حساب آخر</div>
                         </div>
                     </div>
                 </div>
@@ -404,14 +520,14 @@
                 <!-- Use Another Account Input View -->
                 <form class="another-account-form" id="anotherAccountForm" onsubmit="submitNewAccount(event)">
                     <div class="g-input-wrap">
-                        <input type="text" id="newAccEmail" class="g-input" placeholder="Email or phone" autocomplete="username email" required>
+                        <input type="text" id="newAccEmail" class="g-input" inputmode="email" placeholder="Email or phone (البريد أو الموبايل)" autocomplete="username email" required>
                     </div>
                     <div class="g-input-wrap">
-                        <input type="text" id="newAccName" class="g-input" placeholder="Full Name (optional)" autocomplete="name">
+                        <input type="text" id="newAccName" class="g-input" placeholder="Full Name (الاسم - اختياري)" autocomplete="name">
                     </div>
-                    <div id="newAccErr" style="display:none; color:#b3261e; font-size:12px;"></div>
+                    <div id="newAccErr" style="display:none; color:#b3261e; font-size:13px;"></div>
                     <div class="g-form-actions">
-                        <button type="button" class="btn-g-text" onclick="backToChooser()">Back to accounts</button>
+                        <button type="button" class="btn-g-text" onclick="backToChooser()">Back</button>
                         <button type="submit" class="btn-g-primary" id="btnNextSubmit">Next</button>
                     </div>
                 </form>
@@ -443,6 +559,18 @@
     const params = new URLSearchParams(window.location.search);
     const provider = (params.get('provider') || 'google').toLowerCase();
     const nextUrl = params.get('next') || '/';
+
+    function handleBackClick() {
+        if (window.opener && !window.opener.closed) {
+            window.close();
+            return;
+        }
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = '/login';
+        }
+    }
 
     const PROVIDER_CONFIG = {
         google: {
@@ -521,6 +649,7 @@
                         <div class="acc-name">${name}</div>
                         <div class="acc-email">${acc.identifier}</div>
                     </div>
+                    <span class="acc-arrow">›</span>
                 </li>
             `;
         }).join('');
@@ -607,7 +736,7 @@
                 localStorage.setItem('agri_saved_accounts', JSON.stringify(existing.slice(0, 6)));
             } catch (e) {}
 
-            // Notify opener tab if opened via window.open
+            // Notify opener tab if opened via window.open on desktop
             if (window.opener && !window.opener.closed) {
                 try {
                     window.opener.postMessage({
@@ -618,10 +747,9 @@
                     }, '*');
                 } catch (e) {}
                 setTimeout(() => {
-                    window.close();
-                    // If browser blocks closing a full tab, redirect this tab to nextUrl
+                    try { window.close(); } catch (e) {}
                     window.location.href = nextUrl;
-                }, 250);
+                }, 180);
             } else {
                 window.location.href = nextUrl;
             }
@@ -634,7 +762,7 @@
     renderAccounts();
     setTimeout(() => {
         document.getElementById('loadingBar').classList.remove('active');
-    }, 350);
+    }, 300);
 </script>
 
 </body>
