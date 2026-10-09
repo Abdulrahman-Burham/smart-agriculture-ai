@@ -26,7 +26,10 @@ import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-import cv2
+try:
+    import cv2
+except Exception:
+    cv2 = None  # type: ignore[assignment]
 import numpy as np
 from PIL import ExifTags, Image
 
