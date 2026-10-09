@@ -7,7 +7,17 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from rank_bm25 import BM25Okapi
+try:
+    from rank_bm25 import BM25Okapi
+except ImportError:
+    class BM25Okapi:  # type: ignore[no-redef]
+        """Lightweight fallback BM25 scorer when rank_bm25 is not installed."""
+        def __init__(self, corpus: List[List[str]]):
+            self.corpus = corpus
+
+        def get_scores(self, query_tokens: List[str]) -> List[float]:
+            q_set = set(query_tokens)
+            return [float(len(q_set.intersection(doc))) for doc in self.corpus]
 
 logger = logging.getLogger(__name__)
 

@@ -21,16 +21,6 @@ def test_health_check_endpoint():
     assert data["services"]["rag_pipeline"] == "online"
 
 
-def test_health_check_endpoint():
-    """Verify system readiness probe returns healthy status."""
-    response = client.get("/health")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "healthy"
-    assert data["services"]["api_gateway"] == "online"
-    assert data["services"]["rag_pipeline"] == "online"
-
-
 def test_standalone_cv_prediction():
     """Verify Computer Vision disease classification endpoint."""
     from computer_vision.standalone_cv_api import app as cv_app

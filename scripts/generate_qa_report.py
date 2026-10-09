@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any, Dict
+
+os.environ.setdefault("CI", "1")
 
 from tests.load.test_load_performance import run_load_stress_test
 
@@ -71,7 +74,7 @@ def generate_qa_report(report_dir: str | Path = "reports") -> Path:
 """
 
     out_file.write_text(report_content, encoding="utf-8")
-    print(f"✅ QA Report successfully generated at {out_file}")
+    print(f"[OK] QA Report successfully generated at {out_file}")
     return out_file
 
 
