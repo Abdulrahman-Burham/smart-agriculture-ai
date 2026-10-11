@@ -1636,17 +1636,63 @@
       if (aChk && autoSpk === '1') aChk.checked = true;
     })();
 
+    let mobSpeechRunId = 0;
+    const mobTtsBlobCache = new Map();
+
+    function splitMobEgyptianSpeechChunks(text) {
+      const cleaned = (text || '').replace(/\[[^\]]*\d+[^\]]*\]/g, '').replace(/[*#_`~>|]/g, '').trim();
+      if (!cleaned) return [];
+      if (cleaned.length <= 240) return [cleaned];
+
+      const parts = cleaned.split(/(?<=[.!؟\n])\s+/);
+      const chunks = [];
+      let current = '';
+      for (const part of parts) {
+        const limit = chunks.length === 0 ? 190 : 320;
+        if (current && (current.length + part.length + 1) > limit) {
+          chunks.push(current.trim());
+          current = part;
+        } else {
+          current = current ? (current + ' ' + part) : part;
+        }
+      }
+      if (current.trim()) chunks.push(current.trim());
+      return chunks.slice(0, 6);
+    }
+
+    async function fetchMobTtsChunkBlob(chunkText, voice) {
+      const cacheKey = `${voice}::${chunkText}`;
+      if (mobTtsBlobCache.has(cacheKey)) return mobTtsBlobCache.get(cacheKey);
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: chunkText, voice: voice, colloquial: true })
+      });
+      if (!res.ok) throw new Error('TTS fallback');
+      const blob = await res.blob();
+      if (mobTtsBlobCache.size > 40) mobTtsBlobCache.clear();
+      mobTtsBlobCache.set(cacheKey, blob);
+      return blob;
+    }
+
     async function speakMobileEgyptian(btnEl, rawText) {
       if (!rawText) return;
 
       // If clicking the currently playing button, stop playback
-      if (activeMobAudio && activeMobSpeakBtn === btnEl) {
-        activeMobAudio.pause();
-        activeMobAudio = null;
+      if ((activeMobAudio || activeMobSpeakBtn) && activeMobSpeakBtn === btnEl) {
+        mobSpeechRunId++;
+        if (activeMobAudio) {
+          activeMobAudio.pause();
+          activeMobAudio = null;
+        }
         if (activeMobSpeakBtn) activeMobSpeakBtn.innerHTML = '🔊 اسمع بالمصري';
         activeMobSpeakBtn = null;
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         return;
       }
+
+      mobSpeechRunId++;
+      const myRunId = mobSpeechRunId;
 
       if (activeMobAudio) {
         activeMobAudio.pause();
@@ -1657,6 +1703,9 @@
       }
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
+      const chunks = splitMobEgyptianSpeechChunks(rawText);
+      if (!chunks.length) return;
+
       const voiceSel = document.getElementById('egyVoiceSelect');
       const chosenVoice = (voiceSel && voiceSel.value) ? voiceSel.value : (localStorage.getItem('agri_egy_voice') || 'ar-EG-ShakirNeural');
 
@@ -1664,28 +1713,47 @@
       if (btnEl) btnEl.innerHTML = '⏳ جاري تجهيز الصوت المصري...';
 
       try {
-        const res = await fetch('/api/tts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: rawText, voice: chosenVoice })
-        });
-        if (!res.ok) throw new Error('TTS fallback');
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        activeMobAudio = audio;
+        const chunkPromises = chunks.map((ch, idx) =>
+          idx === 0 ? fetchMobTtsChunkBlob(ch, chosenVoice) : null
+        );
+
+        const firstBlob = await chunkPromises[0];
+        if (myRunId !== mobSpeechRunId) return;
+
+        for (let i = 1; i < chunks.length; i++) {
+          chunkPromises[i] = fetchMobTtsChunkBlob(chunks[i], chosenVoice).catch(() => null);
+        }
+
         if (btnEl) btnEl.innerHTML = '⏹️ إيقاف الصوت المصري';
 
-        audio.onended = () => {
-          URL.revokeObjectURL(url);
+        for (let i = 0; i < chunks.length; i++) {
+          if (myRunId !== mobSpeechRunId) break;
+          const blob = i === 0 ? firstBlob : await chunkPromises[i];
+          if (!blob || myRunId !== mobSpeechRunId) break;
+
+          await new Promise((resolve) => {
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            activeMobAudio = audio;
+            const cleanup = () => {
+              URL.revokeObjectURL(url);
+              resolve();
+            };
+            audio.onended = cleanup;
+            audio.onerror = cleanup;
+            audio.play().catch(cleanup);
+          });
+        }
+
+        if (myRunId === mobSpeechRunId) {
           if (activeMobSpeakBtn === btnEl && btnEl) btnEl.innerHTML = '🔊 اسمع بالمصري';
           activeMobAudio = null;
           activeMobSpeakBtn = null;
-        };
-        await audio.play();
+        }
       } catch (e) {
+        if (myRunId !== mobSpeechRunId) return;
         if ('speechSynthesis' in window) {
-          const u = new SpeechSynthesisUtterance(rawText.replace(/[*#_]/g, ''));
+          const u = new SpeechSynthesisUtterance(chunks.join(' '));
           u.lang = 'ar-EG';
           u.rate = 1.0;
           u.onend = () => {

@@ -739,19 +739,72 @@
         }
 
         let currentSimpleAudio = null;
-        function speakEgyptianAdvice(text, btn) {
-            if (currentSimpleAudio && !currentSimpleAudio.paused) {
+        let simpleSpeechRunId = 0;
+        async function speakEgyptianAdvice(text, btn) {
+            if (currentSimpleAudio) {
+                simpleSpeechRunId++;
                 currentSimpleAudio.pause();
                 currentSimpleAudio = null;
                 if (btn) btn.innerText = '🔊 استماع باللهجة المصرية';
                 return;
             }
-            const cleanText = text.replace(/[#*`]/g, '');
-            const url = `/api/tts?voice=ar-EG-ShakirNeural&text=${encodeURIComponent(cleanText.slice(0, 900))}`;
-            if (btn) btn.innerText = '⏹️ إيقاف الصوت';
-            currentSimpleAudio = new Audio(url);
-            currentSimpleAudio.onended = () => { if (btn) btn.innerText = '🔊 استماع باللهجة المصرية'; };
-            currentSimpleAudio.play().catch(() => { if (btn) btn.innerText = '🔊 استماع باللهجة المصرية'; });
+            simpleSpeechRunId++;
+            const myRun = simpleSpeechRunId;
+            const cleanText = (text || '').replace(/[#*`]/g, '').trim();
+            if (!cleanText) return;
+            const parts = cleanText.split(/(?<=[.!؟\n])\s+/);
+            const chunks = [];
+            let cur = '';
+            for (const p of parts) {
+                const lim = chunks.length === 0 ? 190 : 320;
+                if (cur && (cur.length + p.length + 1) > lim) {
+                    chunks.push(cur.trim());
+                    cur = p;
+                } else {
+                    cur = cur ? (cur + ' ' + p) : p;
+                }
+            }
+            if (cur.trim()) chunks.push(cur.trim());
+            const voice = localStorage.getItem('agri_egy_voice') || 'ar-EG-ShakirNeural';
+            if (btn) btn.innerText = '⏳ جاري تجهيز الصوت...';
+
+            const fetchChunk = async (ch) => {
+                const r = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: ch, voice: voice, colloquial: true })
+                });
+                if (!r.ok) throw new Error('TTS failed');
+                return await r.blob();
+            };
+
+            try {
+                const promises = chunks.map((ch, idx) => idx === 0 ? fetchChunk(ch) : null);
+                const firstBlob = await promises[0];
+                if (myRun !== simpleSpeechRunId) return;
+                for (let i = 1; i < chunks.length; i++) {
+                    promises[i] = fetchChunk(chunks[i]).catch(() => null);
+                }
+                if (btn) btn.innerText = '⏹️ إيقاف الصوت';
+                for (let i = 0; i < chunks.length; i++) {
+                    if (myRun !== simpleSpeechRunId) break;
+                    const blob = i === 0 ? firstBlob : await promises[i];
+                    if (!blob || myRun !== simpleSpeechRunId) break;
+                    await new Promise((resolve) => {
+                        const url = URL.createObjectURL(blob);
+                        const audio = new Audio(url);
+                        currentSimpleAudio = audio;
+                        const done = () => { URL.revokeObjectURL(url); resolve(); };
+                        audio.onended = done;
+                        audio.onerror = done;
+                        audio.play().catch(done);
+                    });
+                }
+            } catch (e) {}
+            if (myRun === simpleSpeechRunId) {
+                currentSimpleAudio = null;
+                if (btn) btn.innerText = '🔊 استماع باللهجة المصرية';
+            }
         }
 
         (async function checkSimpleAuth() {

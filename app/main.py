@@ -1705,7 +1705,7 @@ async def egyptian_stt_endpoint(
 
                 def _call_gemini_stt() -> str:
                     models = []
-                    for m in [cfg_model, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                    for m in [cfg_model, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.5-transcribe", "gemini-2.5-flash"]:
                         if m and m not in models:
                             models.append(m)
                     for api_key in ordered_keys:
@@ -1753,17 +1753,18 @@ async def egyptian_stt_endpoint(
 
 # Phrase-level and word-level transformations to make TTS sound 100% authentic Egyptian Arabic (عامية مصرية زراعية)
 _SPOKEN_EGYPTIAN_PHRASE_MAP = [
-    ("تم تشخيص:", "بص يا هندسة، نتيجة الفحص هي:"),
+    ("تم تشخيص:", "بص يا باشمهندس، نتيجة الفحص هي:"),
     ("نتيجة التشخيص:", "بص يا ريس، نتيجة الفحص هي:"),
     ("بناءً على التشخيص", "على حسب الفحص"),
     ("بناءً على ", "على حسب "),
     ("وفقاً لـ", "على حسب "),
     ("بثقة ", "بنسبة تأكيد "),
-    ("خطة العلاج والجرعات الموصى بها:", "ودلوقتي دي خطة العلاج والجرعات المظبوطة:"),
-    ("خطوات العلاج والمكافحة:", "خطوات العلاج اللي هتعملها في الأرض:"),
-    ("المكافحة الكيميائية:", "بالنسبة للرش والمبيدات:"),
-    ("المكافحة الزراعية:", "وبالنسبة للمعاملات في الأرض:"),
-    ("الوقاية والاحتياطات:", "وعشان تحمي زرعك:"),
+    ("خطة العلاج والجرعات الموصى بها:", "ودلوقتي دي خطة العلاج والجرعات المظبوطة،"),
+    ("خطوات العلاج والمكافحة:", "خطوات العلاج اللي هتعملها في الأرض،"),
+    ("المكافحة الكيميائية:", "بالنسبة للرش والمبيدات،"),
+    ("المكافحة الزراعية:", "وبالنسبة للمعاملات في الأرض،"),
+    ("الوقاية والاحتياطات:", "وعلشان تحمي زرعك،"),
+    ("بشمهندس", "باشمهندس"),
     ("يجب عليك ", "لازم "),
     ("يجب أن ", "لازم "),
     ("يجب ", "لازم "),
@@ -1800,7 +1801,8 @@ _SPOKEN_EGYPTIAN_PHRASE_MAP = [
     ("التخلص من الأوراق المصابة", "تشيل الورق المصاب وتتخلص منه"),
     ("الأوراق المصابة", "الورق المصاب"),
     ("الأوراق السفلية", "الورق اللي تحت"),
-    ("الأوراق", "الورق"),
+    ("الأوراق الحديثة", "الورق الجديد"),
+    ("حواف الأوراق", "أطراف الورق"),
     ("النباتات المصابة", "الزرع المصاب"),
     ("النباتات السليمة", "الزرع السليم"),
     ("النباتات", "الزرع"),
@@ -1829,14 +1831,14 @@ _SPOKEN_EGYPTIAN_PHRASE_MAP = [
     ("الآن", "دلوقتي"),
     ("حالياً", "دلوقتي"),
     ("في الوقت الحالي", "في الوقت ده"),
-    ("من أجل ", "عشان "),
-    ("لكي ", "عشان "),
-    ("كي لا ", "عشان ما "),
-    ("لئلا ", "عشان ما "),
-    ("حتى لا ", "عشان ما "),
-    ("بهدف ", "عشان "),
-    ("بسبب ", "عشان "),
-    ("نظراً لـ", "عشان "),
+    ("من أجل ", "علشان "),
+    ("لكي ", "علشان "),
+    ("كي لا ", "علشان ما "),
+    ("لئلا ", "علشان ما "),
+    ("حتى لا ", "علشان ما "),
+    ("بهدف ", "علشان "),
+    ("بسبب ", "بسبب "),
+    ("نظراً لـ", "علشان "),
     ("نتيجة لـ", "بسبب "),
     ("في حالة وجود ", "لو لقيت "),
     ("في حالة ظهور ", "لو ظهرت "),
@@ -1864,13 +1866,16 @@ _SPOKEN_EGYPTIAN_PHRASE_MAP = [
     ("بالإضافة إلى ", "وكمان "),
     ("علاوة على ذلك", "وفوق ده كله"),
     ("ومع ذلك", "وبردو"),
-    ("لذلك ", "عشان كده "),
-    ("لذا ", "عشان كده "),
-    ("وبالتالي ", "وعشان كده "),
+    ("لذلك ", "علشان كده "),
+    ("لذا ", "علشان كده "),
+    ("وبالتالي ", "وعلشان كده "),
     ("لا تقم بـ", "بلاش "),
     ("لا تستخدم ", "بلاش تستخدم "),
     ("لا تفرط في ", "بلاش تكتر من "),
     ("الإفراط في ", "كتر "),
+    ("وتتجنب ", "وتبعد عن "),
+    ("تتجنب ", "تبعد عن "),
+    ("لتجنب ", "علشان تبعد عن "),
     ("تجنب ", "ابعد عن "),
     ("الامتناع عن ", "إنك تبعد عن "),
     ("احرص على ", "خلي بالك من "),
@@ -1881,10 +1886,8 @@ _SPOKEN_EGYPTIAN_PHRASE_MAP = [
     ("مساءً", "آخر النهار"),
     ("في المساء", "آخر النهار"),
     ("قبل الغروب", "آخر النهار قبل المغرب"),
-    ("جيداً", "كويس قوي"),
-    ("جيدا", "كويس قوي"),
-    ("جداً", "قوي"),
-    ("جدا", "قوي"),
+    ("جيداً", "كويس جداً"),
+    ("جيدا", "كويس جداً"),
     ("كثيراً", "كتير"),
     ("كثيرة", "كتير"),
     ("قليلاً", "شوية"),
@@ -1902,10 +1905,6 @@ _SPOKEN_EGYPTIAN_PHRASE_MAP = [
     ("لتر من الماء", "لتر مية"),
     ("الماء", "المية"),
     ("مياه الري", "مية الري"),
-    ("درجة مئوية", "درجة"),
-    ("بمعدل ", "بمعدل "),
-    ("الندوة المتأخرة", "الندوة المتأخرة"),
-    ("الندوة المبكرة", "الندوة المبكرة"),
 ]
 
 
@@ -1916,8 +1915,8 @@ def to_spoken_egyptian_arabic(raw_text: str) -> str:
         return ""
 
     text = raw_text
-    # 1. Remove citation brackets like [1], [2] and page refs like (صفحة 14)
-    text = re.sub(r"\[\d+\]", "", text)
+    # 1. Remove citation brackets like [1], [2], [ص 5-6] and page refs like (صفحة 14)
+    text = re.sub(r"\[[^\]]*\d+[^\]]*\]", "", text)
     text = re.sub(r"\(\s*صفحة\s*\d+[^)]*\)", "", text)
     # 2. Remove parenthetical English disease/model codes like (Tomato___Late_blight) or (EfficientNetV2B2_best.keras)
     text = re.sub(r"\([A-Za-z0-9_.\-\s/]+\)", "", text)
@@ -1928,38 +1927,42 @@ def to_spoken_egyptian_arabic(raw_text: str) -> str:
     text = re.sub(r"[🔬🌿🌾🚜💧🌊🚿🌡️💨📍🎯✅⚠️❌💊📚🤖⚡📸📷🎤🔊📋💬🔄🏠👤🔒🔑🗣️]", " ", text)
 
     # 5. Normalize agricultural units & numbers into natural Egyptian spoken words
+    text = re.sub(r"(\d+(?:\.\d+)?)\s*°\s*(?:C|مئوية|م)?", r"\1 درجة مئوية ", text, flags=re.IGNORECASE)
     text = re.sub(r"(\d+)\s*-\s*(\d+)", r"من \1 لـ \2", text)
     text = re.sub(r"(\d+)\s*(?:سم3|سم³|مل|ملي)\b", r"\1 سنتي", text)
     text = re.sub(r"(\d+)\s*(?:جم|غ|جرام)\b", r"\1 جرام", text)
     text = re.sub(r"(\d+)\s*(?:كجم|كغ|كيلوجرام)\b", r"\1 كيلو", text)
-    text = re.sub(r"/\s*100\s*لتر", " على كل مية لتر", text)
-    text = re.sub(r"لكل\s*100\s*لتر", "على كل مية لتر", text)
+    text = re.sub(r"/\s*100\s*لتر", " لكل مية لتر", text)
+    text = re.sub(r"لكل\s*100\s*لتر", "لكل مية لتر", text)
     text = re.sub(r"/\s*فدان", " للفدان", text)
     text = re.sub(r"/\s*الفدان", " للفدان", text)
     text = re.sub(r"(\d+(?:\.\d+)?)\s*%", r"\1 في المية", text)
-    text = re.sub(r"(\d+(?:\.\d+)?)\s*°\s*C?", r"\1 درجة", text, flags=re.IGNORECASE)
 
     # 6. Convert numbered bullet points (1. , 2. , 3. ) into natural Egyptian spoken transitions
-    text = re.sub(r"(?:^|\n)\s*1[\.\-\)]\s*", " . أول حاجة: ", text)
-    text = re.sub(r"(?:^|\n)\s*2[\.\-\)]\s*", " . وتاني حاجة: ", text)
-    text = re.sub(r"(?:^|\n)\s*3[\.\-\)]\s*", " . وتالت حاجة: ", text)
-    text = re.sub(r"(?:^|\n)\s*4[\.\-\)]\s*", " . ورابع حاجة: ", text)
-    text = re.sub(r"(?:^|\n)\s*5[\.\-\)]\s*", " . وخامس حاجة: ", text)
+    text = re.sub(r"(?:^|\n)\s*1[\.\-\)]\s*", " . أول حاجة، ", text)
+    text = re.sub(r"(?:^|\n)\s*2[\.\-\)]\s*", " . وتاني حاجة، ", text)
+    text = re.sub(r"(?:^|\n)\s*3[\.\-\)]\s*", " . وتالت حاجة، ", text)
+    text = re.sub(r"(?:^|\n)\s*4[\.\-\)]\s*", " . ورابع حاجة، ", text)
+    text = re.sub(r"(?:^|\n)\s*5[\.\-\)]\s*", " . وخامس حاجة، ", text)
 
     # 7. Apply Egyptian agricultural dialect phrase & vocabulary replacements
     for formal, egyptian in _SPOKEN_EGYPTIAN_PHRASE_MAP:
         text = text.replace(formal, egyptian)
 
-    # 8. Add a warm Egyptian agricultural greeting if not already conversational
+    # 8. Smooth punctuation & parentheses so prosody flows naturally
+    text = re.sub(r"[\(\)]", " ، ", text)
     text = re.sub(r"—|--", "، ", text)
-    text = re.sub(r"\n+", " ، ", text)
+    text = re.sub(r":\s*", "، ", text)
+    text = re.sub(r"\n+", " . ", text)
+    text = re.sub(r"(?:\s*[.،]\s*){2,}", " . ", text)
     text = re.sub(r"\s{2,}", " ", text).strip()
-    if text and not any(text.startswith(p) for p in ("بص يا", "يا هندسة", "يا حاج", "يا ريس", "أهلاً")):
-        text = "بص يا هندسة، " + text
+    if text and not any(text.startswith(p) for p in ("بص يا", "يا هندسة", "يا باشمهندس", "يا حاج", "يا ريس", "أهلاً", "اهلا")):
+        text = "بص يا باشمهندس، " + text
     return text
 
 
 _TTS_AUDIO_CACHE: Dict[tuple[str, str], bytes] = {}
+_TTS_KEY_RR_IDX = 0
 
 
 class TTSPayload(BaseModel):
@@ -1968,33 +1971,145 @@ class TTSPayload(BaseModel):
     colloquial: bool = True
 
 
-async def _synthesize_egyptian_tts_mp3(raw_text: str, voice: str = "ar-EG-ShakirNeural") -> bytes:
-    """Convert text to authentic Spoken Egyptian Arabic and synthesize MP3 via Microsoft Edge Neural Egyptian voices."""
+def _wav_or_pcm_to_mp3(audio_bytes: bytes, default_sr: int = 24000) -> tuple[bytes, str]:
+    """Convert WAV or raw 16-bit PCM bytes into compact 64kbps MP3 (or WAV if lameenc unavailable)."""
+    import io
+    import wave
+
+    pcm_data = audio_bytes
+    sample_rate = default_sr
+    channels = 1
+
+    if audio_bytes[:4] == b"RIFF":
+        try:
+            with wave.open(io.BytesIO(audio_bytes), "rb") as wf:
+                sample_rate = wf.getframerate()
+                channels = wf.getnchannels()
+                pcm_data = wf.readframes(wf.getnframes())
+        except Exception:
+            return audio_bytes, "audio/wav"
+
+    try:
+        import lameenc
+        encoder = lameenc.Encoder()
+        encoder.set_bit_rate(64)
+        encoder.set_in_sample_rate(sample_rate)
+        encoder.set_channels(channels)
+        encoder.set_quality(2)
+        mp3_bytes = bytes(encoder.encode(pcm_data) + encoder.flush())
+        if mp3_bytes:
+            return mp3_bytes, "audio/mpeg"
+    except Exception:
+        pass
+
+    if audio_bytes[:4] == b"RIFF":
+        return audio_bytes, "audio/wav"
+
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wf:
+        wf.setnchannels(channels)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        wf.writeframes(pcm_data)
+    return buf.getvalue(), "audio/wav"
+
+
+async def _synthesize_egyptian_tts_mp3(raw_text: str, voice: str = "ar-EG-ShakirNeural") -> tuple[bytes, str]:
+    """Synthesize authentic, human-sounding Egyptian Arabic speech via Gemini 3.8 Neural TTS with Edge TTS retry fallback."""
+    global _TTS_KEY_RR_IDX
+    import base64
     import hashlib
+
     base_spoken = to_spoken_egyptian_arabic(raw_text)
     if not base_spoken:
         raise HTTPException(status_code=400, detail="Empty text")
 
-    selected_voice = voice if voice in ("ar-EG-ShakirNeural", "ar-EG-SalmaNeural") else "ar-EG-ShakirNeural"
-    clipped_text = base_spoken[:1800]
-    raw_hash = hashlib.md5(clipped_text.encode("utf-8")).hexdigest()
-    cache_key = (raw_hash, selected_voice)
-    if cache_key in _TTS_AUDIO_CACHE:
-        return _TTS_AUDIO_CACHE[cache_key]
+    is_female = voice in ("ar-EG-SalmaNeural", "female", "Aoede", "Kore")
+    selected_edge_voice = "ar-EG-SalmaNeural" if is_female else "ar-EG-ShakirNeural"
+    gemini_voice = "Aoede" if is_female else "Orus"
 
+    clipped_text = base_spoken[:900]
+    raw_hash = hashlib.md5(clipped_text.encode("utf-8")).hexdigest()
+    cache_key = (raw_hash, selected_edge_voice)
+    if cache_key in _TTS_AUDIO_CACHE:
+        cached_bytes = _TTS_AUDIO_CACHE[cache_key]
+        mime = "audio/wav" if cached_bytes[:4] == b"RIFF" else "audio/mpeg"
+        return cached_bytes, mime
+
+    # 1. Primary Engine: Gemini 3.8 Neural TTS (human-grade Egyptian dialect prosody & number reading)
+    keys, _ = _get_gemini_key_pool_and_model()
+    if keys:
+        n_keys = len(keys)
+        start_idx = _TTS_KEY_RR_IDX % n_keys
+        _TTS_KEY_RR_IDX += 1
+        ordered_keys = [keys[(start_idx + i) % n_keys] for i in range(n_keys)]
+
+        def _call_gemini_tts() -> Optional[tuple[bytes, str]]:
+            for api_key in ordered_keys:
+                for tts_model in ("gemini-3.8-flash-lite-tts", "gemini-3.8-flash-tts", "gemini-2.5-flash-preview-tts"):
+                    try:
+                        url = f"https://generativelanguage.googleapis.com/v1beta/models/{tts_model}:generateContent?key={api_key}"
+                        payload = {
+                            "contents": [{"parts": [{"text": clipped_text}]}],
+                            "generationConfig": {
+                                "responseModalities": ["AUDIO"],
+                                "speechConfig": {
+                                    "voiceConfig": {
+                                        "prebuiltVoiceConfig": {"voiceName": gemini_voice}
+                                    }
+                                },
+                            },
+                        }
+                        r = ext_requests.post(url, json=payload, timeout=16)
+                        if r.status_code == 200:
+                            cands = r.json().get("candidates", [])
+                            if cands and "content" in cands[0]:
+                                parts = cands[0]["content"].get("parts", [])
+                                if parts and parts[0].get("inlineData", {}).get("data"):
+                                    raw_audio = base64.b64decode(parts[0]["inlineData"]["data"])
+                                    if raw_audio and len(raw_audio) > 400:
+                                        return _wav_or_pcm_to_mp3(raw_audio)
+                    except Exception as e:
+                        logger.warning(f"Gemini TTS ({tts_model}) notice: {e}")
+            return None
+
+        gemini_res = await asyncio.to_thread(_call_gemini_tts)
+        if gemini_res:
+            audio_bytes, media_type = gemini_res
+            if len(_TTS_AUDIO_CACHE) > 160:
+                _TTS_AUDIO_CACHE.clear()
+            _TTS_AUDIO_CACHE[cache_key] = audio_bytes
+            return audio_bytes, media_type
+
+    # 2. Secondary Engine (Fallback): Microsoft Edge Neural TTS with 3x Retry + Egyptian phonetic hints
+    edge_text = (
+        clipped_text.replace("عشان", "علشان")
+        .replace("يا حاج", "يا حَاجّ")
+        .replace("خلي بالك", "خَلِّي بَالَك")
+        .replace("بتاعتك", "بِتَاعْتَك")
+    )
     try:
         import edge_tts
-        communicate = edge_tts.Communicate(clipped_text, selected_voice, rate="+3%", pitch="+0Hz")
-        audio_chunks = bytearray()
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio_chunks.extend(chunk["data"])
-        if audio_chunks:
-            mp3_bytes = bytes(audio_chunks)
-            if len(_TTS_AUDIO_CACHE) > 120:
-                _TTS_AUDIO_CACHE.clear()
-            _TTS_AUDIO_CACHE[cache_key] = mp3_bytes
-            return mp3_bytes
+        from edge_tts.drm import DRM
+
+        for attempt in range(3):
+            try:
+                if attempt > 0:
+                    DRM.clock_skew_seconds = 0.0
+                communicate = edge_tts.Communicate(edge_text, selected_edge_voice, rate="+0%", pitch="-2Hz")
+                audio_chunks = bytearray()
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        audio_chunks.extend(chunk["data"])
+                if audio_chunks:
+                    mp3_bytes = bytes(audio_chunks)
+                    if len(_TTS_AUDIO_CACHE) > 160:
+                        _TTS_AUDIO_CACHE.clear()
+                    _TTS_AUDIO_CACHE[cache_key] = mp3_bytes
+                    return mp3_bytes, "audio/mpeg"
+            except Exception as inner_e:
+                logger.warning(f"Edge TTS attempt {attempt + 1} notice: {inner_e}")
+                await asyncio.sleep(0.15)
     except Exception as e:
         logger.warning(f"Edge TTS notice: {e}")
 
@@ -2006,16 +2121,16 @@ async def egyptian_tts_get_endpoint(
     text: str = Query(..., description="النص المراد نطقه باللهجة المصرية"),
     voice: str = Query("ar-EG-ShakirNeural", description="ar-EG-ShakirNeural (رجالي مصري) أو ar-EG-SalmaNeural (نسائي مصري)"),
 ):
-    """Synthesize natural Egyptian Arabic speech (MP3) via GET."""
-    mp3_bytes = await _synthesize_egyptian_tts_mp3(text, voice)
-    return Response(content=mp3_bytes, media_type="audio/mpeg", headers={"Cache-Control": "public, max-age=3600"})
+    """Synthesize natural Egyptian Arabic speech (MP3/WAV) via GET."""
+    audio_bytes, media_type = await _synthesize_egyptian_tts_mp3(text, voice)
+    return Response(content=audio_bytes, media_type=media_type, headers={"Cache-Control": "public, max-age=3600"})
 
 
 @app.post("/api/tts", tags=["Speech (Egyptian Dialect)"])
 async def egyptian_tts_post_endpoint(payload: TTSPayload):
-    """Synthesize natural Egyptian Arabic speech (MP3) via POST (supports long agricultural prescriptions)."""
-    mp3_bytes = await _synthesize_egyptian_tts_mp3(payload.text, payload.voice)
-    return Response(content=mp3_bytes, media_type="audio/mpeg")
+    """Synthesize natural Egyptian Arabic speech (MP3/WAV) via POST (supports long agricultural prescriptions)."""
+    audio_bytes, media_type = await _synthesize_egyptian_tts_mp3(payload.text, payload.voice)
+    return Response(content=audio_bytes, media_type=media_type)
 
 
 # ─── Camouflaged Developer-Only Telemetry Endpoints (Hidden from Schema & Returns 404 without Key) ───

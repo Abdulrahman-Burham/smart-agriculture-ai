@@ -28,3 +28,5 @@ keras>=3.0.0
 h5py>=3.8.0
 optree>=0.10.0
 absl-py>=2.0.0
+edge-tts>=7.0.0
+lameenc>=1.7.0

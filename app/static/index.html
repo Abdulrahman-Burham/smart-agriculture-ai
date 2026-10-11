@@ -2145,14 +2145,60 @@
             if (aChk) aChk.checked = (savedA === '1');
         })();
 
+        let currentSpeechRunId = 0;
+        const desktopTtsBlobCache = new Map();
+
+        function splitEgyptianSpeechChunks(text) {
+            const cleaned = (text || '').replace(/\[[^\]]*\d+[^\]]*\]/g, '').replace(/[*#_`~>|]/g, '').trim();
+            if (!cleaned) return [];
+            if (cleaned.length <= 240) return [cleaned];
+
+            const parts = cleaned.split(/(?<=[.!؟\n])\s+/);
+            const chunks = [];
+            let current = '';
+            for (const part of parts) {
+                const limit = chunks.length === 0 ? 190 : 320;
+                if (current && (current.length + part.length + 1) > limit) {
+                    chunks.push(current.trim());
+                    current = part;
+                } else {
+                    current = current ? (current + ' ' + part) : part;
+                }
+            }
+            if (current.trim()) chunks.push(current.trim());
+            return chunks.slice(0, 6);
+        }
+
+        async function fetchTtsChunkBlob(chunkText, voice) {
+            const cacheKey = `${voice}::${chunkText}`;
+            if (desktopTtsBlobCache.has(cacheKey)) return desktopTtsBlobCache.get(cacheKey);
+            const res = await fetch('/api/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: chunkText, voice: voice, colloquial: true })
+            });
+            if (!res.ok) throw new Error('TTS POST failed');
+            const blob = await res.blob();
+            if (desktopTtsBlobCache.size > 40) desktopTtsBlobCache.clear();
+            desktopTtsBlobCache.set(cacheKey, blob);
+            return blob;
+        }
+
         async function speakArabic(rawText, btnEl = null) {
-            if (currentAudioPlayer && currentAudioBtn && currentAudioBtn === btnEl) {
-                currentAudioPlayer.pause();
-                currentAudioPlayer = null;
+            if ((currentAudioPlayer || currentAudioBtn) && currentAudioBtn && currentAudioBtn === btnEl) {
+                currentSpeechRunId++;
+                if (currentAudioPlayer) {
+                    currentAudioPlayer.pause();
+                    currentAudioPlayer = null;
+                }
                 btnEl.innerHTML = '🔊 اسمع بالمصري';
                 currentAudioBtn = null;
+                if ('speechSynthesis' in window) window.speechSynthesis.cancel();
                 return;
             }
+            currentSpeechRunId++;
+            const myRunId = currentSpeechRunId;
+
             if (currentAudioPlayer) {
                 currentAudioPlayer.pause();
                 currentAudioPlayer = null;
@@ -2163,8 +2209,8 @@
             }
             if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
-            const cleanText = (rawText || '').replace(/\[\d+\]/g, '').trim();
-            if (!cleanText) return;
+            const chunks = splitEgyptianSpeechChunks(rawText);
+            if (!chunks.length) return;
 
             const vSel = document.getElementById('desktop-egy-voice');
             const chosenVoice = (vSel && vSel.value) ? vSel.value : (localStorage.getItem('agri_egy_voice') || 'ar-EG-ShakirNeural');
@@ -2175,34 +2221,51 @@
             }
 
             try {
-                const res = await fetch('/api/tts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: cleanText,
-                        voice: chosenVoice,
-                        colloquial: true
-                    })
-                });
-                if (!res.ok) throw new Error('TTS POST failed');
-                const blob = await res.blob();
-                const objUrl = URL.createObjectURL(blob);
-                const audio = new Audio(objUrl);
-                currentAudioPlayer = audio;
+                // Start fetching chunk 0 immediately, and trigger background prefetch of remaining chunks
+                const chunkPromises = chunks.map((ch, idx) =>
+                    idx === 0 ? fetchTtsChunkBlob(ch, chosenVoice) : null
+                );
+
+                const firstBlob = await chunkPromises[0];
+                if (myRunId !== currentSpeechRunId) return;
+
+                // Prefetch remaining chunks in background while chunk 0 plays
+                for (let i = 1; i < chunks.length; i++) {
+                    chunkPromises[i] = fetchTtsChunkBlob(chunks[i], chosenVoice).catch(() => null);
+                }
+
                 if (btnEl) btnEl.innerHTML = '⏹️ إيقاف الصوت المصري';
 
-                audio.onended = () => {
-                    URL.revokeObjectURL(objUrl);
+                for (let i = 0; i < chunks.length; i++) {
+                    if (myRunId !== currentSpeechRunId) break;
+                    const blob = i === 0 ? firstBlob : await chunkPromises[i];
+                    if (!blob || myRunId !== currentSpeechRunId) break;
+
+                    await new Promise((resolve) => {
+                        const objUrl = URL.createObjectURL(blob);
+                        const audio = new Audio(objUrl);
+                        currentAudioPlayer = audio;
+                        const cleanup = () => {
+                            URL.revokeObjectURL(objUrl);
+                            resolve();
+                        };
+                        audio.onended = cleanup;
+                        audio.onerror = cleanup;
+                        audio.play().catch(cleanup);
+                    });
+                }
+
+                if (myRunId === currentSpeechRunId) {
                     if (btnEl) btnEl.innerHTML = '🔊 اسمع بالمصري';
-                    if (currentAudioPlayer === audio) currentAudioPlayer = null;
-                    if (currentAudioBtn === btnEl) currentAudioBtn = null;
-                };
-                await audio.play();
+                    currentAudioPlayer = null;
+                    currentAudioBtn = null;
+                }
             } catch (e) {
+                if (myRunId !== currentSpeechRunId) return;
                 if (btnEl) btnEl.innerHTML = '🔊 اسمع بالمصري';
                 currentAudioBtn = null;
                 if ('speechSynthesis' in window) {
-                    const utter = new SpeechSynthesisUtterance(cleanText);
+                    const utter = new SpeechSynthesisUtterance(chunks.join(' '));
                     utter.lang = 'ar-EG';
                     utter.rate = 0.98;
                     window.speechSynthesis.speak(utter);
