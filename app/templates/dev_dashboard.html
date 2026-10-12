@@ -436,6 +436,103 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Live Server Infrastructure & Traffic Monitoring */
+        .server-status-ribbon {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.12), rgba(59, 130, 246, 0.10), rgba(15, 23, 42, 0.95));
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            border-radius: 14px;
+            padding: 12px 18px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 0.8rem;
+        }
+        .pulse-dot {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulseGreen 1.8s infinite;
+            margin-left: 6px;
+        }
+        @keyframes pulseGreen {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .server-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .server-card {
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.98));
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px 18px;
+            position: relative;
+            overflow: hidden;
+        }
+        .server-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .server-card-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .server-big-val {
+            font-size: 1.65rem;
+            font-weight: 800;
+            line-height: 1.2;
+            font-family: 'Consolas', monospace;
+        }
+        .meter-track {
+            width: 100%;
+            height: 8px;
+            background: #0f172a;
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 10px 0;
+            border: 1px solid #1e293b;
+        }
+        .meter-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.45s ease, background 0.3s ease;
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+        }
+        .server-meta-list {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .server-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed rgba(51, 65, 85, 0.45);
+            padding-bottom: 3px;
+        }
+        .server-meta-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -445,13 +542,13 @@
         <span style="font-size: 1.6rem;">🛡️</span>
         <div>
             <h1 style="font-size: 1.15rem; font-weight: 800;">لوحة المراقبة، التحليل الجنائي للصور، والتعلم النشط (Developer Telemetry & Active Learning)</h1>
-            <div style="font-size: 0.76rem; color: var(--text-muted);">تسجيل سري 100% للزوار، الشبكات، جودة الصور، فجوات الـ RAG، وتصدير مجموعات التدريب</div>
+            <div style="font-size: 0.76rem; color: var(--text-muted);">مراقبة حية للبروسيسور والرام والمساحة والترافيك + تسجيل الزوار والشبكات وجودة الصور</div>
         </div>
         <span class="brand-badge">🔒 وضع المطور فقط</span>
     </div>
     <div class="header-actions">
         <span id="lastUpdated" style="font-size: 0.78rem; color: var(--text-muted);"></span>
-        <button class="btn btn-primary" onclick="loadAnalytics()">🔄 تحديث</button>
+        <button class="btn btn-primary" onclick="loadAnalytics()">🔄 تحديث الآن</button>
         <a id="exportDatasetZipBtn" class="btn btn-purple" href="#" target="_blank">📦 تحميل Dataset الصور للتدريب (ZIP)</a>
         <a id="exportFinetuneBtn" class="btn btn-blue" href="#" target="_blank">🤖 تحميل تدريب الشات (JSONL)</a>
         <a id="exportCsvUsersBtn" class="btn" href="#" target="_blank">👥 المسجلين CSV</a>
@@ -462,6 +559,96 @@
 </header>
 
 <div class="container">
+    <!-- Live Server Status Ribbon -->
+    <div class="server-status-ribbon">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span><span class="pulse-dot"></span><strong style="color:#34d399;">السيرفر متصل ويعمل بكفاءة</strong></span>
+            <span class="badge badge-blue mono" id="srvHostBadge">Host: -</span>
+            <span class="badge badge-purple" id="srvUptimeBadge">⏱️ تشغيل السيرفر: -</span>
+            <span class="badge badge-green" id="srvAiModelsBadge">🧠 EfficientNetV2B2 + Agri-RAG: نشط</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span class="badge badge-amber" id="srvLiveActiveBadge">🔥 نشط الآن (15د): 0 زائر</span>
+            <span class="badge badge-blue" id="srvRpmBadge">⚡ معدل الطلبات: 0 req/min</span>
+            <span style="font-size:0.74rem; color:var(--text-muted);">يتحدث تلقائياً كل 15 ثانية</span>
+        </div>
+    </div>
+
+    <!-- Live Hardware & Traffic Gauges (CPU, RAM, Disk, Network/Traffic) -->
+    <div class="server-grid">
+        <!-- 1. CPU & Load Average -->
+        <div class="server-card">
+            <div class="server-card-head">
+                <div class="server-card-title">⚙️ البروسيسور والمعالج (CPU)</div>
+                <span class="badge badge-blue mono" id="srvCpuCoresBadge">- vCPU</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div class="server-big-val" id="srvCpuPct" style="color:#34d399;">0%</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);" id="srvCpuLoadShort">Load: 0.00</div>
+            </div>
+            <div class="meter-track"><div class="meter-fill" id="srvCpuBar" style="width:0%;"></div></div>
+            <div class="server-meta-list">
+                <div class="server-meta-row"><span>طراز المعالج:</span><strong id="srvCpuModel" style="color:#e2e8f0; max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">-</strong></div>
+                <div class="server-meta-row"><span>متوسط الحمل (1د / 5د / 15د):</span><strong class="mono" id="srvCpuLoadFull" style="color:#93c5fd;">- / - / -</strong></div>
+                <div class="server-meta-row"><span>استهلاك خدمة الذكاء الاصطناعي:</span><strong id="srvAppUptime" style="color:#34d399;">-</strong></div>
+            </div>
+        </div>
+
+        <!-- 2. RAM & Swap Memory -->
+        <div class="server-card">
+            <div class="server-card-head">
+                <div class="server-card-title">🧠 الذاكرة العشوائية (RAM)</div>
+                <span class="badge badge-purple mono" id="srvRamUsedBadge">0 / 0 GB</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div class="server-big-val" id="srvRamPct" style="color:#60a5fa;">0%</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">متاح: <strong id="srvRamAvail" style="color:#34d399;">0 GB</strong></div>
+            </div>
+            <div class="meter-track"><div class="meter-fill" id="srvRamBar" style="width:0%;"></div></div>
+            <div class="server-meta-list">
+                <div class="server-meta-row"><span>المستخدم / الإجمالي:</span><strong class="mono" id="srvRamDetail" style="color:#e2e8f0;">-</strong></div>
+                <div class="server-meta-row"><span>ذاكرة موديلات الـ AI (Python RSS):</span><strong class="mono" id="srvAppRss" style="color:#c4b5fd;">- MB</strong></div>
+                <div class="server-meta-row"><span>ذاكرة التبديل (Swap):</span><strong class="mono" id="srvSwapDetail" style="color:#94a3b8;">-</strong></div>
+            </div>
+        </div>
+
+        <!-- 3. Disk Storage & DB / Cache Breakdown -->
+        <div class="server-card">
+            <div class="server-card-head">
+                <div class="server-card-title">💾 المساحة التخزينية (Disk)</div>
+                <span class="badge badge-green mono" id="srvDiskFreeBadge">متبقي: 0 GB</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div class="server-big-val" id="srvDiskPct" style="color:#34d399;">0%</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);" id="srvDiskUsedText">0 / 0 GB</div>
+            </div>
+            <div class="meter-track"><div class="meter-fill" id="srvDiskBar" style="width:0%;"></div></div>
+            <div class="server-meta-list">
+                <div class="server-meta-row"><span>قاعدة البيانات (SQLite DB):</span><strong class="mono" id="srvDbSize" style="color:#fbbf24;">0 MB</strong></div>
+                <div class="server-meta-row"><span>الصور المحفوظة للتدريب:</span><strong class="mono" id="srvImgStorage" style="color:#60a5fa;">0 MB</strong></div>
+                <div class="server-meta-row"><span>كاش الصوت المصري (TTS):</span><strong class="mono" id="srvTtsCache" style="color:#34d399;">0 MB (0 ملف)</strong></div>
+            </div>
+        </div>
+
+        <!-- 4. Live Network Bandwidth & HTTP Traffic -->
+        <div class="server-card">
+            <div class="server-card-head">
+                <div class="server-card-title">📡 الترافيك والشبكة (Traffic & Net)</div>
+                <span class="badge badge-amber mono" id="srvTraffic24hBadge">24س: 0 طلب</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div class="server-big-val" id="srvTraffic1h" style="color:#fbbf24;">0 <span style="font-size:0.82rem; font-weight:600;">طلب/ساعة</span></div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">آخر 5د: <strong id="srvTraffic5m" style="color:#34d399;">0</strong></div>
+            </div>
+            <div class="meter-track"><div class="meter-fill" id="srvTrafficBar" style="width:15%; background:linear-gradient(90deg, #f59e0b, #10b981);"></div></div>
+            <div class="server-meta-list">
+                <div class="server-meta-row"><span>باندويدث السيرفر (وارد ⬇️ / صادر ⬆️):</span><strong class="mono" id="srvNetIo" style="color:#93c5fd;">⬇️ 0 MB | ⬆️ 0 MB</strong></div>
+                <div class="server-meta-row"><span>استجابات السيرفر (آخر 24س):</span><strong class="mono" id="srvHttpStatusCodes">✅ 0 | ⚠️ 0 | ❌ 0</strong></div>
+                <div class="server-meta-row"><span>نشاط الذكاء الاصطناعي (24س):</span><strong id="srvAiActivity24h" style="color:#cbd5e1;">💬 0 شات | 📸 0 صورة</strong></div>
+            </div>
+        </div>
+    </div>
+
     <!-- KPIs -->
     <div class="kpi-grid">
         <div class="kpi-card">
@@ -488,6 +675,10 @@
 
     <!-- Insights -->
     <div class="insights-grid">
+        <div class="panel">
+            <div class="panel-title">🚀 أكثر المسارات استهلاكاً للترافيك والسرعة (Top Endpoints)</div>
+            <div id="topEndpointsList">جاري التحميل...</div>
+        </div>
         <div class="panel">
             <div class="panel-title">⏰ أوقات الذروة والضغط (حسب الساعة)</div>
             <div id="peakHoursList">جاري التحميل...</div>
@@ -821,14 +1012,103 @@
         }).join('');
     }
 
+    function meterColor(pct) {
+        if (pct >= 85) return 'linear-gradient(90deg, #ef4444, #f97316)';
+        if (pct >= 65) return 'linear-gradient(90deg, #f59e0b, #eab308)';
+        return 'linear-gradient(90deg, #10b981, #3b82f6)';
+    }
+
+    function textPctColor(pct) {
+        if (pct >= 85) return '#f87171';
+        if (pct >= 65) return '#fbbf24';
+        return '#34d399';
+    }
+
     async function loadAnalytics() {
         try {
             const res = await fetch(`/api/dev/analytics?limit=150&key=${encodeURIComponent(DEV_KEY)}`);
             if (!res.ok) throw new Error('Failed to load telemetry');
             const data = await res.json();
 
-            // KPIs
+            // Live Server Hardware & Traffic Telemetry
+            const srv = data.server_metrics || {};
+            const cpu = srv.cpu || {};
+            const mem = srv.memory || {};
+            const dsk = srv.disk || {};
+            const net = srv.network || {};
+            const sys = srv.system || {};
+            const trf = data.traffic_summary || {};
             const k = data.kpis || {};
+
+            // Status Ribbon
+            document.getElementById('srvHostBadge').textContent = `🖥️ ${sys.hostname || 'Azure-VM'} | Python ${sys.python_version || ''}`;
+            document.getElementById('srvUptimeBadge').textContent = `⏱️ السيرفر: ${sys.os_uptime || '-'} | الخدمة: ${sys.app_uptime || '-'}`;
+            document.getElementById('srvAiModelsBadge').textContent = `🧠 الرؤية: ${sys.vision_model_loaded ? 'محمّل بالرام ✅' : 'في الانتظار'} | المراجع RAG: ${sys.rag_ready ? 'جاهز ✅' : 'غير جاهز'}`;
+            document.getElementById('srvLiveActiveBadge').textContent = `🔥 نشط الآن (15د): ${trf.active_visitors_15m ?? 0} زائر (${trf.active_ips_1h ?? 0} IP/ساعة)`;
+            document.getElementById('srvRpmBadge').textContent = `⚡ معدل الطلبات: ${trf.rpm_5m ?? 0} req/min`;
+
+            // 1. CPU Card
+            const cpuPct = Number(cpu.usage_pct || 0);
+            document.getElementById('srvCpuCoresBadge').textContent = `${cpu.cores || 1} vCPU`;
+            const cpuPctEl = document.getElementById('srvCpuPct');
+            cpuPctEl.textContent = `${cpuPct.toFixed(1)}%`;
+            cpuPctEl.style.color = textPctColor(cpuPct);
+            const cpuBar = document.getElementById('srvCpuBar');
+            cpuBar.style.width = `${Math.min(100, Math.max(3, cpuPct))}%`;
+            cpuBar.style.background = meterColor(cpuPct);
+            document.getElementById('srvCpuLoadShort').textContent = `Load 1m: ${(cpu.load_1m ?? 0).toFixed(2)}`;
+            document.getElementById('srvCpuModel').textContent = cpu.model || 'Cloud vCPU';
+            document.getElementById('srvCpuModel').title = cpu.model || '';
+            document.getElementById('srvCpuLoadFull').textContent = `${(cpu.load_1m ?? 0).toFixed(2)} / ${(cpu.load_5m ?? 0).toFixed(2)} / ${(cpu.load_15m ?? 0).toFixed(2)}`;
+            document.getElementById('srvAppUptime').textContent = `نشط منذ ${sys.app_uptime || '-'}`;
+
+            // 2. RAM Card
+            const ramPct = Number(mem.usage_pct || 0);
+            document.getElementById('srvRamUsedBadge').textContent = `${mem.used_gb ?? 0} / ${mem.total_gb ?? 0} GB`;
+            const ramPctEl = document.getElementById('srvRamPct');
+            ramPctEl.textContent = `${ramPct.toFixed(1)}%`;
+            ramPctEl.style.color = textPctColor(ramPct);
+            document.getElementById('srvRamAvail').textContent = `${mem.available_gb ?? 0} GB`;
+            const ramBar = document.getElementById('srvRamBar');
+            ramBar.style.width = `${Math.min(100, Math.max(3, ramPct))}%`;
+            ramBar.style.background = meterColor(ramPct);
+            document.getElementById('srvRamDetail').textContent = `${mem.used_mb ?? 0} MB مستخدم من ${mem.total_mb ?? 0} MB`;
+            document.getElementById('srvAppRss').textContent = `${mem.app_rss_mb ?? 0} MB`;
+            document.getElementById('srvSwapDetail').textContent = mem.swap_total_mb > 0
+                ? `${mem.swap_used_mb ?? 0} / ${mem.swap_total_mb ?? 0} MB (${mem.swap_pct ?? 0}%)`
+                : 'غير مفعّل (0 MB)';
+
+            // 3. Disk Card
+            const diskPct = Number(dsk.usage_pct || 0);
+            document.getElementById('srvDiskFreeBadge').textContent = `متاح: ${dsk.free_gb ?? 0} GB`;
+            const diskPctEl = document.getElementById('srvDiskPct');
+            diskPctEl.textContent = `${diskPct.toFixed(1)}%`;
+            diskPctEl.style.color = textPctColor(diskPct);
+            document.getElementById('srvDiskUsedText').textContent = `${dsk.used_gb ?? 0} / ${dsk.total_gb ?? 0} GB`;
+            const diskBar = document.getElementById('srvDiskBar');
+            diskBar.style.width = `${Math.min(100, Math.max(3, diskPct))}%`;
+            diskBar.style.background = meterColor(diskPct);
+            document.getElementById('srvDbSize').textContent = `${trf.db_size_mb ?? 0} MB`;
+            const imgBytes = Number(k.total_image_bytes || 0);
+            document.getElementById('srvImgStorage').textContent = `${(imgBytes / (1024 * 1024)).toFixed(2)} MB (${k.total_images ?? 0} صورة)`;
+            document.getElementById('srvTtsCache').textContent = `${dsk.tts_cache_mb ?? 0} MB (${dsk.tts_cache_files ?? 0} ملف صوتي)`;
+
+            // 4. Traffic & Network Card
+            const req24h = trf.requests_24h ?? 0;
+            const req1h = trf.requests_1h ?? 0;
+            const req5m = trf.requests_5m ?? 0;
+            document.getElementById('srvTraffic24hBadge').textContent = `24س: ${req24h} طلب`;
+            document.getElementById('srvTraffic1h').innerHTML = `${req1h} <span style="font-size:0.82rem; font-weight:600;">طلب/ساعة</span>`;
+            document.getElementById('srvTraffic5m').textContent = `${req5m} طلب`;
+            const trafficIntensity = Math.min(100, Math.max(8, Math.round((req1h / Math.max(req24h, 20)) * 100)));
+            document.getElementById('srvTrafficBar').style.width = `${trafficIntensity}%`;
+            const rxText = (net.rx_gb >= 1) ? `${net.rx_gb} GB` : `${net.rx_mb ?? 0} MB`;
+            const txText = (net.tx_gb >= 1) ? `${net.tx_gb} GB` : `${net.tx_mb ?? 0} MB`;
+            document.getElementById('srvNetIo').textContent = `⬇️ ${rxText} | ⬆️ ${txText}`;
+            document.getElementById('srvHttpStatusCodes').innerHTML = `<span style="color:#34d399;">✅ 2xx: ${trf.status_2xx ?? 0}</span> | <span style="color:#fbbf24;">⚠️ 4xx: ${trf.status_4xx ?? 0}</span> | <span style="color:#f87171;">❌ 5xx: ${trf.status_5xx ?? 0}</span>`;
+            document.getElementById('srvAiActivity24h').textContent = `💬 ${trf.chats_24h ?? 0} استشارة | 📸 ${trf.images_24h ?? 0} فحص صورة`;
+
+            // KPIs
             document.getElementById('kpiTotalVisits').textContent = k.total_visits ?? 0;
             document.getElementById('kpiTotalUsers').textContent = k.total_users ?? 0;
             document.getElementById('kpiUniqueVisitors').textContent = k.unique_visitors ?? 0;
@@ -842,7 +1122,26 @@
             document.getElementById('kpiUncertainImages').textContent = k.uncertain_images ?? 0;
             document.getElementById('kpiTotalErrors').textContent = k.total_errors ?? 0;
 
-            // Insights
+            // Insights: Top Endpoints
+            const topEps = data.top_endpoints || [];
+            const maxEpHits = Math.max(...topEps.map(e => e.hits || 1), 1);
+            document.getElementById('topEndpointsList').innerHTML = topEps.length
+                ? topEps.slice(0, 6).map(ep => {
+                    const pct = Math.round(((ep.hits || 0) / maxEpHits) * 100);
+                    return `
+                        <div class="bar-row">
+                            <div class="bar-header">
+                                <span class="mono" style="font-size:0.76rem; color:#93c5fd;">${esc(ep.endpoint)}</span>
+                                <span><strong style="color:#34d399;">${ep.hits}</strong> طلب <span class="badge badge-purple" style="margin-right:4px;">${ep.avg_ms} ms</span></span>
+                            </div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:${pct}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : '<div style="color:var(--text-muted); font-size:0.82rem;">لا توجد بيانات مسارات بعد</div>';
+
             document.getElementById('peakHoursList').innerHTML = renderBars(data.peak_hours || [], 'hour', 'count');
 
             const topicsHtml = renderBars((data.top_chat_topics || []).slice(0, 4), 'topic', 'count');

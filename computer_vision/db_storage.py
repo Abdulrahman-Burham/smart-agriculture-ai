@@ -2004,6 +2004,38 @@ def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
 
         avg_chat_ms = conn.execute("SELECT COALESCE(AVG(latency_ms), 0) FROM chat_logs WHERE latency_ms > 0").fetchone()[0]
         avg_img_ms = conn.execute("SELECT COALESCE(AVG(latency_ms), 0) FROM uploaded_images WHERE latency_ms > 0").fetchone()[0]
+        avg_visit_ms = conn.execute("SELECT COALESCE(AVG(latency_ms), 0) FROM visitor_logs WHERE latency_ms > 0").fetchone()[0]
+
+        # 1b. Live Traffic Window Metrics (5m, 15m, 1h, 24h) & HTTP Status Breakdown
+        now_dt = datetime.datetime.now()
+        ts_5m = (now_dt - datetime.timedelta(minutes=5)).strftime("%Y-%m-%d %H:%M:%S")
+        ts_15m = (now_dt - datetime.timedelta(minutes=15)).strftime("%Y-%m-%d %H:%M:%S")
+        ts_1h = (now_dt - datetime.timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+        ts_24h = (now_dt - datetime.timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+
+        requests_5m = conn.execute("SELECT COUNT(*) FROM visitor_logs WHERE created_at >= ?", (ts_5m,)).fetchone()[0]
+        requests_1h = conn.execute("SELECT COUNT(*) FROM visitor_logs WHERE created_at >= ?", (ts_1h,)).fetchone()[0]
+        requests_24h = conn.execute("SELECT COUNT(*) FROM visitor_logs WHERE created_at >= ?", (ts_24h,)).fetchone()[0]
+        active_visitors_15m = conn.execute("SELECT COUNT(DISTINCT visitor_hash) FROM visitor_logs WHERE created_at >= ? AND visitor_hash != ''", (ts_15m,)).fetchone()[0]
+        active_ips_1h = conn.execute("SELECT COUNT(DISTINCT client_ip) FROM visitor_logs WHERE created_at >= ? AND client_ip != ''", (ts_1h,)).fetchone()[0]
+        chats_24h = conn.execute("SELECT COUNT(*) FROM chat_logs WHERE created_at >= ?", (ts_24h,)).fetchone()[0]
+        images_24h = conn.execute("SELECT COUNT(*) FROM uploaded_images WHERE created_at >= ?", (ts_24h,)).fetchone()[0]
+
+        status_2xx = conn.execute("SELECT COUNT(*) FROM visitor_logs WHERE status_code >= 200 AND status_code < 400").fetchone()[0]
+        status_4xx = conn.execute("SELECT COUNT(*) FROM visitor_logs WHERE status_code >= 400 AND status_code < 500").fetchone()[0]
+        status_5xx = conn.execute("SELECT COUNT(*) FROM visitor_logs WHERE status_code >= 500").fetchone()[0]
+
+        endpoint_rows = conn.execute(
+            """
+            SELECT path, COUNT(*) AS hits, ROUND(AVG(latency_ms), 1) AS avg_ms
+            FROM visitor_logs
+            WHERE path != ''
+            GROUP BY path
+            ORDER BY hits DESC
+            LIMIT 8
+            """
+        ).fetchall()
+        top_endpoints = [dict(r) for r in endpoint_rows]
 
         # 2. Peak Hours Breakdown
         hourly_rows = conn.execute(
@@ -2201,7 +2233,23 @@ def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
             "knowledge_gaps": knowledge_gaps,
             "avg_chat_latency_ms": round(float(avg_chat_ms or 0.0), 1),
             "avg_image_latency_ms": round(float(avg_img_ms or 0.0), 1),
+            "avg_visit_latency_ms": round(float(avg_visit_ms or 0.0), 1),
         },
+        "traffic_summary": {
+            "requests_5m": requests_5m,
+            "requests_1h": requests_1h,
+            "requests_24h": requests_24h,
+            "rpm_5m": round(float(requests_5m) / 5.0, 2),
+            "active_visitors_15m": active_visitors_15m,
+            "active_ips_1h": active_ips_1h,
+            "chats_24h": chats_24h,
+            "images_24h": images_24h,
+            "status_2xx": status_2xx,
+            "status_4xx": status_4xx,
+            "status_5xx": status_5xx,
+            "db_size_mb": round(os.path.getsize(DB_PATH) / (1024 * 1024), 2) if os.path.exists(DB_PATH) else 0.0,
+        },
+        "top_endpoints": top_endpoints,
         "peak_hours": peak_hours,
         "top_chat_crops": top_chat_crops,
         "top_chat_topics": top_chat_topics,
