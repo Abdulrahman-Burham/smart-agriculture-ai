@@ -1279,6 +1279,7 @@
             if (!btn) return;
             const current = document.documentElement.getAttribute('data-theme') || 'light';
             btn.innerHTML = current === 'dark' ? '☀️ الوضع الفاتح' : '🌙 الوضع الليلي';
+            if (window.AGRI_I18N) window.AGRI_I18N.refresh();
         }
 
         function toggleSiteTheme() {
@@ -1356,6 +1357,7 @@
             if (srcBadge) srcBadge.textContent = s.source;
             if (adviceEl) adviceEl.innerHTML = s.adviceHtml;
             if (launchLink) launchLink.href = `/dashboard?view=desktop&demo=${s.key}`;
+            if (window.AGRI_I18N) window.AGRI_I18N.refresh();
         }
 
         async function playEgyptianTTSText(textToSpeak, btn, defaultLabel) {
@@ -1461,5 +1463,6 @@
             } catch (e) {}
         })();
     </script>
+    <script src="/static/i18n.js"></script>
 </body>
 </html>

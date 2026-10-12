@@ -598,6 +598,7 @@
                 if (!b) return;
                 var cur = document.documentElement.getAttribute('data-theme') || 'light';
                 b.innerHTML = cur === 'dark' ? '☀️ الوضع الفاتح' : '🌙 الوضع الليلي';
+                if (window.AGRI_I18N) window.AGRI_I18N.refresh();
             }
             function toggleLoginTheme() {
                 var cur = document.documentElement.getAttribute('data-theme') || 'light';
@@ -1674,5 +1675,6 @@
             } catch (e) {}
         })();
     </script>
+    <script src="/static/i18n.js"></script>
 </body>
 </html>
