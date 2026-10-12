@@ -1041,9 +1041,11 @@
             const k = data.kpis || {};
 
             // Status Ribbon
-            document.getElementById('srvHostBadge').textContent = `🖥️ ${sys.hostname || 'Azure-VM'} | Python ${sys.python_version || ''}`;
-            document.getElementById('srvUptimeBadge').textContent = `⏱️ السيرفر: ${sys.os_uptime || '-'} | الخدمة: ${sys.app_uptime || '-'}`;
-            document.getElementById('srvAiModelsBadge').textContent = `🧠 الرؤية: ${sys.vision_model_loaded ? 'محمّل بالرام ✅' : 'في الانتظار'} | المراجع RAG: ${sys.rag_ready ? 'جاهز ✅' : 'غير جاهز'}`;
+            const srvUp = sys.server_uptime || sys.os_uptime || '-';
+            const cvOk = sys.cv_loaded ?? sys.vision_model_loaded ?? true;
+            document.getElementById('srvHostBadge').textContent = `🖥️ ${sys.hostname || 'Azure-VM'} | ${sys.os_info || ''} | Python ${sys.python_version || ''}`;
+            document.getElementById('srvUptimeBadge').textContent = `⏱️ السيرفر: ${srvUp} | الخدمة: ${sys.app_uptime || '-'}`;
+            document.getElementById('srvAiModelsBadge').textContent = `🧠 الرؤية: ${cvOk ? 'محمّل بالرام ✅' : 'في الانتظار'} | الموديل: ${sys.gemini_model || 'Agri-RAG ✅'}`;
             document.getElementById('srvLiveActiveBadge').textContent = `🔥 نشط الآن (15د): ${trf.active_visitors_15m ?? 0} زائر (${trf.active_ips_1h ?? 0} IP/ساعة)`;
             document.getElementById('srvRpmBadge').textContent = `⚡ معدل الطلبات: ${trf.rpm_5m ?? 0} req/min`;
 
@@ -1060,10 +1062,12 @@
             document.getElementById('srvCpuModel').textContent = cpu.model || 'Cloud vCPU';
             document.getElementById('srvCpuModel').title = cpu.model || '';
             document.getElementById('srvCpuLoadFull').textContent = `${(cpu.load_1m ?? 0).toFixed(2)} / ${(cpu.load_5m ?? 0).toFixed(2)} / ${(cpu.load_15m ?? 0).toFixed(2)}`;
-            document.getElementById('srvAppUptime').textContent = `نشط منذ ${sys.app_uptime || '-'}`;
+            document.getElementById('srvAppUptime').textContent = `تشغيل السيرفر: ${srvUp}`;
 
             // 2. RAM Card
             const ramPct = Number(mem.usage_pct || 0);
+            const usedMb = mem.used_mb ?? Math.round((mem.used_gb || 0) * 1024);
+            const totalMb = mem.total_mb ?? Math.round((mem.total_gb || 0) * 1024);
             document.getElementById('srvRamUsedBadge').textContent = `${mem.used_gb ?? 0} / ${mem.total_gb ?? 0} GB`;
             const ramPctEl = document.getElementById('srvRamPct');
             ramPctEl.textContent = `${ramPct.toFixed(1)}%`;
@@ -1072,11 +1076,12 @@
             const ramBar = document.getElementById('srvRamBar');
             ramBar.style.width = `${Math.min(100, Math.max(3, ramPct))}%`;
             ramBar.style.background = meterColor(ramPct);
-            document.getElementById('srvRamDetail').textContent = `${mem.used_mb ?? 0} MB مستخدم من ${mem.total_mb ?? 0} MB`;
+            document.getElementById('srvRamDetail').textContent = `${usedMb} MB مستخدم من ${totalMb} MB`;
             document.getElementById('srvAppRss').textContent = `${mem.app_rss_mb ?? 0} MB`;
-            document.getElementById('srvSwapDetail').textContent = mem.swap_total_mb > 0
-                ? `${mem.swap_used_mb ?? 0} / ${mem.swap_total_mb ?? 0} MB (${mem.swap_pct ?? 0}%)`
-                : 'غير مفعّل (0 MB)';
+            const swapTotalGb = mem.swap_total_gb ?? 0;
+            document.getElementById('srvSwapDetail').textContent = swapTotalGb > 0
+                ? `${mem.swap_used_gb ?? 0} / ${swapTotalGb} GB (${mem.swap_pct ?? 0}%)`
+                : 'غير مفعّل (0 GB)';
 
             // 3. Disk Card
             const diskPct = Number(dsk.usage_pct || 0);
@@ -1088,7 +1093,7 @@
             const diskBar = document.getElementById('srvDiskBar');
             diskBar.style.width = `${Math.min(100, Math.max(3, diskPct))}%`;
             diskBar.style.background = meterColor(diskPct);
-            document.getElementById('srvDbSize').textContent = `${trf.db_size_mb ?? 0} MB`;
+            document.getElementById('srvDbSize').textContent = `${trf.db_size_mb || dsk.db_size_mb || 0} MB`;
             const imgBytes = Number(k.total_image_bytes || 0);
             document.getElementById('srvImgStorage').textContent = `${(imgBytes / (1024 * 1024)).toFixed(2)} MB (${k.total_images ?? 0} صورة)`;
             document.getElementById('srvTtsCache').textContent = `${dsk.tts_cache_mb ?? 0} MB (${dsk.tts_cache_files ?? 0} ملف صوتي)`;
@@ -1128,10 +1133,11 @@
             document.getElementById('topEndpointsList').innerHTML = topEps.length
                 ? topEps.slice(0, 6).map(ep => {
                     const pct = Math.round(((ep.hits || 0) / maxEpHits) * 100);
+                    const epPath = ep.path || ep.endpoint || '/';
                     return `
                         <div class="bar-row">
                             <div class="bar-header">
-                                <span class="mono" style="font-size:0.76rem; color:#93c5fd;">${esc(ep.endpoint)}</span>
+                                <span class="mono" style="font-size:0.76rem; color:#93c5fd;">${esc(epPath)}</span>
                                 <span><strong style="color:#34d399;">${ep.hits}</strong> طلب <span class="badge badge-purple" style="margin-right:4px;">${ep.avg_ms} ms</span></span>
                             </div>
                             <div class="bar-track">
