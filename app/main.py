@@ -899,8 +899,8 @@ async def health_check():
 async def public_stats_endpoint():
     """Return safe, anonymized live platform statistics for the Landing Page and Demo Day showcase."""
     try:
-        analytics = await asyncio.to_thread(get_developer_analytics, 5)
-        summary = analytics.get("summary", {})
+        analytics = await asyncio.to_thread(get_developer_analytics, 1)
+        summary = analytics.get("kpis", {})
         return {
             "status": "online",
             "supported_diseases": 38,
