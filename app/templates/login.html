@@ -544,13 +544,12 @@
             }
         }
     </style>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
     <div class="auth-wrapper">
         <div class="top-back-bar">
-            <a href="/" class="hci-back-link">رجوع للصفحة الرئيسية</a>
+            <a href="/" class="hci-back-link">🏠 رجوع لصفحة العرض الرئيسية</a>
             <span style="font-size:0.76rem; color:var(--text-muted); font-weight:600;">Smart Agriculture AI</span>
         </div>
         <div class="brand-header">
@@ -558,48 +557,34 @@
                 <img src="/logo.png" alt="Smart Agri AI">
                 <span>الخبير الزراعي الذكي</span>
             </a>
-            <div class="brand-subtitle">سجّل دخولك بضغطة واحدة لحفظ تشخيصات محصولك وموقع أرضك</div>
+            <div class="brand-subtitle">سجّل دخولك لحفظ تشخيصات محصولك وتوصيات مزرعتك</div>
         </div>
 
         <div class="auth-card">
             <div id="auth-alert" class="alert-msg"></div>
 
-            <!-- Kaggle-Style 4-Button Sign-In Stack -->
-            <div class="quick-auth-section" id="kaggle-auth-stack">
-                <button type="button" class="btn-google-main" onclick="openSocialProviderFlow('google')" style="direction:ltr; justify-content:center; gap:12px; padding:0.82rem 1.2rem; border-radius:999px; font-size:0.95rem;">
-                    <svg width="20" height="20" viewBox="0 0 48 48">
-                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                    </svg>
-                    <span>Sign in with Google</span>
-                </button>
-
-                <button type="button" class="btn-provider" onclick="toggleEmailFormSection()" style="width:100%; direction:ltr; justify-content:center; gap:12px; padding:0.78rem 1.2rem; border-radius:999px; font-size:0.92rem; margin-bottom:0.55rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#F3F0E8;">
-                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                    <span>Sign in with Email</span>
-                </button>
-
-                <button type="button" class="btn-provider" onclick="openSocialProviderFlow('facebook')" style="width:100%; direction:ltr; justify-content:center; gap:12px; padding:0.78rem 1.2rem; border-radius:999px; font-size:0.92rem; margin-bottom:0.55rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#F3F0E8;">
-                    <svg width="19" height="19" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                    <span>Sign in with Facebook</span>
-                </button>
-
-                <button type="button" class="btn-provider" onclick="openSocialProviderFlow('yahoo')" style="width:100%; direction:ltr; justify-content:center; gap:12px; padding:0.78rem 1.2rem; border-radius:999px; font-size:0.92rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#F3F0E8;">
-                    <svg width="19" height="19" viewBox="0 0 24 24" fill="#a855f7"><path d="M12.9 14.5 17.5 4h-3.6l-2.7 6.8L8.5 4H4.7l4.8 10.5V20h3.4v-5.5z"/><circle cx="18.3" cy="17.8" r="2.1"/></svg>
-                    <span>Sign in with Yahoo</span>
-                </button>
+            <!-- Official Google Identity Services (GIS) Button Container:
+                 Strictly hidden unless a real *.apps.googleusercontent.com Client ID is configured -->
+            <div id="google-official-gsi-wrap" style="display:none; margin-bottom:1.1rem;">
+                <div id="g_id_signin_btn" style="display:flex; justify-content:center;"></div>
+                <div class="auth-divider">أو عبر رقم الموبايل / البريد الإلكتروني</div>
             </div>
 
-            <!-- Collapsible Email / Password Section (shown when clicking Sign in with Email) -->
-            <div id="email-auth-container" style="display:none; margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.12);">
+            <!-- Saved Accounts on this Device for 1-Tap Login (if any) -->
+            <div id="inline-saved-accounts-box" style="display:none; margin-bottom:1.1rem;">
+                <div style="font-size:0.78rem; color:#6ee7b7; font-weight:700; margin-bottom:0.45rem;">⚡ دخول سريع بحسابك المحفوظ على هذا الجهاز:</div>
+                <div id="inline-saved-accounts-list"></div>
+                <div class="auth-divider">أو بحساب آخر</div>
+            </div>
+
+            <!-- Direct Login / Register Section -->
+            <div id="email-auth-container">
                 <div class="tabs-bar">
                     <button type="button" class="tab-btn active" id="tab-login" onclick="switchAuthTab('login')">
                         تسجيل الدخول
                     </button>
                     <button type="button" class="tab-btn" id="tab-register" onclick="switchAuthTab('register')">
-                        إنشاء حساب جديد
+                        إنشاء حساب مزارع جديد
                     </button>
                 </div>
 
@@ -1236,61 +1221,87 @@
             openSocialProviderFlow('quick_phone');
         }
 
+        function renderInlineSavedAccounts() {
+            try {
+                const saved = getSavedAccounts();
+                const box = document.getElementById('inline-saved-accounts-box');
+                const listEl = document.getElementById('inline-saved-accounts-list');
+                if (!box || !listEl) return;
+                if (saved && saved.length > 0) {
+                    box.style.display = 'block';
+                    listEl.innerHTML = saved.map((acc, idx) => {
+                        const initial = (acc.full_name || acc.identifier || 'م').trim().charAt(0).toUpperCase();
+                        const avatarHtml = acc.avatar_url
+                            ? `<img src="${acc.avatar_url}" alt="" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid rgba(110,231,183,0.4);">`
+                            : `<div class="saved-acc-avatar">${initial}</div>`;
+                        return `
+                            <div class="saved-acc-item" onclick="quickLoginWithSavedAccount(${idx})">
+                                <div style="display:flex; align-items:center; gap:0.65rem;">
+                                    ${avatarHtml}
+                                    <div>
+                                        <div style="font-size:0.88rem; font-weight:700; color:#F2EFE9;">${acc.full_name || acc.identifier}</div>
+                                        <div style="font-size:0.75rem; color:#9CA89E;">${acc.identifier} • ${acc.governorate || 'القاهرة'}</div>
+                                    </div>
+                                </div>
+                                <span style="font-size:0.75rem; color:#6ee7b7; font-weight:700;">دخول فوري ←</span>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    box.style.display = 'none';
+                }
+            } catch (e) {}
+        }
+
         function bindGoogleSDK(clientId) {
-            if (!clientId) return;
+            if (!clientId || !clientId.endsWith('.apps.googleusercontent.com')) return;
             const savedGov = localStorage.getItem('agri_PinnedGov') || localStorage.getItem('agri_gov') || 'القاهرة';
             let attempts = 0;
             const timer = setInterval(() => {
                 attempts++;
-                if (window.google && window.google.accounts) {
+                if (window.google && window.google.accounts && window.google.accounts.id) {
                     clearInterval(timer);
-                    // 1. Initialize OAuth2 TokenClient (opens native Google Account Chooser popup and fetches profile via userinfo API)
-                    if (window.google.accounts.oauth2) {
-                        googleTokenClient = window.google.accounts.oauth2.initTokenClient({
-                            client_id: clientId,
-                            scope: 'openid email profile',
-                            callback: async (tokenResponse) => {
-                                if (tokenResponse && tokenResponse.access_token) {
-                                    showAlert('جاري سحب بيانات حساب Google الخاص بك...', false);
-                                    await executeSocialAuthRequest({
-                                        provider: 'google',
-                                        access_token: tokenResponse.access_token,
-                                        governorate: savedGov
-                                    });
-                                }
+                    window.google.accounts.id.initialize({
+                        client_id: clientId,
+                        callback: async (response) => {
+                            if (response && response.credential) {
+                                showAlert('جاري التحقق من حساب Google الرسمي الخاص بك...', false);
+                                await executeSocialAuthRequest({
+                                    provider: 'google',
+                                    credential_jwt: response.credential,
+                                    governorate: savedGov
+                                });
                             }
+                        }
+                    });
+                    const wrap = document.getElementById('google-official-gsi-wrap');
+                    const btnDiv = document.getElementById('g_id_signin_btn');
+                    if (wrap && btnDiv) {
+                        wrap.style.display = 'block';
+                        window.google.accounts.id.renderButton(btnDiv, {
+                            type: 'standard',
+                            theme: 'filled_black',
+                            size: 'large',
+                            text: 'signin_with',
+                            shape: 'pill',
+                            width: 340
                         });
                     }
-                    // 2. Initialize Google One-Tap & Official Sign-In Button
-                    if (window.google.accounts.id) {
-                        window.google.accounts.id.initialize({
-                            client_id: clientId,
-                            callback: async (response) => {
-                                if (response && response.credential) {
-                                    showAlert('جاري التحقق من حساب Google الخاص بك...', false);
-                                    await executeSocialAuthRequest({
-                                        provider: 'google',
-                                        credential_jwt: response.credential,
-                                        governorate: savedGov
-                                    });
-                                }
-                            }
-                        });
-                        window.google.accounts.id.prompt();
-                    }
+                    window.google.accounts.id.prompt();
                 } else if (attempts > 30) {
                     clearInterval(timer);
                 }
             }, 150);
         }
 
-        // Initialize official Google Identity Services (GSI) on load if GOOGLE_CLIENT_ID is configured on backend
+        // Render saved accounts & initialize official Google Identity Services (GSI) only if GOOGLE_CLIENT_ID is configured
         (async function initGoogleGSI() {
+            renderInlineSavedAccounts();
             try {
                 const res = await fetch('/api/auth/oauth-config');
                 if (!res.ok) return;
                 const cfg = await res.json();
-                if (cfg.google_client_id) {
+                if (cfg.google_client_id && cfg.google_client_id.endsWith('.apps.googleusercontent.com')) {
                     ACTIVE_GOOGLE_CLIENT_ID = cfg.google_client_id;
                     const inp = document.getElementById('input-google-client-id');
                     if (inp) inp.value = cfg.google_client_id;
