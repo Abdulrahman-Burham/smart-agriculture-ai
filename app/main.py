@@ -835,8 +835,9 @@ async def auth_me_endpoint(http_request: Request):
         return resp
 
     pinned = await asyncio.to_thread(get_pinned_visitor_profile, client_info["visitor_hash"], None)
-    return JSONResponse(status_code=401, content={
+    return JSONResponse(status_code=200, content={
         "authenticated": False,
+        "user": None,
         "visitor_id": client_info["visitor_hash"],
         "pinned_profile": pinned,
     })

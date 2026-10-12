@@ -56,47 +56,74 @@
             --shadow: 0 8px 28px rgba(10, 14, 12, 0.36);
         }
 
-        /* Light Mode Component Overrides for Crisp Contrast on Projectors */
+        /* Light Mode Component Overrides for Crisp Contrast */
         [data-theme="light"] header {
-            background: rgba(255, 255, 255, 0.94) !important;
-            border-bottom: 1px solid rgba(45, 106, 79, 0.16) !important;
-            box-shadow: 0 4px 18px rgba(24, 36, 29, 0.05);
+            background: rgba(255, 255, 255, 0.96) !important;
+            border-bottom: 1px solid rgba(45, 106, 79, 0.14) !important;
+            box-shadow: 0 4px 18px rgba(24, 36, 29, 0.04);
         }
         [data-theme="light"] .logo span,
+        [data-theme="light"] .brand-title-main,
         [data-theme="light"] .panel-title {
             color: #1B4332 !important;
         }
         [data-theme="light"] .weather-widget,
         [data-theme="light"] .farm-context-card,
-        [data-theme="light"] .model-selector-bar {
+        [data-theme="light"] .model-selector-bar,
+        [data-theme="light"] .hci-stepper {
             background: #F4F7F4 !important;
-            border-color: rgba(45, 106, 79, 0.18) !important;
+            border-color: rgba(45, 106, 79, 0.16) !important;
             color: #18241D !important;
+        }
+        [data-theme="light"] .hci-step.active {
+            background: rgba(45, 106, 79, 0.14) !important;
+            color: #1B4332 !important;
+            border-color: rgba(45, 106, 79, 0.3) !important;
+        }
+        [data-theme="light"] .hci-step.done {
+            background: rgba(45, 106, 79, 0.08) !important;
+            color: #2D6A4F !important;
+        }
+        [data-theme="light"] .farm-summary-pill,
+        [data-theme="light"] .farm-drawer-toggle {
+            color: #1B4332 !important;
+            background: rgba(45, 106, 79, 0.1) !important;
+            border-color: rgba(45, 106, 79, 0.24) !important;
         }
         [data-theme="light"] .farm-control,
         [data-theme="light"] .chat-input {
             background: #F9F8F3 !important;
-            border-color: rgba(45, 106, 79, 0.24) !important;
+            border-color: rgba(45, 106, 79, 0.22) !important;
             color: #18241D !important;
         }
         [data-theme="light"] .chat-input::placeholder {
             color: #64746B !important;
         }
         [data-theme="light"] .message-bot {
-            background: #F1F7F3 !important;
+            background: #F4F8F5 !important;
             color: #18241D !important;
-            border: 1px solid rgba(45, 106, 79, 0.16);
+            border: 1px solid rgba(45, 106, 79, 0.14);
             border-right: 4px solid #2D6A4F !important;
         }
-        [data-theme="light"] .source-badge {
+        [data-theme="light"] .source-badge,
+        [data-theme="light"] .crop-type {
             background: #E6F4EC !important;
             color: #1B4332 !important;
-            border: 1px solid rgba(45, 106, 79, 0.25);
+            border: 1px solid rgba(45, 106, 79, 0.22);
+        }
+        [data-theme="light"] .progress-bg {
+            background: rgba(45, 106, 79, 0.12) !important;
+        }
+        [data-theme="light"] .model-badge {
+            background: #E6F4EC !important;
+            color: #1B4332 !important;
+            border-color: rgba(45, 106, 79, 0.25) !important;
+            box-shadow: none !important;
         }
         [data-theme="light"] .model-opt-btn {
             background: #FFFFFF !important;
             color: #2D6A4F !important;
-            border-color: rgba(45, 106, 79, 0.25) !important;
+            border-color: rgba(45, 106, 79, 0.22) !important;
         }
         [data-theme="light"] .model-opt-btn.active {
             background: #2D6A4F !important;
@@ -104,21 +131,49 @@
         }
         [data-theme="light"] .upload-zone {
             background: #F9FBF9 !important;
-            border-color: rgba(45, 106, 79, 0.32) !important;
+            border-color: rgba(45, 106, 79, 0.3) !important;
             color: #18241D !important;
         }
         [data-theme="light"] .nav-btn {
             background: #FFFFFF;
             color: #2D3B32;
-            border: 1px solid rgba(45, 106, 79, 0.2);
+            border: 1px solid rgba(45, 106, 79, 0.18);
+        }
+        [data-theme="light"] .nav-btn:hover {
+            background: #F4F7F4;
+            color: #1B4332;
         }
         [data-theme="light"] .nav-btn.active {
             background: #2D6A4F !important;
             color: #FFFFFF !important;
         }
         [data-theme="light"] #cv-inline-advice-text {
-            background: #F1F7F3 !important;
+            background: #F4F8F5 !important;
             color: #18241D !important;
+        }
+        [data-theme="light"] .icon-btn:hover:not(:disabled) {
+            background: rgba(45, 106, 79, 0.1) !important;
+            color: #1B4332 !important;
+        }
+        .chat-action-btn {
+            background: rgba(45, 106, 79, 0.1);
+            border: 1px solid rgba(45, 106, 79, 0.25);
+            color: var(--primary-green);
+            border-radius: 10px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        [data-theme="dark"] .chat-action-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: #A7F3D0;
+        }
+        .chat-action-btn:hover {
+            background: var(--primary-green);
+            color: #FFFFFF;
         }
 
         * {
@@ -1313,14 +1368,14 @@
         <div class="header-info" style="flex-wrap:wrap; gap:0.5rem;">
             <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
                 <div id="weather-widget">🌡️ جاري التحميل...</div>
-                <button type="button" id="btn-gps-header" onclick="detectGPSLocation()" title="تحديد موقع أرضك بالـ GPS لحساب الطقس الدقيق" style="background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.45); color:#60a5fa; border-radius:12px; padding:0.2rem 0.55rem; font-size:0.74rem; font-weight:700; cursor:pointer; white-space:nowrap;">
-                    🎯 GPS
+                <button type="button" id="btn-gps-header" onclick="detectGPSLocation()" title="تحديد موقع أرضك بالـ GPS لحساب الطقس الدقيق" style="background:rgba(3,105,161,0.12); border:1px solid rgba(3,105,161,0.3); color:var(--accent-blue); border-radius:12px; padding:0.22rem 0.6rem; font-size:0.75rem; font-weight:700; cursor:pointer; white-space:nowrap;">
+                    📍 موقعي
                 </button>
             </div>
             <div id="date-widget">📅</div>
             <div id="auth-header-box" style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
-                <a href="/login" style="background:linear-gradient(135deg,#10b981,#059669); color:#fff; text-decoration:none; padding:0.32rem 0.8rem; border-radius:14px; font-size:0.8rem; font-weight:700;">🔐 دخول</a>
-                <a href="/login?tab=register" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#e2e8f0; text-decoration:none; padding:0.32rem 0.75rem; border-radius:14px; font-size:0.8rem; font-weight:600;">✨ حساب جديد</a>
+                <a href="/login" style="background:linear-gradient(135deg,#2D6A4F,#1B4332); color:#fff; text-decoration:none; padding:0.34rem 0.85rem; border-radius:12px; font-size:0.8rem; font-weight:700;">تسجيل الدخول</a>
+                <a href="/login?tab=register" style="background:rgba(45,106,79,0.1); border:1px solid rgba(45,106,79,0.28); color:var(--primary-green); text-decoration:none; padding:0.34rem 0.8rem; border-radius:12px; font-size:0.8rem; font-weight:700;">حساب جديد</a>
             </div>
             <script>
                 (function instantHydrateAuth() {
@@ -1332,13 +1387,13 @@
                         var box = document.getElementById('auth-header-box');
                         if (!box) return;
                         var adminBtn = u.role === 'admin'
-                            ? '<a href="/dev-panel" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9); color:#fff; text-decoration:none; padding:0.3rem 0.7rem; border-radius:12px; font-size:0.76rem; font-weight:700;">🛡️ لوحة المطور</a>'
+                            ? '<a href="/dev-panel" style="background:linear-gradient(135deg,#6d28d9,#4c1d95); color:#fff; text-decoration:none; padding:0.3rem 0.7rem; border-radius:10px; font-size:0.76rem; font-weight:700;">لوحة المطور</a>'
                             : '';
                         box.innerHTML =
-                            '<span style="background:rgba(16,185,129,0.16); border:1px solid rgba(16,185,129,0.4); color:#34d399; padding:0.28rem 0.7rem; border-radius:12px; font-size:0.78rem; font-weight:700;">👤 ' + u.full_name + '</span>' +
-                            '<button type="button" onclick="openMyHistoryModal()" style="background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.4); color:#60a5fa; padding:0.28rem 0.65rem; border-radius:12px; font-size:0.76rem; font-weight:700; cursor:pointer;">📜 سجلي</button>' +
+                            '<span style="background:rgba(45,106,79,0.12); border:1px solid rgba(45,106,79,0.3); color:var(--primary-green); padding:0.28rem 0.7rem; border-radius:10px; font-size:0.78rem; font-weight:700;">' + u.full_name + '</span>' +
+                            '<button type="button" onclick="openMyHistoryModal()" style="background:rgba(3,105,161,0.12); border:1px solid rgba(3,105,161,0.3); color:var(--accent-blue); padding:0.28rem 0.65rem; border-radius:10px; font-size:0.76rem; font-weight:700; cursor:pointer;">سجلي الزراعي</button>' +
                             adminBtn +
-                            '<button type="button" onclick="logoutUser()" style="background:rgba(239,68,68,0.16); border:1px solid rgba(239,68,68,0.35); color:#fca5a5; padding:0.28rem 0.6rem; border-radius:12px; font-size:0.75rem; font-weight:700; cursor:pointer;">🚪 خروج</button>';
+                            '<button type="button" onclick="logoutUser()" style="background:rgba(220,38,38,0.1); border:1px solid rgba(220,38,38,0.28); color:#dc2626; padding:0.28rem 0.6rem; border-radius:10px; font-size:0.75rem; font-weight:700; cursor:pointer;">خروج</button>';
                     } catch (e) {}
                 })();
             </script>
@@ -1349,13 +1404,13 @@
     <div id="hci-toast" class="hci-toast" role="status" aria-live="polite"></div>
 
     <!-- User Personal History Modal -->
-    <div id="my-history-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:1rem;">
-        <div class="glass" style="width:100%; max-width:740px; max-height:85vh; overflow-y:auto; padding:1.25rem; border-radius:18px; background:#0b1912;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.7rem; border-bottom:1px solid rgba(255,255,255,0.12); gap:0.5rem;">
-                <h3 style="color:#34d399; font-size:1.05rem;">📜 سجلي الزراعي (تشخيصاتي واستشاراتي)</h3>
-                <button type="button" onclick="closeMyHistoryModal()" style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; border-radius:10px; padding:5px 12px; cursor:pointer; font-weight:700;">➡️ رجوع / إغلاق</button>
+    <div id="my-history-modal" style="display:none; position:fixed; inset:0; background:rgba(15,23,18,0.65); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:1rem;">
+        <div class="glass" style="width:100%; max-width:740px; max-height:85vh; overflow-y:auto; padding:1.35rem; border-radius:18px; background:var(--glass-bg); color:var(--text-light);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.7rem; border-bottom:var(--glass-border); gap:0.5rem;">
+                <h3 style="color:var(--primary-green); font-size:1.05rem;">سجلي الزراعي (الفحوصات والاستشارات السابقة)</h3>
+                <button type="button" onclick="closeMyHistoryModal()" style="background:rgba(220,38,38,0.12); border:1px solid rgba(220,38,38,0.3); color:#dc2626; border-radius:10px; padding:5px 12px; cursor:pointer; font-weight:700;">إغلاق</button>
             </div>
-            <div id="my-history-content" style="font-size:0.9rem; line-height:1.6; color:#e2e8f0;">⏳ جاري تحميل سجلك الزراعي...</div>
+            <div id="my-history-content" style="font-size:0.9rem; line-height:1.65; color:var(--text-light);">جاري تحميل سجلك الزراعي...</div>
         </div>
     </div>
 
@@ -1371,30 +1426,24 @@
 
     <!-- Desktop Navigation Tabs -->
     <div class="nav-container">
-        <a class="nav-btn" href="/landing" style="border-color: rgba(180, 83, 9, 0.35); color: var(--accent-gold);">
-            🏠 صفحة العرض (Landing)
+        <a class="nav-btn" href="/landing">
+            الرئيسية
         </a>
         <button class="nav-btn active" id="btn-assistant" onclick="switchView('assistant')">
-            🤖 المساعد الذكي والتشخيص
+            فحص النبات والمستشار
         </button>
         <button class="nav-btn" id="btn-powerbi" onclick="switchView('powerbi')">
-            📊 لوحة تحليلات AgriTech (Power BI)
+            إحصائيات المحاصيل
         </button>
-        <a class="nav-btn" href="/m" style="border-color: rgba(45, 106, 79, 0.45); color: var(--primary-green);">
-            📱 نسخة الموبايل (App)
+        <a class="nav-btn" href="/m">
+            نسخة الموبايل
         </a>
         <a class="nav-btn" href="/simple">
-            🎯 التشخيص السريع بالصورة
+            الفحص السريع
         </a>
         <button type="button" class="nav-btn" id="dashThemeToggleBtn" onclick="toggleDashboardTheme()">
-            🌙 الوضع الليلي
+            الوضع الليلي
         </button>
-        <a class="nav-btn" href="/cv/docs" target="_blank" rel="noopener">
-            🔬 API موديل الصور
-        </a>
-        <a class="nav-btn" href="/agri-rag/docs" target="_blank" rel="noopener">
-            🌾 API محرك Agri-RAG
-        </a>
     </div>
     <script>
         function updateDashboardThemeBtn() {
@@ -1438,12 +1487,12 @@
                         ➡️ رجوع للرئيسية
                     </button>
                     <div class="powerbi-title">
-                        📊 لوحة تحليلات AgriTech المتكاملة - Power BI Report
+                        إحصائيات المحاصيل والأمراض الزراعية
                     </div>
                 </div>
                 <div class="powerbi-actions">
                     <a href="https://app.powerbi.com/view?r=eyJrIjoiNDUwN2U1ZWItMDc5Mi00ZjI4LWFjYzQtZDVhOGRkYWVjN2VkIiwidCI6IjNmNGYyOGVkLTAwNWUtNGI5Ny1hNzJkLWFkNDQ4OWYzMTg1NyJ9" target="_blank" rel="noopener">
-                        🔗 فتح في نافذة مستقلة ↗
+                        فتح في نافذة مستقلة ↗
                     </a>
                 </div>
             </div>
@@ -1457,32 +1506,32 @@
         <div class="panel" id="panel-vision">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                 <h2 class="panel-title" style="margin:0;">
-                    <span>👁️ التشخيص البصري بالصورة</span>
+                    <span>فحص أوراق النبات بالصورة</span>
                 </h2>
                 <div style="display:flex; align-items:center; gap:0.4rem;">
                     <button type="button" class="hci-back-btn visible" id="vision-back-to-chat-btn" onclick="switchMobileTab('chat')" style="padding:0.26rem 0.65rem; font-size:0.76rem;">
                         ➡️ رجوع للمحادثة
                     </button>
-                    <span class="model-badge" id="panel-model-badge">⚡ EfficientNetV2B2_best</span>
+                    <span class="model-badge" id="panel-model-badge">فحص بصري دقيق</span>
                 </div>
             </div>
 
             <!-- HCI 3-Step Visual Progress Stepper -->
             <div class="hci-stepper" id="vision-hci-stepper">
-                <div class="hci-step active" id="hci-step-1">① اختيار/تصوير الورقة</div>
-                <div class="hci-step" id="hci-step-2">② فحص بالذكاء الاصطناعي</div>
-                <div class="hci-step" id="hci-step-3">③ التشخيص وخطة العلاج</div>
+                <div class="hci-step active" id="hci-step-1">1. اختيار أو تصوير الورقة</div>
+                <div class="hci-step" id="hci-step-2">2. فحص الإصابة</div>
+                <div class="hci-step" id="hci-step-3">3. التشخيص والعلاج</div>
             </div>
 
-            <!-- Optional Model Selector Buttons -->
-            <div class="model-selector-bar">
-                <span class="model-selector-label">🎛️ موديل الصور:</span>
+            <!-- Optional Model Selector Buttons (hidden from end-user to keep UI clean) -->
+            <div class="model-selector-bar" style="display:none;">
+                <span class="model-selector-label">موديل الصور:</span>
                 <div class="model-selector-group">
                     <button type="button" class="model-opt-btn active" id="btn-model-effnet" onclick="selectVisionModel('EfficientNetV2B2')">
-                        ⚡ EfficientNetV2B2 (الأساسي)
+                        EfficientNetV2B2
                     </button>
                     <button type="button" class="model-opt-btn" id="btn-model-resnet" onclick="selectVisionModel('ResNet18')">
-                        🧪 ResNet18 (إضافي)
+                        ResNet18
                     </button>
                 </div>
             </div>
@@ -1497,34 +1546,34 @@
                 </div>
                 
                 <div id="upload-placeholder">
-                    <div class="upload-icon">📸</div>
+                    <div class="upload-icon">🌿</div>
                     <div class="upload-text">اضغط لرفع صورة ورقة النبات أو تصويرها بالكاميرا</div>
                 </div>
             </div>
 
             <!-- Action Buttons: 1. Upload Image | Camera | 2. Show Result | Clear -->
             <div class="action-buttons" style="display: flex; gap: 0.65rem; margin-top: 0.25rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
-                <button class="btn-action primary" id="btn-select-image" style="flex: 1.2; min-width: 130px; padding: 0.9rem; font-size: 0.96rem; font-weight: 700; border-radius: 14px; background: linear-gradient(135deg, #2D6A4F, #1B4332); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.45rem; box-shadow: 0 4px 14px rgba(27, 67, 50, 0.25);">
-                    🖼️ اختر من المعرض
+                <button class="btn-action primary" id="btn-select-image" style="flex: 1.2; min-width: 130px; padding: 0.85rem; font-size: 0.94rem; font-weight: 700; border-radius: 12px; background: linear-gradient(135deg, #2D6A4F, #1B4332); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.45rem; box-shadow: 0 4px 12px rgba(27, 67, 50, 0.2);">
+                    اختر من المعرض
                 </button>
-                <button class="btn-action" id="btn-camera-image" title="تصوير مباشر بالكاميرا" style="flex: 1; min-width: 120px; padding: 0.9rem 0.95rem; font-size: 0.95rem; font-weight: 700; border-radius: 14px; background: rgba(45, 106, 79, 0.12); color: var(--primary-green); border: 1px solid rgba(45, 106, 79, 0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
-                    📷 تصوير بالكاميرا
+                <button class="btn-action" id="btn-camera-image" title="تصوير مباشر بالكاميرا" style="flex: 1; min-width: 120px; padding: 0.85rem 0.9rem; font-size: 0.94rem; font-weight: 700; border-radius: 12px; background: rgba(45, 106, 79, 0.1); color: var(--primary-green); border: 1px solid rgba(45, 106, 79, 0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                    تصوير بالكاميرا
                 </button>
-                <button class="btn-action secondary" id="btn-diagnose-image" style="flex: 1.4; min-width: 140px; padding: 0.9rem; font-size: 0.98rem; font-weight: 700; border-radius: 14px; background: linear-gradient(135deg, #0284C7, #0369A1); color: white; border: none; cursor: not-allowed; opacity: 0.5; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(3, 105, 161, 0.25);" disabled>
-                    🔍 2. فحص وإظهار العلاج
+                <button class="btn-action secondary" id="btn-diagnose-image" style="flex: 1.4; min-width: 140px; padding: 0.85rem; font-size: 0.95rem; font-weight: 700; border-radius: 12px; background: linear-gradient(135deg, #0284C7, #0369A1); color: white; border: none; cursor: not-allowed; opacity: 0.5; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(3, 105, 161, 0.2);" disabled>
+                    فحص وإظهار العلاج
                 </button>
-                <button class="btn-action" id="btn-clear-image" onclick="clearSelectedImage()" title="مسح الصورة المحددة" style="display: none; padding: 0.9rem 0.85rem; font-size: 0.9rem; font-weight: 700; border-radius: 14px; background: rgba(239, 68, 68, 0.14); color: #DC2626; border: 1px solid rgba(239, 68, 68, 0.35); cursor: pointer;">
-                    🗑️
+                <button class="btn-action" id="btn-clear-image" onclick="clearSelectedImage()" title="مسح الصورة المحددة" style="display: none; padding: 0.85rem 0.85rem; font-size: 0.88rem; font-weight: 700; border-radius: 12px; background: rgba(239, 68, 68, 0.12); color: #DC2626; border: 1px solid rgba(239, 68, 68, 0.3); cursor: pointer;">
+                    مسح
                 </button>
             </div>
 
-            <!-- Demo Day Quick Sample Presets Bar -->
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.4rem; flex-wrap:wrap; background:rgba(180,83,9,0.08); border:1px solid rgba(180,83,9,0.25); border-radius:12px; padding:0.48rem 0.75rem;">
-                <span style="font-size:0.76rem; font-weight:800; color:var(--accent-gold);">🎬 عينات عرض Demo Day الفورية:</span>
+            <!-- Quick Sample Presets Bar -->
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.4rem; flex-wrap:wrap; background:rgba(45,106,79,0.06); border:1px solid rgba(45,106,79,0.18); border-radius:12px; padding:0.48rem 0.75rem;">
+                <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted);">نماذج جاهزة للتجربة السريعة:</span>
                 <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
-                    <button type="button" class="model-opt-btn" style="font-size:0.74rem; padding:0.24rem 0.65rem; font-weight:700;" onclick="runDemoDaySample('tomato')">🍅 طماطم (ندوة متأخرة)</button>
-                    <button type="button" class="model-opt-btn" style="font-size:0.74rem; padding:0.24rem 0.65rem; font-weight:700;" onclick="runDemoDaySample('potato')">🥔 بطاطس (ندوة مبكرة)</button>
-                    <button type="button" class="model-opt-btn" style="font-size:0.74rem; padding:0.24rem 0.65rem; font-weight:700;" onclick="runDemoDaySample('mango')">🥭 مانجو (بياض دقيقي)</button>
+                    <button type="button" class="model-opt-btn" style="font-size:0.75rem; padding:0.24rem 0.65rem; font-weight:700;" onclick="runDemoDaySample('tomato')">طماطم (ندوة متأخرة)</button>
+                    <button type="button" class="model-opt-btn" style="font-size:0.75rem; padding:0.24rem 0.65rem; font-weight:700;" onclick="runDemoDaySample('potato')">بطاطس (ندوة مبكرة)</button>
+                    <button type="button" class="model-opt-btn" style="font-size:0.75rem; padding:0.24rem 0.65rem; font-weight:700;" onclick="runDemoDaySample('mango')">مانجو (بياض دقيقي)</button>
                 </div>
             </div>
 
@@ -1534,24 +1583,24 @@
                         <div class="disease-name" id="cv-disease-name">تشخيص النبات</div>
                         <div class="crop-type" id="cv-crop-type">المحصول</div>
                     </div>
-                    <div class="model-badge" id="cv-model-badge">🤖 الموديل: EfficientNetV2B2_best</div>
+                    <div class="model-badge" id="cv-model-badge">نتيجة الفحص</div>
                 </div>
                 <div id="predictions-container">
                     <!-- Predictions will be injected here -->
                 </div>
-                <!-- Inline AI Treatment Advice so Mobile Users Immediately See the Full Prescription -->
-                <div id="cv-inline-advice-box" style="display:none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.12);">
+                <!-- Inline AI Treatment Advice -->
+                <div id="cv-inline-advice-box" style="display:none; margin-top: 1rem; padding-top: 1rem; border-top: var(--glass-border);">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom: 0.55rem;">
-                        <div style="font-weight: 700; color: #34d399; font-size: 0.95rem;">
-                            💊 خطة العلاج والجرعات الموصى بها من الخبير الزراعي:
+                        <div style="font-weight: 700; color: var(--primary-green); font-size: 0.95rem;">
+                            خطة العلاج والجرعات الموصى بها:
                         </div>
-                        <button type="button" id="cv-inline-speak-btn" style="background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.45); color:#6ee7b7; border-radius:10px; padding:4px 11px; font-size:0.78rem; font-weight:800; font-family:'Cairo',sans-serif; cursor:pointer;">
+                        <button type="button" id="cv-inline-speak-btn" class="chat-action-btn">
                             🔊 اسمع الروشتة بالمصري
                         </button>
                     </div>
-                    <div id="cv-inline-advice-text" style="font-size: 0.9rem; line-height: 1.65; color: #e2e8f0; background: rgba(0,0,0,0.25); padding: 0.85rem; border-radius: 12px; border-right: 3px solid #10b981;"></div>
-                    <button type="button" onclick="switchMobileTab('chat')" style="width: 100%; margin-top: 0.75rem; padding: 0.75rem; border-radius: 12px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; font-weight: 700; font-size: 0.9rem; cursor: pointer;">
-                        💬 متابعة النقاش والسؤال عن هذه الصورة في الشات ⬅️
+                    <div id="cv-inline-advice-text" style="font-size: 0.9rem; line-height: 1.65; color: var(--text-light); background: rgba(0,0,0,0.2); padding: 0.85rem; border-radius: 12px; border-right: 3px solid var(--primary-green);"></div>
+                    <button type="button" onclick="switchMobileTab('chat')" style="width: 100%; margin-top: 0.75rem; padding: 0.75rem; border-radius: 12px; background: linear-gradient(135deg, #2D6A4F, #1B4332); color: #fff; border: none; font-weight: 700; font-size: 0.9rem; cursor: pointer;">
+                        متابعة النقاش والسؤال عن هذه الحالة في المحادثة
                     </button>
                 </div>
             </div>
@@ -1560,19 +1609,19 @@
         <!-- Right Panel: Chat -->
         <div class="panel" id="panel-chat">
             <h2 class="panel-title" style="display: flex; justify-content: space-between; align-items: center;">
-                <span>💬 المستشار الزراعي الذكي</span>
-                <span class="model-badge" id="chat-model-badge">🌾 محرك Agri-RAG</span>
+                <span>المستشار الزراعي</span>
+                <span class="model-badge" id="chat-model-badge">إرشاد زراعي معتمد</span>
             </h2>
 
-            <!-- Optional RAG Model Selector Buttons (Desktop visible, tucked inside drawer on mobile) -->
-            <div class="model-selector-bar desktop-only-selector">
-                <span class="model-selector-label">🧠 اختيار محرك الذكاء:</span>
+            <!-- Optional RAG Model Selector Buttons (hidden from end-user to keep UI clean) -->
+            <div class="model-selector-bar desktop-only-selector" style="display:none;">
+                <span class="model-selector-label">اختيار محرك الذكاء:</span>
                 <div class="model-selector-group">
                     <button type="button" class="model-opt-btn active" id="btn-rag-agri" onclick="selectRagModel('agri_rag')">
-                        🌾 محرك Agri-RAG (الأساسي المعتمد)
+                        Agri-RAG
                     </button>
                     <button type="button" class="model-opt-btn" id="btn-rag-main" onclick="selectRagModel('legacy_rag')">
-                        🤖 محرك RAG الاحتياطي (اختياري)
+                        RAG الاحتياطي
                     </button>
                 </div>
             </div>
@@ -1582,36 +1631,36 @@
                 <div class="farm-summary-row">
                     <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
                         <span class="farm-summary-pill" id="farm-summary-pill" onclick="toggleFarmDrawer()" style="cursor:pointer;">
-                            🚜 القاهرة • تلقائي • 1 فدان (غمر)
+                            القاهرة • تلقائي • 1 فدان (غمر)
                         </span>
-                        <button type="button" id="btn-gps-loc" onclick="detectGPSLocation()" title="تحديد موقع أرضك بالـ GPS لحساب الطقس الدقيق" style="background:rgba(59,130,246,0.16); border:1px solid rgba(59,130,246,0.4); color:#60a5fa; border-radius:10px; padding:0.28rem 0.6rem; font-size:0.75rem; font-weight:700; cursor:pointer; white-space:nowrap;">
-                            🎯 موقعي (GPS)
+                        <button type="button" id="btn-gps-loc" onclick="detectGPSLocation()" title="تحديد موقع أرضك بالـ GPS لحساب الطقس الدقيق" style="background:rgba(3,105,161,0.12); border:1px solid rgba(3,105,161,0.3); color:var(--accent-blue); border-radius:10px; padding:0.28rem 0.6rem; font-size:0.75rem; font-weight:700; cursor:pointer; white-space:nowrap;">
+                            📍 موقعي (GPS)
                         </button>
                         <button type="button" class="farm-drawer-toggle" id="btn-farm-drawer" onclick="toggleFarmDrawer()">
-                            ⚙️ تعديل أرضي ▾
+                            تعديل بيانات الأرض ▾
                         </button>
                     </div>
                     <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
-                        <select id="desktop-egy-voice" onchange="localStorage.setItem('agri_egy_voice', this.value)" title="اختر صوت المهندس الزراعي باللهجة المصرية" style="background:rgba(16,185,129,0.14); border:1px solid rgba(16,185,129,0.35); color:#34d399; border-radius:10px; padding:0.24rem 0.5rem; font-size:0.74rem; font-weight:700; font-family:'Cairo',sans-serif; cursor:pointer; outline:none;">
-                            <option value="ar-EG-ShakirNeural">🗣️ م. شاكر (مصري)</option>
-                            <option value="ar-EG-SalmaNeural">🗣️ م. سلمى (مصرية)</option>
+                        <select id="desktop-egy-voice" onchange="localStorage.setItem('agri_egy_voice', this.value)" title="اختر صوت المهندس الزراعي باللهجة المصرية" style="background:rgba(45,106,79,0.1); border:1px solid rgba(45,106,79,0.28); color:var(--primary-green); border-radius:10px; padding:0.24rem 0.5rem; font-size:0.74rem; font-weight:700; font-family:'Cairo',sans-serif; cursor:pointer; outline:none;">
+                            <option value="ar-EG-ShakirNeural">صوت: م. شاكر</option>
+                            <option value="ar-EG-SalmaNeural">صوت: م. سلمى</option>
                         </select>
-                        <label title="تشغيل الرد بصوت مصري تلقائياً" style="display:inline-flex; align-items:center; gap:4px; background:rgba(59,130,246,0.14); border:1px solid rgba(59,130,246,0.35); color:#93c5fd; border-radius:10px; padding:0.24rem 0.55rem; font-size:0.73rem; font-weight:700; cursor:pointer;">
-                            <input type="checkbox" id="desktop-auto-speak" onchange="localStorage.setItem('agri_auto_speak', this.checked ? '1' : '0')" style="accent-color:#10b981; cursor:pointer;">
-                            🔊 نطق تلقائي
+                        <label title="تشغيل الرد بصوت مصري تلقائياً" style="display:inline-flex; align-items:center; gap:4px; background:rgba(3,105,161,0.1); border:1px solid rgba(3,105,161,0.26); color:var(--accent-blue); border-radius:10px; padding:0.24rem 0.55rem; font-size:0.73rem; font-weight:700; cursor:pointer;">
+                            <input type="checkbox" id="desktop-auto-speak" onchange="localStorage.setItem('agri_auto_speak', this.checked ? '1' : '0')" style="accent-color:#2D6A4F; cursor:pointer;">
+                            نطق تلقائي
                         </label>
-                        <span id="memory-status-badge" title="المساعد الذكي يتذكر محادثاتك وتشخيصاتك السابقة ليكمل عليها" style="background:rgba(16,185,129,0.14); border:1px solid rgba(16,185,129,0.35); color:#34d399; border-radius:10px; padding:0.26rem 0.6rem; font-size:0.74rem; font-weight:700;">
-                            🧠 الذاكرة متصلة
+                        <span id="memory-status-badge" title="المستشار يتذكر محادثاتك وتشخيصاتك السابقة" style="background:rgba(45,106,79,0.1); border:1px solid rgba(45,106,79,0.26); color:var(--primary-green); border-radius:10px; padding:0.26rem 0.6rem; font-size:0.74rem; font-weight:700;">
+                            متصل
                         </span>
-                        <button type="button" class="model-opt-btn" onclick="resetChatSession()" title="بدء استشارة جديدة ومسح الذاكرة الحالية" style="padding:0.26rem 0.6rem; font-size:0.74rem;">
-                            🔄 جلسة جديدة
+                        <button type="button" class="model-opt-btn" onclick="resetChatSession()" title="بدء استشارة جديدة" style="padding:0.26rem 0.6rem; font-size:0.74rem;">
+                            محادثة جديدة
                         </button>
                     </div>
                 </div>
 
                 <div class="farm-controls-grid" id="farm-controls-grid">
                     <div class="farm-field">
-                        <label>📍 المحافظة:</label>
+                        <label>المحافظة:</label>
                         <select id="gov-select" class="farm-control" onchange="onManualGovChange()">
                             <option value="القاهرة">القاهرة</option>
                             <option value="البحيرة">البحيرة</option>
@@ -1644,34 +1693,34 @@
                     </div>
 
                     <div class="farm-field">
-                        <label>🌱 المحصول:</label>
+                        <label>المحصول:</label>
                         <select id="crop-select" class="farm-control" onchange="saveFarmPrefs()">
                             <option value="">تلقائي / عام</option>
-                            <option value="طماطم">طماطم 🍅</option>
-                            <option value="بطاطس">بطاطس 🥔</option>
-                            <option value="قمح">قمح 🌾</option>
-                            <option value="ذرة">ذرة 🌽</option>
-                            <option value="مانجو">مانجو 🥭</option>
-                            <option value="أرز">أرز 🍚</option>
-                            <option value="عنب">عنب 🍇</option>
-                            <option value="تفاح">تفاح 🍎</option>
-                            <option value="برتقال">موالح وبرتقال 🍊</option>
-                            <option value="فلفل حلو">فلفل 🫑</option>
-                            <option value="فراولة">فراولة 🍓</option>
+                            <option value="طماطم">طماطم</option>
+                            <option value="بطاطس">بطاطس</option>
+                            <option value="قمح">قمح</option>
+                            <option value="ذرة">ذرة</option>
+                            <option value="مانجو">مانجو</option>
+                            <option value="أرز">أرز</option>
+                            <option value="عنب">عنب</option>
+                            <option value="تفاح">تفاح</option>
+                            <option value="برتقال">موالح وبرتقال</option>
+                            <option value="فلفل حلو">فلفل</option>
+                            <option value="فراولة">فراولة</option>
                         </select>
                     </div>
 
                     <div class="farm-field">
-                        <label>🚜 المساحة (فدان):</label>
+                        <label>المساحة (فدان):</label>
                         <input type="number" id="area-input" class="farm-control" min="0.25" max="5000" step="0.5" value="1" onchange="saveFarmPrefs()" style="width:72px; text-align:center;" title="مساحة الأرض بالفدان لحساب الكميات بدقة">
                     </div>
 
                     <div class="farm-field">
-                        <label>💧 نظام الري:</label>
+                        <label>نظام الري:</label>
                         <select id="irrig-select" class="farm-control" onchange="saveFarmPrefs()">
-                            <option value="غمر">ري بالغمر 🌊</option>
-                            <option value="تنقيط">ري بالتنقيط 💧</option>
-                            <option value="رش">ري بالرش 🚿</option>
+                            <option value="غمر">ري بالغمر</option>
+                            <option value="تنقيط">ري بالتنقيط</option>
+                            <option value="رش">ري بالرش</option>
                         </select>
                     </div>
                 </div>
@@ -1680,8 +1729,8 @@
             <div class="chat-container glass">
                 <div class="chat-messages" id="chat-messages">
                     <div class="message message-bot">
-                        أهلاً بك في نظام <strong>الخبير الزراعي (Agri-RAG)</strong>! 🌿<br>
-                        المساعد مزود <strong>بذاكرة محادثة ممتدة</strong> (يتذكر محصولك، محافظتك، مساحة أرضك، نظام الري، والصور التي فحصتها ليكمل معك الحديث بذكاء). اسأل بالكتابة أو بالصوت 🎤 أو صوّر ورقة النبات 📷!
+                        أهلاً بك في <strong>الخبير الزراعي</strong>.<br>
+                        يمكنك تصوير ورقة النبات لفحصها، أو كتابة سؤالك وتسجيله بصوتك للحصول على التوصية والجرعة المناسبة لمحصولك ومساحة أرضك وطقس محافظتك.
                     </div>
                 </div>
                 
@@ -2413,10 +2462,10 @@
             if (!isUser && text) {
                 const safeText = text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
                 content += `
-                    <div style="display:flex; gap:0.4rem; margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08); flex-wrap:wrap;">
-                        <button type="button" class="egy-tts-btn" onclick="speakArabic('${safeText}', this)" style="background:rgba(16,185,129,0.16); border:1px solid rgba(16,185,129,0.35); color:#6ee7b7; border-radius:10px; padding:3px 10px; font-size:0.74rem; font-weight:700; cursor:pointer;">🔊 اسمع بالمصري</button>
-                        <button type="button" onclick="copyBotMessage(this, '${safeText}')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; border-radius:10px; padding:3px 9px; font-size:0.74rem; cursor:pointer;">📋 نسخ</button>
-                        <button type="button" onclick="shareWhatsApp('${safeText}')" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#34d399; border-radius:10px; padding:3px 9px; font-size:0.74rem; cursor:pointer;">💬 واتساب</button>
+                    <div style="display:flex; gap:0.4rem; margin-top:10px; padding-top:8px; border-top:1px solid rgba(45,106,79,0.14); flex-wrap:wrap;">
+                        <button type="button" class="egy-tts-btn chat-action-btn" onclick="speakArabic('${safeText}', this)">🔊 اسمع بالمصري</button>
+                        <button type="button" class="chat-action-btn" onclick="copyBotMessage(this, '${safeText}')">📋 نسخ</button>
+                        <button type="button" class="chat-action-btn" onclick="shareWhatsApp('${safeText}')">💬 واتساب</button>
                     </div>
                 `;
             }
@@ -2696,11 +2745,10 @@
         function displayCVResults(cvData, adviceText = '') {
             if (!cvData) return;
 
-            const modelName = cvData.model_used || (selectedVisionModel === 'ResNet18' ? 'ResNet18' : 'EfficientNetV2B2_best.keras');
             const cvBadge = document.getElementById('cv-model-badge');
             const panelBadge = document.getElementById('panel-model-badge');
-            if (cvBadge) cvBadge.innerText = `🤖 ${modelName}`;
-            if (panelBadge) panelBadge.innerText = `⚡ ${modelName}`;
+            if (cvBadge) cvBadge.innerText = 'نتيجة الفحص';
+            if (panelBadge) panelBadge.innerText = 'فحص بصري دقيق';
 
             const diseaseEl = document.getElementById('cv-disease-name');
             const cropEl = document.getElementById('cv-crop-type');
@@ -2712,19 +2760,19 @@
             // Check if the Plant-Only Filter rejected the image as a non-plant
             if (cvData.is_plant === false || cvData.rejected === true || cvData.predicted_class === 'Not_A_Plant') {
                 const detectedObj = cvData.detected_object_ar || 'صورة غير نباتية';
-                diseaseEl.innerText = `⚠️ تنبيه: الصورة ليست نباتاً (${detectedObj})`;
+                diseaseEl.innerText = `تنبيه: الصورة ليست نباتاً (${detectedObj})`;
                 diseaseEl.classList.remove('healthy');
-                diseaseEl.style.color = '#f87171';
-                cropEl.innerText = '❌ هذا النظام يقبل فقط صور أوراق النباتات والمحاصيل الزراعية';
-                cropEl.style.color = '#fca5a5';
-                cvResults.style.borderColor = 'rgba(239, 68, 68, 0.55)';
-                cvResults.style.background = 'rgba(127, 29, 29, 0.22)';
+                diseaseEl.style.color = '#dc2626';
+                cropEl.innerText = 'هذا النظام مخصص لفحص أوراق النباتات والمحاصيل الزراعية فقط';
+                cropEl.style.color = '#dc2626';
+                cvResults.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+                cvResults.style.background = 'rgba(239, 68, 68, 0.08)';
 
                 container.innerHTML = `
-                    <div style="background: rgba(239, 68, 68, 0.16); border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 12px; padding: 0.9rem; color: #fecaca; font-size: 0.9rem; line-height: 1.65; margin-top: 0.5rem;">
-                        <strong>🚫 تم رفض الصورة بواسطة فلتر النباتات الذكي:</strong><br>
+                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 12px; padding: 0.9rem; color: var(--text-light); font-size: 0.9rem; line-height: 1.65; margin-top: 0.5rem;">
+                        <strong>تم استبعاد الصورة لأنها لا تحتوي على نبات:</strong><br>
                         تم رصد: <strong>${detectedObj}</strong>.<br>
-                        الرجاء رفع أو تصوير <strong>ورقة نبات حقيقية</strong> عن قرب للحصول على التشخيص والعلاج.
+                        الرجاء رفع أو تصوير <strong>ورقة نبات واضحة</strong> عن قرب للحصول على التشخيص والعلاج.
                     </div>
                 `;
 
@@ -2754,13 +2802,11 @@
             cropEl.style.color = '';
             cvResults.style.borderColor = '';
             cvResults.style.background = '';
-            if (inlineText) inlineText.style.borderRightColor = '#10b981';
+            if (inlineText) inlineText.style.borderRightColor = 'var(--primary-green)';
             
             const topClassRaw = cvData.predicted_class || (cvData.top_predictions && cvData.top_predictions[0] ? cvData.top_predictions[0].class : '');
             const topClassAr = cvData.predicted_class_ar || (cvData.predictions && cvData.predictions[0] ? cvData.predictions[0].label_ar : '');
-            const diseaseText = topClassRaw
-                ? (topClassAr && topClassAr !== topClassRaw ? `${topClassAr} (${topClassRaw})` : topClassRaw)
-                : (cvData.disease_name || "تشخيص النبات");
+            const diseaseText = topClassAr || topClassRaw || cvData.disease_name || "تشخيص النبات";
 
             diseaseEl.innerText = diseaseText;
             if(diseaseText.includes('سليم') || diseaseText.toLowerCase().includes('healthy')) {
@@ -2788,12 +2834,12 @@
                 } else {
                     const rawConf = Number(pred.confidence || 0);
                     confPercent = rawConf <= 1 ? (rawConf * 100) : rawConf;
-                    confDisplay = `${confPercent.toFixed(2)}%`;
+                    confDisplay = `${confPercent.toFixed(1)}%`;
                 }
 
                 const color = getConfidenceColor(confPercent);
                 const rawName = pred.class || pred.label || pred.name || "فئة زراعية";
-                const arName = pred.label_ar && pred.label_ar !== rawName ? `${pred.label_ar} (${rawName})` : rawName;
+                const arName = pred.label_ar || rawName.replace(/___/g, ' — ').replace(/_/g, ' ');
                 
                 container.innerHTML += `
                     <div class="prediction-item">
@@ -3122,14 +3168,14 @@
             if (typeof updateFarmSummaryPill === 'function') updateFarmSummaryPill();
 
             const adminBtn = u.role === 'admin'
-                ? `<a href="/dev-panel" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9); color:#fff; text-decoration:none; padding:0.35rem 0.8rem; border-radius:14px; font-size:0.8rem; font-weight:700;">🛡️ لوحة المطور</a>`
+                ? `<a href="/dev-panel" style="background:linear-gradient(135deg,#6d28d9,#4c1d95); color:#fff; text-decoration:none; padding:0.32rem 0.75rem; border-radius:10px; font-size:0.78rem; font-weight:700;">لوحة المطور</a>`
                 : '';
 
             box.innerHTML = `
-                <span style="background:rgba(16,185,129,0.16); border:1px solid rgba(16,185,129,0.4); color:#34d399; padding:0.32rem 0.8rem; border-radius:14px; font-size:0.82rem; font-weight:700;">👤 ${u.full_name}</span>
-                <button type="button" onclick="openMyHistoryModal()" style="background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.4); color:#60a5fa; padding:0.32rem 0.75rem; border-radius:14px; font-size:0.8rem; font-weight:700; cursor:pointer;">📜 سجلي الزراعي</button>
+                <span style="background:rgba(45,106,79,0.12); border:1px solid rgba(45,106,79,0.3); color:var(--primary-green); padding:0.3rem 0.75rem; border-radius:10px; font-size:0.8rem; font-weight:700;">${u.full_name}</span>
+                <button type="button" onclick="openMyHistoryModal()" style="background:rgba(3,105,161,0.12); border:1px solid rgba(3,105,161,0.3); color:var(--accent-blue); padding:0.3rem 0.7rem; border-radius:10px; font-size:0.78rem; font-weight:700; cursor:pointer;">سجلي الزراعي</button>
                 ${adminBtn}
-                <button type="button" onclick="logoutUser()" style="background:rgba(239,68,68,0.16); border:1px solid rgba(239,68,68,0.35); color:#fca5a5; padding:0.32rem 0.7rem; border-radius:14px; font-size:0.78rem; font-weight:700; cursor:pointer;">🚪 خروج</button>
+                <button type="button" onclick="logoutUser()" style="background:rgba(220,38,38,0.1); border:1px solid rgba(220,38,38,0.28); color:#dc2626; padding:0.3rem 0.65rem; border-radius:10px; font-size:0.76rem; font-weight:700; cursor:pointer;">خروج</button>
             `;
         }
 
@@ -3155,25 +3201,25 @@
                     credentials: 'same-origin',
                     headers: tok ? { 'Authorization': `Bearer ${tok}` } : {}
                 });
-                if (res.status === 401) {
-                    // Only clear if server explicitly says unauthorized
+                if (!res.ok && res.status !== 401) return;
+                const data = res.ok ? await res.json() : { authenticated: false };
+                if (res.status === 401 || !data.authenticated || !data.user) {
                     localStorage.removeItem('agri_auth_token');
                     localStorage.removeItem('agri_user');
                     box.innerHTML = `
-                        <a href="/login" style="background:linear-gradient(135deg,#10b981,#059669); color:#fff; text-decoration:none; padding:0.38rem 0.9rem; border-radius:16px; font-size:0.84rem; font-weight:700;">🔐 تسجيل الدخول</a>
-                        <a href="/login?tab=register" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#e2e8f0; text-decoration:none; padding:0.38rem 0.85rem; border-radius:16px; font-size:0.84rem; font-weight:600;">✨ حساب جديد</a>
+                        <a href="/login" style="background:linear-gradient(135deg,#2D6A4F,#1B4332); color:#fff; text-decoration:none; padding:0.34rem 0.85rem; border-radius:12px; font-size:0.8rem; font-weight:700;">تسجيل الدخول</a>
+                        <a href="/login?tab=register" style="background:rgba(45,106,79,0.1); border:1px solid rgba(45,106,79,0.28); color:var(--primary-green); text-decoration:none; padding:0.34rem 0.8rem; border-radius:12px; font-size:0.8rem; font-weight:700;">حساب جديد</a>
                     `;
+                    if (window.AGRI_I18N) window.AGRI_I18N.refresh();
                     return;
                 }
-                if (!res.ok) return;
-                const data = await res.json();
-                if (!data.authenticated || !data.user) return;
                 const u = data.user;
                 localStorage.setItem('agri_user', JSON.stringify(u));
                 if (data.token) {
                     localStorage.setItem('agri_auth_token', data.token);
                 }
                 renderUserHeaderBadge(u);
+                if (window.AGRI_I18N) window.AGRI_I18N.refresh();
             } catch (e) {}
         }
 
@@ -3185,7 +3231,7 @@
             currentHciState = 'history';
             updateGlobalBackBtn('history');
             try { history.pushState({ tab: 'history' }, '', '#history'); } catch (e) {}
-            content.innerHTML = '⏳ جاري تحميل سجلك الزراعي...';
+            content.innerHTML = 'جاري تحميل سجلك الزراعي...';
             try {
                 const tok = localStorage.getItem('agri_auth_token') || '';
                 const res = await fetch('/api/auth/my-history', {
@@ -3200,35 +3246,35 @@
                 const diags = data.diagnoses || [];
                 const chats = data.chats || [];
 
-                let html = `<h4 style="color:#10b981; margin-bottom:0.5rem;">📸 تشخيصات الصور السابقة (${diags.length})</h4>`;
+                let html = `<h4 style="color:var(--primary-green); margin-bottom:0.5rem;">فحوصات الصور السابقة (${diags.length})</h4>`;
                 if (diags.length === 0) {
-                    html += `<div style="color:#94a3b8; margin-bottom:1rem;">لا توجد صور مفحوصة مسجلة بعد.</div>`;
+                    html += `<div style="color:var(--text-muted); margin-bottom:1rem;">لا توجد صور مفحوصة مسجلة بعد.</div>`;
                 } else {
                     diags.forEach(d => {
                         html += `
-                            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:0.75rem; margin-bottom:0.6rem;">
-                                <div style="display:flex; justify-content:space-between; font-weight:700; color:#34d399;">
-                                    <span>🌿 ${d.predicted_class_ar || d.predicted_class} (${d.confidence})</span>
-                                    <span style="font-size:0.78rem; color:#94a3b8;">${d.created_at}</span>
+                            <div style="background:rgba(45,106,79,0.06); border:1px solid rgba(45,106,79,0.16); border-radius:12px; padding:0.75rem; margin-bottom:0.6rem;">
+                                <div style="display:flex; justify-content:space-between; font-weight:700; color:var(--primary-green);">
+                                    <span>${d.predicted_class_ar || d.predicted_class} (${d.confidence})</span>
+                                    <span style="font-size:0.78rem; color:var(--text-muted);">${d.created_at}</span>
                                 </div>
-                                <div style="font-size:0.84rem; color:#cbd5e1; margin-top:0.3rem;">${(d.rag_advice || '').slice(0, 260)}...</div>
+                                <div style="font-size:0.84rem; color:var(--text-light); margin-top:0.3rem;">${(d.rag_advice || '').slice(0, 260)}...</div>
                             </div>
                         `;
                     });
                 }
 
-                html += `<h4 style="color:#60a5fa; margin:1rem 0 0.5rem;">💬 استشاراتي السابقة (${chats.length})</h4>`;
+                html += `<h4 style="color:var(--accent-blue); margin:1rem 0 0.5rem;">استشاراتي السابقة (${chats.length})</h4>`;
                 if (chats.length === 0) {
-                    html += `<div style="color:#94a3b8;">لا توجد استشارات سابقة مسجلة بعد.</div>`;
+                    html += `<div style="color:var(--text-muted);">لا توجد استشارات سابقة مسجلة بعد.</div>`;
                 } else {
                     chats.forEach(c => {
                         html += `
-                            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:0.75rem; margin-bottom:0.6rem;">
-                                <div style="display:flex; justify-content:space-between; font-weight:700; color:#93c5fd;">
-                                    <span>❓ ${c.user_query}</span>
-                                    <span style="font-size:0.78rem; color:#94a3b8;">${c.created_at}</span>
+                            <div style="background:rgba(3,105,161,0.05); border:1px solid rgba(3,105,161,0.16); border-radius:12px; padding:0.75rem; margin-bottom:0.6rem;">
+                                <div style="display:flex; justify-content:space-between; font-weight:700; color:var(--accent-blue);">
+                                    <span>${c.user_query}</span>
+                                    <span style="font-size:0.78rem; color:var(--text-muted);">${c.created_at}</span>
                                 </div>
-                                <div style="font-size:0.84rem; color:#cbd5e1; margin-top:0.3rem;">${(c.bot_answer || '').slice(0, 260)}...</div>
+                                <div style="font-size:0.84rem; color:var(--text-light); margin-top:0.3rem;">${(c.bot_answer || '').slice(0, 260)}...</div>
                             </div>
                         `;
                     });
@@ -3308,13 +3354,13 @@
             tomato: {
                 crop: 'طماطم',
                 query: 'عندي إصابة بالندوة المتأخرة في الطماطم، ما هي خطة المكافحة المتكاملة والجرعات بالفدان؟',
-                inlineAdvice: 'تشخيص الرؤية الحاسوبية: **الندوة المتأخرة في الطماطم (Tomato Late Blight)** بثقة **97.8%**. تم إرسال الحالة إلى المستشار الزراعي (Agri-RAG) لإصدار الروشتة الكاملة حسب طقس محافظتك.',
+                inlineAdvice: 'نتيجة الفحص البصري: **الندوة المتأخرة في الطماطم** بنسبة تطابق **97.8%**. جاري استخراج الروشتة والجرعات المناسبة لمساحة أرضك وطقس محافظتك.',
                 cvData: {
                     is_plant: true,
                     model_used: 'EfficientNetV2B2_best.keras',
                     predicted_class: 'Tomato___Late_blight',
                     predicted_class_ar: 'طماطم — الندوة المتأخرة',
-                    crop_type_ar: 'محصول الطماطم 🍅 (عينة عرض Demo Day)',
+                    crop_type_ar: 'محصول الطماطم',
                     predictions: [
                         { label: 'Tomato___Late_blight', label_ar: 'طماطم — الندوة المتأخرة', confidence: 0.978 },
                         { label: 'Tomato___Early_blight', label_ar: 'طماطم — الندوة المبكرة', confidence: 0.016 },
@@ -3325,13 +3371,13 @@
             potato: {
                 crop: 'بطاطس',
                 query: 'ظهرت بقع بنية وحلقات للندوة المبكرة في البطاطس، ما هو العلاج والرش المناسب؟',
-                inlineAdvice: 'تشخيص الرؤية الحاسوبية: **الندوة المبكرة في البطاطس (Potato Early Blight)** بثقة **96.4%**. جاري استخراج الروشتة المعتمدة من نشرات وزارة الزراعة.',
+                inlineAdvice: 'نتيجة الفحص البصري: **الندوة المبكرة في البطاطس** بنسبة تطابق **96.4%**. جاري استخراج الروشتة المعتمدة من نشرات وزارة الزراعة.',
                 cvData: {
                     is_plant: true,
                     model_used: 'EfficientNetV2B2_best.keras',
                     predicted_class: 'Potato___Early_blight',
                     predicted_class_ar: 'بطاطس — الندوة المبكرة',
-                    crop_type_ar: 'محصول البطاطس 🥔 (عينة عرض Demo Day)',
+                    crop_type_ar: 'محصول البطاطس',
                     predictions: [
                         { label: 'Potato___Early_blight', label_ar: 'بطاطس — الندوة المبكرة', confidence: 0.964 },
                         { label: 'Potato___Late_blight', label_ar: 'بطاطس — الندوة المتأخرة', confidence: 0.029 },
@@ -3342,13 +3388,13 @@
             mango: {
                 crop: 'مانجو',
                 query: 'عندي بياض دقيقي ولفحة أزهار في المانجو، ما هي الجرعة الموصى بها وتوقيت الرش؟',
-                inlineAdvice: 'تشخيص الرؤية الحاسوبية: **البياض الدقيقي في المانجو (Mango Powdery Mildew)** بثقة **95.9%**. جاري استخراج برنامج الرش المعتمد من نشرات بحوث البساتين.',
+                inlineAdvice: 'نتيجة الفحص البصري: **البياض الدقيقي في المانجو** بنسبة تطابق **95.9%**. جاري استخراج برنامج الرش المعتمد من نشرات بحوث البساتين.',
                 cvData: {
                     is_plant: true,
                     model_used: 'EfficientNetV2B2_best.keras',
                     predicted_class: 'Mango___Powdery_mildew',
                     predicted_class_ar: 'مانجو — البياض الدقيقي',
-                    crop_type_ar: 'أشجار المانجو 🥭 (عينة عرض Demo Day)',
+                    crop_type_ar: 'أشجار المانجو',
                     predictions: [
                         { label: 'Mango___Powdery_mildew', label_ar: 'مانجو — البياض الدقيقي', confidence: 0.959 },
                         { label: 'Mango___Anthracnose', label_ar: 'مانجو — الأنثراكنوز (لفحة الأزهار)', confidence: 0.032 },
@@ -3361,7 +3407,7 @@
         function runDemoDaySample(sampleKey) {
             const sample = DEMO_DAY_SAMPLES[sampleKey] || DEMO_DAY_SAMPLES.tomato;
             displayCVResults(sample.cvData, sample.inlineAdvice);
-            showToast(`🎬 تم تشغيل عينة العرض: ${sample.cvData.predicted_class_ar}`);
+            showToast(`تم اختيار نموذج: ${sample.cvData.predicted_class_ar}`);
             if (typeof askQuickQuestion === 'function') {
                 askQuickQuestion(sample.query, sample.crop);
             }

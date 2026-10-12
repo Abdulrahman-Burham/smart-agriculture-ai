@@ -261,16 +261,51 @@
             "أدخل كلمة المرور": "Enter your password",
             "تسجيل الدخول بكلمة المرور": "Sign In with Password",
             "👤 الاسم بالكامل (حروف عربية أو إنجليزية فقط)": "👤 Full Name (Arabic or English letters)",
+            "الاسم بالكامل": "Full Name",
             "📱 رقم الموبايل المصري (11 رقم) أو البريد الإلكتروني": "📱 Egyptian Mobile Number (11 digits) or Email",
             "📍 المحافظة": "📍 Governorate",
+            "المحافظة": "Governorate",
             "🌾 المحصول الأساسي": "🌾 Primary Crop",
+            "المحصول الأساسي": "Primary Crop",
             "🚜 مساحة الأرض (بالفدان)": "🚜 Farm Size (Feddan)",
+            "مساحة الأرض (فدان)": "Farm Size (Feddan)",
             "💧 نظام الري الأساسي": "💧 Primary Irrigation System",
+            "نظام الري": "Irrigation System",
             "🔑 كلمة المرور (6 أحرف أو أرقام غير مكررة على الأقل)": "🔑 Password (At least 6 non-repeating characters)",
+            "6 أحرف أو أرقام على الأقل": "At least 6 characters",
             "🔒 تأكيد كلمة المرور": "🔒 Confirm Password",
+            "تأكيد كلمة المرور": "Confirm Password",
             "🌱 إنشاء الحساب والدخول فوراً": "🌱 Create Account & Sign In",
+            "إنشاء الحساب والدخول فوراً": "Create Account & Sign In",
             "العودة للرئيسية": "Back to Home",
-            "التشخيص السريع بالصورة": "Quick Photo Diagnosis"
+            "الرئيسية": "Home",
+            "التشخيص السريع بالصورة": "Quick Photo Diagnosis",
+            "خدمة الإرشاد الزراعي الرقمي لمحافظات مصر": "Digital Agricultural Advisory for Egypt's Governorates",
+            "فحص أمراض النباتات بالصورة، وتوصيات علاجية معتمدة من نشرات وزارة الزراعة المصرية": "Visual Plant Disease Diagnosis & Verified Egyptian Ministry of Agriculture Prescriptions",
+            "لوحة الكمبيوتر": "Desktop Dashboard",
+            "تطبيق الموبايل": "Mobile App",
+            "الفحص السريع": "Quick Scan",
+            "كيف نعمل": "How It Works",
+            "مرشدك الزراعي المصري": "Your Egyptian Agricultural Advisor",
+            "فحص النبات والمستشار": "Plant Scanner & Advisor",
+            "إحصائيات المحاصيل": "Crop Analytics",
+            "نسخة الموبايل": "Mobile View",
+            "نماذج جاهزة للتجربة السريعة:": "Instant Sample Cases:",
+            "فحص بصري دقيق": "Precision Visual Scan",
+            "نتيجة الفحص": "Diagnosis Result",
+            "إرشاد زراعي معتمد": "Verified Agronomic Guidance",
+            "ابدأ الفحص والاستشارة مجاناً": "Start Free Diagnosis & Consultation",
+            "لوحة العرض الكاملة": "Full Desktop Dashboard",
+            "اسمع ترحيب المهندس بالمصري": "Hear Egyptian Agronomist Welcome",
+            "فحص 38 مرض وآفة بالصورة": "38 Plant Diseases Diagnosed by Photo",
+            "صوت مصري واضح ومسموع": "Clear Natural Egyptian Voice",
+            "طقس لحظي لـ 27 محافظة مصرية": "Live Weather for 27 Governorates",
+            "جاهز لفحص محصولك أو استشارة المهندس الزراعي؟": "Ready to Diagnose Your Crop or Consult the Agronomist?",
+            "افتح لوحة التشخيص الكاملة": "Open Full Diagnosis Dashboard",
+            "تسجيل دخول / حساب مزارع": "Sign In / Farmer Account",
+            "المتابعة بحساب Google": "Continue with Google",
+            "الدخول السريع بالبريد أو رقم الموبايل": "Quick Sign-In with Email or Mobile",
+            "صفحة الدخول وإنشاء حساب مزارع كامل": "Full Login & Farmer Registration Page"
         },
 
         fr: {
@@ -494,8 +529,42 @@
             "كلمة المرور": "Mot de Passe",
             "تسجيل الدخول بكلمة المرور": "Se Connecter",
             "🌱 إنشاء الحساب والدخول فوراً": "🌱 Créer le Compte",
+            "إنشاء الحساب والدخول فوراً": "Créer le Compte",
+            "الاسم بالكامل": "Nom Complet",
+            "المحافظة": "Gouvernorat",
+            "المحصول الأساسي": "Culture Principale",
+            "مساحة الأرض (فدان)": "Surface (Feddan)",
+            "نظام الري": "Système d'Irrigation",
+            "تأكيد كلمة المرور": "Confirmer le Mot de Passe",
             "العودة للرئيسية": "Retour à l'Accueil",
-            "التشخيص السريع بالصورة": "Diagnostic Photo Rapide"
+            "الرئيسية": "Accueil",
+            "التشخيص السريع بالصورة": "Diagnostic Photo Rapide",
+            "خدمة الإرشاد الزراعي الرقمي لمحافظات مصر": "Service de Conseil Agricole Numérique pour l'Égypte",
+            "فحص أمراض النباتات بالصورة، وتوصيات علاجية معتمدة من نشرات وزارة الزراعة المصرية": "Diagnostic Visuel des Plantes & Recommandations du Ministère de l'Agriculture",
+            "لوحة الكمبيوتر": "Tableau de Bord PC",
+            "تطبيق الموبايل": "Application Mobile",
+            "الفحص السريع": "Scan Rapide",
+            "كيف نعمل": "Comment ça marche",
+            "مرشدك الزراعي المصري": "Votre Conseiller Agricole Égyptien",
+            "فحص النبات والمستشار": "Diagnostic & Conseiller",
+            "إحصائيات المحاصيل": "Statistiques Agricoles",
+            "نسخة الموبايل": "Version Mobile",
+            "نماذج جاهزة للتجربة السريعة:": "Exemples Rapides à Tester :",
+            "فحص بصري دقيق": "Analyse Visuelle Précise",
+            "نتيجة الفحص": "Résultat du Diagnostic",
+            "إرشاد زراعي معتمد": "Conseil Agricole Certifié",
+            "ابدأ الفحص والاستشارة مجاناً": "Démarrer le Diagnostic Gratuit",
+            "لوحة العرض الكاملة": "Tableau de Bord Complet",
+            "اسمع ترحيب المهندس بالمصري": "Écouter l'Accueil Vocal Égyptien",
+            "فحص 38 مرض وآفة بالصورة": "38 Maladies Végétales Détectées par Photo",
+            "صوت مصري واضح ومسموع": "Voix Égyptienne Claire et Naturelle",
+            "طقس لحظي لـ 27 محافظة مصرية": "Météo en Direct pour 27 Gouvernorats",
+            "جاهز لفحص محصولك أو استشارة المهندس الزراعي؟": "Prêt à Diagnostiquer Votre Culture ou Consulter l'Agronome ?",
+            "افتح لوحة التشخيص الكاملة": "Ouvrir le Tableau de Bord Complet",
+            "تسجيل دخول / حساب مزارع": "Connexion / Compte Agriculteur",
+            "المتابعة بحساب Google": "Continuer avec Google",
+            "الدخول السريع بالبريد أو رقم الموبايل": "Connexion Rapide par Email ou Téléphone",
+            "صفحة الدخول وإنشاء حساب مزارع كامل": "Page Complète de Connexion et d'Inscription"
         }
     };
 
@@ -629,6 +698,7 @@
         const navAuthArea = document.getElementById('navAuthArea'); // landing.html
         const topBackBar = document.querySelector('.top-back-bar'); // login.html
         const topActions = document.querySelector('.top-actions'); // mobile.html
+        const headerActions = document.querySelector('.header-actions'); // simple.html
         const navContainer = document.querySelector('.nav-container'); // index.html
 
         if (navAuthArea) {
@@ -639,6 +709,8 @@
             select.style.padding = '4px 7px';
             select.style.fontSize = '0.74rem';
             topActions.insertBefore(select, topActions.firstChild);
+        } else if (headerActions) {
+            headerActions.insertBefore(select, headerActions.firstChild);
         } else if (navContainer) {
             navContainer.appendChild(select);
         }

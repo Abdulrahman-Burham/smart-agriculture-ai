@@ -976,51 +976,40 @@
       </button>
     </div>
 
-    <a href="/?desktop=1" class="desktop-switch-link">التبديل إلى واجهة سطح المكتب الكاملة</a>
+    <a href="/dashboard?view=desktop" class="desktop-switch-link">التبديل إلى واجهة الكمبيوتر الكاملة</a>
   </section>
 
   <!-- VIEW 3: Saved Diagnosis, Quick Sign-In & Memory Log -->
   <section class="view-section" id="view-history">
-    <!-- Instant Multi-Provider Sign-In Card (shown when guest) -->
+    <!-- Instant Sign-In Card (shown when guest) -->
     <div class="settings-card" id="mobileQuickAuthCard">
       <div class="settings-title">
         <svg class="icon" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span>تسجيل الدخول لحفظ سجل التشخيصات وموقع الأرض</span>
+        <span>تسجيل الدخول لحفظ سجل المزرعة</span>
       </div>
-      <p class="settings-desc">اختر حسابك للمتابعة وحفظ جميع تشخيصاتك وموقع أرضك دائماً على الموبايل والكمبيوتر.</p>
+      <p class="settings-desc">سجّل دخولك لحفظ جميع فحوصات الأوراق واستشاراتك وموقع أرضك على الموبايل والكمبيوتر.</p>
 
-      <div style="display:flex; flex-direction:column; gap:10px; direction:ltr;">
-        <button type="button" onclick="openMobileQuickAuth('google')" style="width:100%; min-height:48px; display:flex; align-items:center; justify-content:center; gap:12px; padding:12px 18px; border-radius:999px; border:1.5px solid #dadce0; background:#FFFFFF; color:#202124; font-family:'Plus Jakarta Sans','Cairo',sans-serif; font-size:0.94rem; font-weight:700; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button type="button" onclick="openMobileQuickAuth('google')" style="width:100%; min-height:48px; display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 18px; border-radius:12px; border:1.5px solid var(--border-strong); background:#FFFFFF; color:#18241D; font-family:'Cairo',sans-serif; font-size:0.92rem; font-weight:800; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
           <svg width="20" height="20" viewBox="0 0 48 48">
             <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
             <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
             <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
             <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
           </svg>
-          <span>Sign in with Google</span>
+          <span>المتابعة بحساب Google</span>
         </button>
 
-        <button type="button" onclick="openMobileQuickAuth('email')" style="width:100%; min-height:48px; display:flex; align-items:center; justify-content:center; gap:12px; padding:12px 18px; border-radius:999px; border:1.5px solid #dadce0; background:#FFFFFF; color:#202124; font-family:'Plus Jakarta Sans','Cairo',sans-serif; font-size:0.94rem; font-weight:700; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3c4043" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" onclick="openMobileQuickAuth('email')" style="width:100%; min-height:46px; display:flex; align-items:center; justify-content:center; gap:10px; padding:11px 18px; border-radius:12px; border:1px solid var(--border-strong); background:var(--bg-elevated); color:var(--text-primary); font-family:'Cairo',sans-serif; font-size:0.9rem; font-weight:700; cursor:pointer;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
           </svg>
-          <span>Sign in with Email</span>
+          <span>الدخول السريع بالبريد أو رقم الموبايل</span>
         </button>
 
-        <button type="button" onclick="openMobileQuickAuth('facebook')" style="width:100%; min-height:48px; display:flex; align-items:center; justify-content:center; gap:12px; padding:12px 18px; border-radius:999px; border:1.5px solid #dadce0; background:#FFFFFF; color:#202124; font-family:'Plus Jakarta Sans','Cairo',sans-serif; font-size:0.94rem; font-weight:700; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-          <svg width="20" height="20" viewBox="0 0 24 24">
-            <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-          </svg>
-          <span>Sign in with Facebook</span>
-        </button>
-
-        <button type="button" onclick="openMobileQuickAuth('yahoo')" style="width:100%; min-height:48px; display:flex; align-items:center; justify-content:center; gap:12px; padding:12px 18px; border-radius:999px; border:1.5px solid #dadce0; background:#FFFFFF; color:#202124; font-family:'Plus Jakarta Sans','Cairo',sans-serif; font-size:0.94rem; font-weight:700; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-          <svg width="20" height="20" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="11" fill="#6001D2"/>
-            <path fill="#FFFFFF" d="M7.2 6.8h2.5l2.1 4.3 2.1-4.3h2.4l-3.4 6.5v3.9h-2.3v-3.9L7.2 6.8zm9.2 7.8h1.9v2.6h-1.9v-2.6zm.1-5.8h1.7l-.3 4.8h-1.1l-.3-4.8z"/>
-          </svg>
-          <span>Sign in with Yahoo</span>
-        </button>
+        <a href="/login?next=/mobile" style="text-align:center; font-size:0.82rem; font-weight:700; color:var(--brand-forest); text-decoration:none; padding:6px 0;">
+          أو فتح صفحة تسجيل الدخول وإنشاء الحساب الكاملة ←
+        </a>
       </div>
 
       <!-- Inline Quick Auth Form inside Mobile -->
@@ -1051,10 +1040,10 @@
 
     <div class="settings-card">
       <div class="settings-title" style="justify-content:space-between;">
-        <span>سجل الفحوصات والمحادثات المرتبطة بك</span>
+        <span>سجل الفحوصات والمحادثات السابقة</span>
         <button type="button" onclick="clearLocalSession()" style="border:1px solid var(--border-strong); background:var(--bg-elevated); padding:4px 10px; border-radius:8px; font-family:inherit; font-size:0.74rem; font-weight:700; cursor:pointer;">بدء جلسة جديدة</button>
       </div>
-      <p class="settings-desc">جميع التشخيصات والأسئلة التالية محفوظة ومرتبطة بمعرف الكوكي الخاص بك (<span id="cookieIdBadge" style="font-family:monospace;">...</span>) وبحسابك.</p>
+      <p class="settings-desc">جميع الفحوصات والأسئلة التالية محفوظة تلقائياً على جهازك وبحسابك للرجوع إليها في أي وقت.<span id="cookieIdBadge" style="display:none;">...</span></p>
       <div id="historyContainer">
         <div style="color:var(--text-muted); font-size:0.84rem; text-align:center; padding:20px 0;">جاري تحميل السجل...</div>
       </div>

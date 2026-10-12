@@ -923,18 +923,18 @@
 </head>
 <body>
 
-    <!-- Demo Day Quick Launcher Strip -->
+    <!-- Top Info Strip -->
     <div class="demo-top-bar">
         <div class="demo-top-inner">
             <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-                <span class="demo-badge-pill">🏆 وضع عرض Demo Day التفاعلي</span>
-                <span style="font-weight:600;">منصة الذكاء الاصطناعي الزراعي المصرية (Vision + Hybrid Agri-RAG + Gemini 3.8 Neural Voice)</span>
+                <span class="demo-badge-pill">الإرشاد الزراعي الرقمي</span>
+                <span style="font-weight:600;">تشخيص أمراض المحاصيل بالصورة وتوصيات معتمدة من واقع نشرات وزارة الزراعة المصرية</span>
             </div>
             <div class="demo-quick-links">
-                <a href="/dashboard?view=desktop">💻 لوحة الكمبيوتر</a>
-                <a href="/mobile">📱 تطبيق الموبايل</a>
-                <a href="/simple">⚡ الفحص السريع</a>
-                <a href="#architecture">🧠 معمارية النظام</a>
+                <a href="/dashboard?view=desktop">لوحة الكمبيوتر</a>
+                <a href="/mobile">تطبيق الموبايل</a>
+                <a href="/simple">الفحص السريع</a>
+                <a href="#architecture">كيف نعمل؟</a>
             </div>
         </div>
     </div>
@@ -946,13 +946,13 @@
                 <img src="/logo.png" alt="Smart Agriculture AI Logo">
                 <div>
                     <div class="brand-title">منصة الزراعة الذكية</div>
-                    <div class="brand-sub">Smart Agriculture AI • مرشدك الزراعي المصري</div>
+                    <div class="brand-sub">مرشدك الزراعي المصري</div>
                 </div>
             </a>
 
             <ul class="nav-links">
                 <li><a href="#interfaces">واجهات المنصة</a></li>
-                <li><a href="#architecture">معمارية الذكاء الاصطناعي</a></li>
+                <li><a href="#architecture">خطوات التشخيص</a></li>
                 <li><a href="#features">المميزات</a></li>
                 <li><a href="#crops">المحاصيل المدعومة</a></li>
             </ul>
@@ -961,8 +961,8 @@
                 <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleSiteTheme()" title="تبديل الوضع الفاتح / الليلي">
                     🌙 الوضع الليلي
                 </button>
-                <a href="/login?next=/dashboard" class="btn btn-outline" id="navLoginBtn">🔐 تسجيل الدخول</a>
-                <a href="/dashboard" class="btn btn-primary">🚀 افتح المنصة الآن</a>
+                <a href="/login?next=/dashboard" class="btn btn-outline" id="navLoginBtn">تسجيل الدخول</a>
+                <a href="/dashboard" class="btn btn-primary">افتح المنصة الآن</a>
             </div>
         </div>
     </nav>
@@ -971,23 +971,23 @@
     <section class="hero">
         <div>
             <div class="hero-badge">
-                <span>🇪🇬</span>
-                <span>أول مساعد زراعي ذكي يتحدث باللهجة المصرية ومعتمد علمياً</span>
+                <span>🌿</span>
+                <span>مساعد زراعي مصري يفهم أرضك ويتحدث بلهجتك</span>
             </div>
             <h1>
                 مهندس زراعي خبير في جيبك..<br>
                 <span class="highlight">يفحص زرعك بالصورة ويكلمك بالمصري!</span>
             </h1>
             <p class="hero-desc">
-                صوّر ورقة النبات المصابة أو اسأل بصوتك بالعامية المصرية، وهتاخد تشخيص فوري بالرؤية الحاسوبية (<strong>EfficientNetV2B2</strong>) مع روشتة علاجية وجرعات دقيقة بالفدان من نشرات <strong>مركز البحوث الزراعية</strong> مربوطة بطقس محافظتك لحظياً.
+                صوّر ورقة النبات المصابة أو اسأل بصوتك بالعامية المصرية، وهتاخد تشخيص فوري لحالة المحصول مع روشتة علاجية وجرعات دقيقة بالفدان من واقع نشرات <strong>مركز البحوث الزراعية</strong> ومربوطة بطقس محافظتك لحظياً.
             </p>
 
             <div class="hero-cta-group">
                 <a href="/dashboard" class="btn btn-primary btn-lg" id="primaryHeroBtn">
-                    🚀 ابدأ الفحص والاستشارة مجاناً
+                    ابدأ الفحص والاستشارة مجاناً
                 </a>
                 <a href="/dashboard?view=desktop" class="btn btn-outline btn-lg">
-                    💻 لوحة العرض الكاملة (Desktop)
+                    لوحة العرض الكاملة (كمبيوتر)
                 </a>
                 <button type="button" class="btn btn-gold btn-lg" id="heroVoiceBtn" onclick="playHeroEgyptianWelcome(this)">
                     🔊 اسمع ترحيب المهندس بالمصري
@@ -995,21 +995,21 @@
             </div>
 
             <div class="hero-trust">
-                <span>✅ فحص 38 مرض وآفة بالصورة</span>
-                <span>✅ نطق بشري مصري طبيعي (Gemini 3.8 TTS)</span>
-                <span>✅ طقس لحظي لـ 27 محافظة مصرية</span>
+                <span>✓ فحص 38 مرض وآفة بالصورة</span>
+                <span>✓ شرح صوتي باللهجة المصرية</span>
+                <span>✓ طقس لحظي لـ 27 محافظة مصرية</span>
             </div>
         </div>
 
-        <!-- Interactive Live Preview Card with 3 Demo Day Scenarios -->
+        <!-- Interactive Live Preview Card -->
         <div class="hero-visual" id="live-demo">
             <div class="showcase-card">
                 <div class="showcase-header">
                     <div style="display:flex; align-items:center; gap:0.6rem;">
-                        <span style="font-size:1.35rem;">🔬</span>
+                        <span style="font-size:1.25rem;">🌿</span>
                         <div>
-                            <div style="font-weight:900; font-size:0.95rem; color:var(--text-main);">محاكاة حية للتشخيص والروشتة (جرّب الضغط)</div>
-                            <div style="font-size:0.74rem; color:var(--text-muted);">اختر محصولاً لمعاينة تشخيص الرؤية الحاسوبية والرد الصوتي المصري</div>
+                            <div style="font-weight:900; font-size:0.95rem; color:var(--text-main);">نموذج حي للتشخيص والروشتة (جرّب الضغط)</div>
+                            <div style="font-size:0.74rem; color:var(--text-muted);">اختر محصولاً لمعاينة نتيجة الفحص والتوصية الصوتية باللهجة المصرية</div>
                         </div>
                     </div>
                     <span class="status-pill">
@@ -1020,30 +1020,30 @@
 
                 <!-- 3-Scenario Switcher -->
                 <div class="scenario-tabs" role="tablist">
-                    <button type="button" class="scenario-tab active" onclick="switchDemoScenario(0, this)">🍅 طماطم (ندوة متأخرة)</button>
-                    <button type="button" class="scenario-tab" onclick="switchDemoScenario(1, this)">🥔 بطاطس (ندوة مبكرة)</button>
-                    <button type="button" class="scenario-tab" onclick="switchDemoScenario(2, this)">🥭 مانجو (بياض دقيقي)</button>
+                    <button type="button" class="scenario-tab active" onclick="switchDemoScenario(0, this)">طماطم (ندوة متأخرة)</button>
+                    <button type="button" class="scenario-tab" onclick="switchDemoScenario(1, this)">بطاطس (ندوة مبكرة)</button>
+                    <button type="button" class="scenario-tab" onclick="switchDemoScenario(2, this)">مانجو (بياض دقيقي)</button>
                 </div>
 
                 <div class="mock-scan-box">
                     <div class="mock-scan-row">
-                        <span id="demoDiseaseTitle" style="font-weight:900; color:var(--primary-bright); font-size:0.92rem;">🔬 التشخيص: طماطم — الندوة المتأخرة (Late Blight)</span>
-                        <span id="demoConfidenceTag" class="mock-tag">ثقة 97.8%</span>
+                        <span id="demoDiseaseTitle" style="font-weight:900; color:var(--primary-bright); font-size:0.92rem;">التشخيص: طماطم — الندوة المتأخرة</span>
+                        <span id="demoConfidenceTag" class="mock-tag">تطابق 97.8%</span>
                     </div>
                     <div class="conf-bar-track">
                         <div id="demoConfBar" class="conf-bar-fill" style="width: 97.8%;"></div>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:0.76rem; color:var(--text-secondary); flex-wrap:wrap; gap:0.4rem;">
-                        <span>النموذج: <strong style="color:var(--accent-sky);">EfficientNetV2B2</strong></span>
-                        <span>فلتر النباتات: <strong style="color:var(--primary);">✅ ورقة نبات حقيقية</strong></span>
-                        <span id="demoSourceBadge" style="color:var(--accent-gold); font-weight:700;">📚 نشرة وزارة الزراعة #142</span>
+                        <span>الفحص: <strong style="color:var(--accent-sky);">تشخيص بصري للأوراق</strong></span>
+                        <span>الحالة: <strong style="color:var(--primary);">✓ ورقة نبات واضحة</strong></span>
+                        <span id="demoSourceBadge" style="color:var(--accent-gold); font-weight:700;">نشرة وزارة الزراعة #142</span>
                     </div>
                 </div>
 
                 <div class="mock-chat-bubble" id="demoBubbleBox">
                     <div style="font-weight:800; color:var(--primary-bright); margin-bottom:0.3rem; font-size:0.82rem; display:flex; justify-content:space-between;">
-                        <span>🤖 روشتة المهندس الزراعي الذكي (باللهجة المصرية):</span>
-                        <span style="color:var(--text-muted); font-size:0.74rem;">Agri-RAG الهجين</span>
+                        <span>روشتة المهندس الزراعي (باللهجة المصرية):</span>
+                        <span style="color:var(--text-muted); font-size:0.74rem;">توصية معتمدة</span>
                     </div>
                     <div id="demoAdviceText">
                         «يا باشمهندس، الورقة دي فيها <strong>ندوة متأخرة في الطماطم</strong> والجو الرطب بيزودها. أول خطوة توقف الري بالغمر وتقلل الرطوبة، وترش فوراً <strong>أوكسي كلور النحاس أو ريدوميل جولد</strong> بمعدل 250 جرام لكل 100 لتر ميه آخر النهار.»
@@ -1055,12 +1055,12 @@
                         🔊 استمع لهذه الروشتة بالصوت المصري
                     </button>
                     <a href="/dashboard?view=desktop&demo=tomato" id="demoLaunchLink" class="btn-sm-launch">
-                        💬 افتح في المنصة ←
+                        افتح في المنصة ←
                     </a>
                 </div>
 
                 <div class="mock-weather-bar" id="liveWeatherPreview">
-                    <span>🌤️ طقس المحافظات الزراعي المباشر:</span>
+                    <span>طقس المحافظات الزراعي المباشر:</span>
                     <strong id="heroWeatherText">جاري جلب حالة الجو...</strong>
                 </div>
             </div>
@@ -1073,61 +1073,61 @@
             <div class="stat-item">
                 <div class="stat-num" id="statDiseases">+38</div>
                 <div class="stat-label">مرض وآفة نباتية بالصورة</div>
-                <div class="stat-sub">نموذج EfficientNetV2B2 + فلتر النباتات</div>
+                <div class="stat-sub">فحص دقيق لأوراق الخضر والفاكهة والمحاصيل</div>
             </div>
             <div class="stat-item">
                 <div class="stat-num" id="statGovs">27</div>
                 <div class="stat-label">محافظة مصرية مربوطة بالطقس</div>
-                <div class="stat-sub">حرارة • رطوبة • سرعة رياح • إنذار مبكر</div>
+                <div class="stat-sub">حرارة • رطوبة • سرعة رياح • مواعيد الرش</div>
             </div>
             <div class="stat-item">
                 <div class="stat-num" id="statInteractions">+735</div>
                 <div class="stat-label">عملية فحص واستشارة زراعية</div>
-                <div class="stat-sub" id="statSubLive">تحديث لحظي من قاعدة بيانات المنصة</div>
+                <div class="stat-sub" id="statSubLive">تحديث لحظي من سجل فحوصات المنصة</div>
             </div>
             <div class="stat-item">
                 <div class="stat-num">100%</div>
                 <div class="stat-label">تحدث واستماع بالعامية المصرية</div>
-                <div class="stat-sub">Gemini 3.8 Neural Egyptian Voice</div>
+                <div class="stat-sub">صوت بشري مصري واضح وسهل الفهم</div>
             </div>
         </div>
     </div>
 
-    <!-- AI Architecture Pipeline Section (Demo Day Highlight) -->
+    <!-- How It Works Section -->
     <section class="section" id="architecture">
         <div class="section-header">
-            <span class="section-tag">معمارية الذكاء الاصطناعي (System Architecture)</span>
-            <h2 class="section-title">كيف تعمل المنصة خلف الكواليس في أقل من ثانية؟</h2>
-            <p class="section-sub">خط أنابيب ذكي من 4 مراحل يدمج الرؤية الحاسوبية، الاسترجاع المعرفي الهجين الموثق، والنماذج الصوتية العصبية باللهجة المصرية.</p>
+            <span class="section-tag">خطوات العمل</span>
+            <h2 class="section-title">كيف تحصل على التشخيص والروشتة في ثوانٍ؟</h2>
+            <p class="section-sub">أربع خطوات بسيطة تجمع بين الفحص البصري لورقة النبات، نشرات الإرشاد الزراعي المعتمدة، وحالة الطقس في أرضك.</p>
         </div>
 
         <div class="pipeline-grid">
             <div class="pipeline-card">
-                <span class="pipeline-step-badge">المرحلة 01 • الفلترة الذكية</span>
-                <h3>بوابة التحقق من النبات</h3>
-                <div class="pipeline-tech">OpenCV HSV + Gemini Gatekeeper</div>
-                <p>فحص جودة الإضاءة وحدة الصورة واستبعاد الصور غير النباتية أو العشوائية تلقائياً قبل التشغيل لضمان دقة التشخيص 100%.</p>
+                <span class="pipeline-step-badge">الخطوة 01 • فحص الصورة</span>
+                <h3>التأكد من وضوح ورقة النبات</h3>
+                <div class="pipeline-tech">فرز تلقائي للصور</div>
+                <p>يتأكد النظام أولاً من أن الصورة المرفوعة لورقة نبات حقيقية وواضحة الإضاءة، ويستبعد أي صور غير نباتية لضمان دقة النتيجة.</p>
             </div>
 
             <div class="pipeline-card">
-                <span class="pipeline-step-badge">المرحلة 02 • الرؤية الحاسوبية</span>
+                <span class="pipeline-step-badge">الخطوة 02 • تحديد الإصابة</span>
                 <h3>تشخيص أمراض الأوراق</h3>
-                <div class="pipeline-tech">EfficientNetV2B2 (38 Classes)</div>
-                <p>تحليل البقع والندوات والبياض الدقيقي ونقص العناصر مع حساب نسبة الثقة وهامش التأكد (Confidence Margin) للتعلم النشط.</p>
+                <div class="pipeline-tech">38 مرض وآفة زراعية</div>
+                <p>تحليل مظهر البقع والندوات والبياض الدقيقي وأعراض نقص العناصر على الورقة مع إظهار نسبة التطابق بدقة.</p>
             </div>
 
             <div class="pipeline-card">
-                <span class="pipeline-step-badge">المرحلة 03 • الاسترجاع الهجين</span>
-                <h3>المستشار الزراعي المعتمد</h3>
-                <div class="pipeline-tech">Multilingual-e5 + BM25 + ChromaDB</div>
-                <p>دمج البحث الدلالي واللفظي في نشرات مركز البحوث الزراعية مع طقس المحافظة ومساحة المزرعة بالفدان ونوع الري.</p>
+                <span class="pipeline-step-badge">الخطوة 03 • إعداد الروشتة</span>
+                <h3>حساب الجرعة المناسبة لأرضك</h3>
+                <div class="pipeline-tech">نشرات وزارة الزراعة + طقس محافظتك</div>
+                <p>تجهيز برنامج المكافحة والجرعات الموصى بها من واقع نشرات مركز البحوث الزراعية بما يناسب مساحة أرضك بالفدان ونوع الري.</p>
             </div>
 
             <div class="pipeline-card">
-                <span class="pipeline-step-badge">المرحلة 04 • النطق العصبي المصري</span>
-                <h3>توليد الصوت المصري الطبيعي</h3>
-                <div class="pipeline-tech">Gemini 3.8 TTS + Spoken Normalizer</div>
-                <p>تحويل الأرقام والرموز العلمية إلى عامية مصرية زراعية سليمة وتوليد صوت بشري مصري (رجالي/نسائي) فائق الوضوح.</p>
+                <span class="pipeline-step-badge">الخطوة 04 • الشرح المسموع</span>
+                <h3>سماع التوصية باللهجة المصرية</h3>
+                <div class="pipeline-tech">صوت مصري طبيعي وواضح</div>
+                <p>إمكانية الاستماع للروشتة كاملة بصوت مهندس زراعي مصري يشرح لك خطوات الوقاية والعلاج ومواعيد الرش المناسبة.</p>
             </div>
         </div>
     </section>
@@ -1136,17 +1136,17 @@
     <section class="section" id="interfaces">
         <div class="section-header">
             <span class="section-tag">واجهات مصممة لكل مزارع ومهندس</span>
-            <h2 class="section-title">اختر الواجهة المناسبة لجهازك أو لعرضك</h2>
-            <p class="section-sub">صممنا المنصة بثلاث واجهات متكاملة لتناسب العمل الميداني بالموبايل في الحقل أو العرض التفصيلي على شاشة الكمبيوتر.</p>
+            <h2 class="section-title">اختر الواجهة المناسبة لجهازك</h2>
+            <p class="section-sub">صممنا المنصة بثلاث واجهات متكاملة لتناسب العمل الميداني بالموبايل في الحقل أو المتابعة التفصيلية على شاشة الكمبيوتر.</p>
         </div>
 
         <div class="interfaces-grid">
             <div class="interface-card">
                 <div>
                     <span class="interface-badge" style="background:var(--primary-tint); color:var(--primary-bright); border:1px solid var(--border-strong);">الأكثر استخداماً في الحقل</span>
-                    <h3 style="font-size:1.3rem; font-weight:900; margin-bottom:0.6rem; color:var(--text-main);">📱 تطبيق الموبايل الذكي</h3>
+                    <h3 style="font-size:1.3rem; font-weight:900; margin-bottom:0.6rem; color:var(--text-main);">تطبيق الموبايل</h3>
                     <p style="color:var(--text-secondary); font-size:0.92rem; margin-bottom:1.5rem;">
-                        واجهة تطبيق أصلية سريعة للموبايل: صوّر الورقة بالكاميرا مباشرة، سجل سؤالك بالصوت، واسمع الروشتة باللهجة المصرية مع تحديد موقع مزرعتك بالـ GPS.
+                        واجهة سريعة ومريحة للموبايل: صوّر الورقة بالكاميرا مباشرة، سجل سؤالك بالصوت، واسمع الروشتة باللهجة المصرية مع تحديد موقع مزرعتك بالـ GPS.
                     </p>
                 </div>
                 <a href="/mobile" class="btn btn-primary" style="width:100%;">افتح واجهة الموبايل ←</a>
@@ -1154,10 +1154,10 @@
 
             <div class="interface-card">
                 <div>
-                    <span class="interface-badge" style="background:var(--accent-sky-bg); color:var(--accent-sky); border:1px solid rgba(3,105,161,0.25);">مثالية لعرض Demo Day</span>
-                    <h3 style="font-size:1.3rem; font-weight:900; margin-bottom:0.6rem; color:var(--text-main);">💻 منصة الكمبيوتر المتكاملة</h3>
+                    <span class="interface-badge" style="background:var(--accent-sky-bg); color:var(--accent-sky); border:1px solid rgba(3,105,161,0.25);">شاشة متكاملة للمتابعة</span>
+                    <h3 style="font-size:1.3rem; font-weight:900; margin-bottom:0.6rem; color:var(--text-main);">منصة الكمبيوتر المتكاملة</h3>
                     <p style="color:var(--text-secondary); font-size:0.92rem; margin-bottom:1.5rem;">
-                        شاشة مزدوجة تجمع بين فحص الصور، المحادثة الذكية مع المهندس الزراعي، أمثلة العرض الجاهزة، سجل فحوصات المزرعة، ومؤشرات الطقس والإنذار المبكر.
+                        شاشة مزدوجة تجمع بين فحص الصور، المحادثة مع المهندس الزراعي، نماذج الفحص السريعة، سجل فحوصات المزرعة، ومؤشرات الطقس والإنذار المبكر.
                     </p>
                 </div>
                 <a href="/dashboard?view=desktop" class="btn btn-outline" style="width:100%;">افتح لوحة الكمبيوتر ←</a>
@@ -1166,7 +1166,7 @@
             <div class="interface-card">
                 <div>
                     <span class="interface-badge" style="background:var(--accent-gold-bg); color:var(--accent-gold); border:1px solid var(--accent-gold-border);">بضغطتين فقط</span>
-                    <h3 style="font-size:1.3rem; font-weight:900; margin-bottom:0.6rem; color:var(--text-main);">⚡ الفحص السريع المبسط</h3>
+                    <h3 style="font-size:1.3rem; font-weight:900; margin-bottom:0.6rem; color:var(--text-main);">الفحص السريع المبسط</h3>
                     <p style="color:var(--text-secondary); font-size:0.92rem; margin-bottom:1.5rem;">
                         واجهة مبسطة جداً للفحص الفوري: ارفع صورة الورقة واضغط زر التشخيص لتحصل على اسم المرض والروشتة العلاجية المسموعة فوراً.
                     </p>
@@ -1179,28 +1179,28 @@
     <!-- Core Features Section -->
     <section class="section" id="features">
         <div class="section-header">
-            <span class="section-tag">تقنيات الذكاء الاصطناعي الزراعي</span>
+            <span class="section-tag">مميزات المنصة</span>
             <h2 class="section-title">كل ما تحتاجه لحماية محصولك وزيادة الإنتاجية</h2>
-            <p class="section-sub">منظومة متكاملة تربط الرؤية الحاسوبية باسترجاع المعرفة الموثقة والطقس الحي لخدمة الفلاح والمهندس الزراعي المصري.</p>
+            <p class="section-sub">منظومة متكاملة تربط الفحص البصري للأوراق بالتوصيات المعتمدة والطقس الحي لخدمة المزارع والمهندس الزراعي المصري.</p>
         </div>
 
         <div class="features-grid">
             <div class="feature-card">
-                <div class="feature-icon">📸</div>
+                <div class="feature-icon">🌿</div>
                 <h3>تشخيص أمراض النبات بالصورة</h3>
-                <p>نموذج <strong>EfficientNetV2B2</strong> مدعوم بفلتر ذكي يرفض الصور غير النباتية تلقائياً ويشخص الأمراض الفطرية والبكتيرية ونقص العناصر بدقة عالية.</p>
+                <p>فحص دقيق لأوراق المحاصيل يستبعد الصور غير النباتية تلقائياً ويشخص الأمراض الفطرية والبكتيرية ونقص العناصر الغذائية.</p>
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">📚</div>
-                <h3>روشتات معتمدة (Agri-RAG)</h3>
-                <p>محرك بحث هجين (<strong>Multilingual-e5 + BM25</strong>) يستخرج الجرعات والمبيدات الموصى بها من نشرات مركز البحوث الزراعية ووزارة الزراعة المصرية بدون تأليف.</p>
+                <div class="feature-icon">📋</div>
+                <h3>توصيات وجرعات معتمدة</h3>
+                <p>يستخرج الجرعات والمبيدات الموصى بها من نشرات مركز البحوث الزراعية ووزارة الزراعة المصرية بدقة وموثوقية.</p>
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">🗣️</div>
+                <div class="feature-icon">🔊</div>
                 <h3>يتحدث ويسمع باللهجة المصرية</h3>
-                <p>سجل سؤالك بصوتك بالعامية المصرية، واسمع الإجابة بصوت بشري مصري طبيعي وواضح (رجالي أو نسائي) يشرح لك خطوات العلاج والجرعات بسهولة.</p>
+                <p>سجل سؤالك بصوتك بالعامية المصرية، واسمع الإجابة بصوت مصري طبيعي وواضح يشرح لك خطوات العلاج والجرعات بسهولة.</p>
             </div>
 
             <div class="feature-card">
@@ -1210,15 +1210,15 @@
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">🧠</div>
-                <h3>ذاكرة ذكية لبيانات مزرعتك</h3>
-                <p>يتذكر اسمك، محصولك الأساسي، مساحة أرضك بالفدان، ونوع الري (تنقيط، غمر، رش) ليحسب لك التوصيات على مقاس أرضك بالضبط.</p>
+                <div class="feature-icon">🚜</div>
+                <h3>حفظ بيانات وسجل مزرعتك</h3>
+                <p>يتذكر محصولك الأساسي، مساحة أرضك بالفدان، ونوع الري (تنقيط، غمر، رش) ليحسب لك التوصيات على مقاس أرضك بالضبط.</p>
             </div>
 
             <div class="feature-card">
                 <div class="feature-icon">💬</div>
                 <h3>مشاركة فورية على واتساب</h3>
-                <p>انسخ الروشتة العلاجية أو شاركها بضغطة زر واحدة عبر واتساب مع العمال أو المهندسين في المزرعة لتنفيذ خطة العلاج فوراً.</p>
+                <p>انسخ الروشتة العلاجية أو شاركها بضغطة زر واحدة عبر واتساب مع فريق العمل أو المهندسين في المزرعة لتنفيذ خطة العلاج.</p>
             </div>
         </div>
     </section>
@@ -1251,15 +1251,15 @@
     <!-- Bottom CTA Banner -->
     <div class="cta-banner">
         <h2 style="font-size:clamp(1.5rem, 2.5vw, 2.2rem); font-weight:900; margin-bottom:0.75rem; color:#FFFFFF;">
-            جاهز لتجربة المنصة الحية أو استعراضها أمام لجنة التحكيم؟
+            جاهز لفحص محصولك والحصول على التوصية المناسبة لأرضك؟
         </h2>
         <p style="color:#E2F1E8; max-width:650px; margin:0 auto 1.75rem; font-size:1rem;">
-            افتح لوحة التحكم الكاملة بضغطة واحدة، أو سجّل حساب مزرعتك لحفظ تاريخ الفحوصات والاستشارات الخاصة بأرضك.
+            افتح المنصة مباشرة بدون تعقيد، أو سجّل حساب مزرعتك لحفظ تاريخ الفحوصات والاستشارات الخاصة بأرضك.
         </p>
         <div style="display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
-            <a href="/dashboard?view=desktop" class="btn btn-lg" style="background:#FFFFFF; color:#1B4332;">💻 افتح لوحة العرض الكاملة</a>
-            <a href="/mobile" class="btn btn-lg" style="background:#FDE68A; color:#78350F;">📱 افتح تطبيق الموبايل</a>
-            <a href="/login?next=/dashboard" class="btn btn-lg" id="bottomLoginBtn" style="background:rgba(255,255,255,0.14); color:#FFFFFF; border:1px solid rgba(255,255,255,0.35);">👤 تسجيل دخول / حساب مزارع</a>
+            <a href="/dashboard?view=desktop" class="btn btn-lg" style="background:#FFFFFF; color:#1B4332;">افتح لوحة الكمبيوتر</a>
+            <a href="/mobile" class="btn btn-lg" style="background:#FDE68A; color:#78350F;">افتح تطبيق الموبايل</a>
+            <a href="/login?next=/dashboard" class="btn btn-lg" id="bottomLoginBtn" style="background:rgba(255,255,255,0.14); color:#FFFFFF; border:1px solid rgba(255,255,255,0.35);">تسجيل الدخول / حساب مزارع</a>
         </div>
     </div>
 
@@ -1291,32 +1291,32 @@
         }
         updateThemeBtnLabel();
 
-        // Demo Day Interactive Scenarios Data
+        // Interactive Scenarios Data
         const DEMO_SCENARIOS = [
             {
                 key: 'tomato',
-                title: '🔬 التشخيص: طماطم — الندوة المتأخرة (Late Blight)',
-                confText: 'ثقة 97.8%',
+                title: 'التشخيص: طماطم — الندوة المتأخرة',
+                confText: 'تطابق 97.8%',
                 confPct: 97.8,
-                source: '📚 نشرة وزارة الزراعة #142',
+                source: 'نشرة وزارة الزراعة #142',
                 adviceHtml: '«يا باشمهندس، الورقة دي فيها <strong>ندوة متأخرة في الطماطم</strong> والجو الرطب بيزودها. أول خطوة توقف الري بالغمر وتقلل الرطوبة، وترش فوراً <strong>أوكسي كلور النحاس أو ريدوميل جولد</strong> بمعدل 250 جرام لكل 100 لتر ميه آخر النهار.»',
                 speechText: 'يا باشمهندس، الورقة دي فيها ندوة متأخرة في الطماطم، والجو الرطب بيزودها. أول خطوة توقف الري بالغمر وتقلل الرطوبة، وترش فوراً أوكسي كلور النحاس أو ريدوميل جولد بمعدل 250 جرام لكل 100 لتر ميه آخر النهار.'
             },
             {
                 key: 'potato',
-                title: '🔬 التشخيص: بطاطس — الندوة المبكرة (Early Blight)',
-                confText: 'ثقة 96.4%',
+                title: 'التشخيص: بطاطس — الندوة المبكرة',
+                confText: 'تطابق 96.4%',
                 confPct: 96.4,
-                source: '📚 نشرة معهد أمراض النبات #89',
+                source: 'نشرة معهد أمراض النبات #89',
                 adviceHtml: '«بص يا حاج، الحلقات البنية دي <strong>ندوة مبكرة في البطاطس</strong>. لم الورق السفلي المصاب بره الغيط، ورش <strong>أزوكسي ستروبين أو مانكوزيب</strong> بمعدل 250 جرام لكل 100 لتر ميه، مع اهتمامك بتسميد البوتاسيوم عشان يقوي العرش.»',
                 speechText: 'بص يا حاج، الحلقات البنية دي ندوة مبكرة في البطاطس. لم الورق السفلي المصاب بره الغيط، ورش أزوكسي ستروبين أو مانكوزيب بمعدل 250 جرام لكل 100 لتر ميه، مع اهتمامك بتسميد البوتاسيوم علشان يقوي العرش.'
             },
             {
                 key: 'mango',
-                title: '🔬 التشخيص: مانجو — البياض الدقيقي ولفحة الأزهار',
-                confText: 'ثقة 95.9%',
+                title: 'التشخيص: مانجو — البياض الدقيقي ولفحة الأزهار',
+                confText: 'تطابق 95.9%',
                 confPct: 95.9,
-                source: '📚 نشرة بحوث البساتين — المانجو',
+                source: 'نشرة بحوث البساتين — المانجو',
                 adviceHtml: '«خلي بالك يا باشمهندس، الشماريخ الزهرية عليها <strong>بياض دقيقي في المانجو</strong>. رش فوراً <strong>كبريت ميكروني</strong> بمعدل 250 جرام لكل 100 لتر ميه في الصباح الباكر أو قبل الغروب، وابعد عن الرش وقت الحر الشديد.»',
                 speechText: 'خلي بالك يا باشمهندس، الشماريخ الزهرية عليها بياض دقيقي في المانجو. رش فوراً كبريت ميكروني بمعدل 250 جرام لكل 100 لتر ميه في الصباح الباكر أو قبل الغروب، وابعد عن الرش وقت الحر الشديد.'
             }
@@ -1411,8 +1411,10 @@
                 if (!res.ok) throw new Error();
                 const w = await res.json();
                 const gov = w.governorate || 'القاهرة';
-                const temp = w.temperature_c != null ? `${w.temperature_c}°م` : '26°م';
-                const hum = w.humidity_pct != null ? `${w.humidity_pct}%` : '50%';
+                const rawTemp = w.temperature != null ? w.temperature : w.temperature_c;
+                const rawHum = w.humidity != null ? w.humidity : w.humidity_pct;
+                const temp = rawTemp != null ? `${rawTemp}°م` : '26°م';
+                const hum = rawHum != null ? `${rawHum}%` : '50%';
                 el.textContent = `${gov}: الحرارة ${temp} • الرطوبة ${hum}`;
             } catch (e) {
                 el.textContent = 'الدلتا والقاهرة: 26°م • الرطوبة 52% (مناسب للرش المسائي)';
@@ -1447,17 +1449,17 @@
                 });
                 if (!res.ok) return;
                 const data = await res.json();
-                const u = data.user || data;
+                const u = data.authenticated && data.user ? data.user : null;
                 if (u && u.full_name) {
                     const loginBtn = document.getElementById('navLoginBtn');
                     if (loginBtn) {
                         loginBtn.href = '/dashboard';
-                        loginBtn.innerHTML = `👤 أهلاً، ${u.full_name}`;
+                        loginBtn.innerHTML = `أهلاً، ${u.full_name}`;
                     }
                     const btmBtn = document.getElementById('bottomLoginBtn');
                     if (btmBtn) {
                         btmBtn.href = '/dashboard';
-                        btmBtn.innerHTML = `🌾 الدخول إلى مزرعة ${u.full_name}`;
+                        btmBtn.innerHTML = `الدخول إلى مزرعة ${u.full_name}`;
                     }
                 }
             } catch (e) {}
