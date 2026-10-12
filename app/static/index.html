@@ -1282,6 +1282,9 @@
 
     <!-- Desktop Navigation Tabs -->
     <div class="nav-container">
+        <a class="nav-btn" href="/landing" style="border-color: rgba(245, 158, 11, 0.45); color: #fcd34d;">
+            🏠 صفحة العرض (Landing)
+        </a>
         <button class="nav-btn active" id="btn-assistant" onclick="switchView('assistant')">
             🤖 المساعد الذكي والتشخيص
         </button>
@@ -1404,6 +1407,16 @@
                 <button class="btn-action" id="btn-clear-image" onclick="clearSelectedImage()" title="مسح الصورة المحددة" style="display: none; padding: 0.9rem 0.85rem; font-size: 0.9rem; font-weight: 700; border-radius: 14px; background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); cursor: pointer;">
                     🗑️
                 </button>
+            </div>
+
+            <!-- Demo Day Quick Sample Presets Bar -->
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.4rem; flex-wrap:wrap; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.28); border-radius:12px; padding:0.45rem 0.7rem;">
+                <span style="font-size:0.75rem; font-weight:800; color:#fcd34d;">🎬 عينات عرض Demo Day الفورية:</span>
+                <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+                    <button type="button" class="model-opt-btn" style="font-size:0.73rem; padding:0.22rem 0.6rem; border-color:rgba(16,185,129,0.4); color:#6ee7b7;" onclick="runDemoDaySample('tomato')">🍅 طماطم (ندوة متأخرة)</button>
+                    <button type="button" class="model-opt-btn" style="font-size:0.73rem; padding:0.22rem 0.6rem; border-color:rgba(56,189,248,0.4); color:#7dd3fc;" onclick="runDemoDaySample('potato')">🥔 بطاطس (ندوة مبكرة)</button>
+                    <button type="button" class="model-opt-btn" style="font-size:0.73rem; padding:0.22rem 0.6rem; border-color:rgba(245,158,11,0.4); color:#fde68a;" onclick="runDemoDaySample('mango')">🥭 مانجو (بياض دقيقي)</button>
+                </div>
             </div>
 
             <div class="cv-results glass" id="cv-results">
@@ -3182,9 +3195,93 @@
             } catch (e) {}
         }
 
+        const DEMO_DAY_SAMPLES = {
+            tomato: {
+                crop: 'طماطم',
+                query: 'عندي إصابة بالندوة المتأخرة في الطماطم، ما هي خطة المكافحة المتكاملة والجرعات بالفدان؟',
+                inlineAdvice: 'تشخيص الرؤية الحاسوبية: **الندوة المتأخرة في الطماطم (Tomato Late Blight)** بثقة **97.8%**. تم إرسال الحالة إلى المستشار الزراعي (Agri-RAG) لإصدار الروشتة الكاملة حسب طقس محافظتك.',
+                cvData: {
+                    is_plant: true,
+                    model_used: 'EfficientNetV2B2_best.keras',
+                    predicted_class: 'Tomato___Late_blight',
+                    predicted_class_ar: 'طماطم — الندوة المتأخرة',
+                    crop_type_ar: 'محصول الطماطم 🍅 (عينة عرض Demo Day)',
+                    predictions: [
+                        { label: 'Tomato___Late_blight', label_ar: 'طماطم — الندوة المتأخرة', confidence: 0.978 },
+                        { label: 'Tomato___Early_blight', label_ar: 'طماطم — الندوة المبكرة', confidence: 0.016 },
+                        { label: 'Tomato___healthy', label_ar: 'طماطم — ورقة سليمة', confidence: 0.006 }
+                    ]
+                }
+            },
+            potato: {
+                crop: 'بطاطس',
+                query: 'ظهرت بقع بنية وحلقات للندوة المبكرة في البطاطس، ما هو العلاج والرش المناسب؟',
+                inlineAdvice: 'تشخيص الرؤية الحاسوبية: **الندوة المبكرة في البطاطس (Potato Early Blight)** بثقة **96.4%**. جاري استخراج الروشتة المعتمدة من نشرات وزارة الزراعة.',
+                cvData: {
+                    is_plant: true,
+                    model_used: 'EfficientNetV2B2_best.keras',
+                    predicted_class: 'Potato___Early_blight',
+                    predicted_class_ar: 'بطاطس — الندوة المبكرة',
+                    crop_type_ar: 'محصول البطاطس 🥔 (عينة عرض Demo Day)',
+                    predictions: [
+                        { label: 'Potato___Early_blight', label_ar: 'بطاطس — الندوة المبكرة', confidence: 0.964 },
+                        { label: 'Potato___Late_blight', label_ar: 'بطاطس — الندوة المتأخرة', confidence: 0.029 },
+                        { label: 'Potato___healthy', label_ar: 'بطاطس — ورقة سليمة', confidence: 0.007 }
+                    ]
+                }
+            },
+            mango: {
+                crop: 'مانجو',
+                query: 'عندي بياض دقيقي ولفحة أزهار في المانجو، ما هي الجرعة الموصى بها وتوقيت الرش؟',
+                inlineAdvice: 'تشخيص الرؤية الحاسوبية: **البياض الدقيقي في المانجو (Mango Powdery Mildew)** بثقة **95.9%**. جاري استخراج برنامج الرش المعتمد من نشرات بحوث البساتين.',
+                cvData: {
+                    is_plant: true,
+                    model_used: 'EfficientNetV2B2_best.keras',
+                    predicted_class: 'Mango___Powdery_mildew',
+                    predicted_class_ar: 'مانجو — البياض الدقيقي',
+                    crop_type_ar: 'أشجار المانجو 🥭 (عينة عرض Demo Day)',
+                    predictions: [
+                        { label: 'Mango___Powdery_mildew', label_ar: 'مانجو — البياض الدقيقي', confidence: 0.959 },
+                        { label: 'Mango___Anthracnose', label_ar: 'مانجو — الأنثراكنوز (لفحة الأزهار)', confidence: 0.032 },
+                        { label: 'Mango___healthy', label_ar: 'مانجو — ورقة سليمة', confidence: 0.009 }
+                    ]
+                }
+            }
+        };
+
+        function runDemoDaySample(sampleKey) {
+            const sample = DEMO_DAY_SAMPLES[sampleKey] || DEMO_DAY_SAMPLES.tomato;
+            displayCVResults(sample.cvData, sample.inlineAdvice);
+            showToast(`🎬 تم تشغيل عينة العرض: ${sample.cvData.predicted_class_ar}`);
+            if (typeof askQuickQuestion === 'function') {
+                askQuickQuestion(sample.query, sample.crop);
+            }
+        }
+
+        function handleLandingDeepLinks() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const demoKey = params.get('demo');
+                const cropParam = params.get('crop');
+                if (demoKey && DEMO_DAY_SAMPLES[demoKey]) {
+                    setTimeout(() => runDemoDaySample(demoKey), 450);
+                } else if (cropParam) {
+                    const cropSelect = document.getElementById('crop-select');
+                    if (cropSelect) {
+                        cropSelect.value = cropParam;
+                        saveFarmPrefs();
+                    }
+                    setTimeout(() => {
+                        askQuickQuestion(`ما هي أهم التوصيات الزراعية وبرنامج الوقاية والتسميد لمحصول ${cropParam} في الوقت الحالي؟`, cropParam);
+                    }, 450);
+                }
+            } catch (e) {}
+        }
+
         updateFarmSummaryPill();
         restoreChatMemoryOnLoad();
         initAuthHeader();
+        handleLandingDeepLinks();
     </script>
 </body>
 </html>

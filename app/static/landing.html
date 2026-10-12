@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منصة الزراعة الذكية | Smart Agriculture AI — مهندس زراعي ذكي في جيبك</title>
-    <meta name="description" content="أول منصة ذكاء اصطناعي زراعية مصرية تجمع بين تشخيص أمراض النبات بالصورة، المستشار الزراعي المعتمد (Agri-RAG)، والطقس اللحظي، والمحادثة الصوتية باللهجة المصرية.">
+    <meta name="description" content="أول منصة ذكاء اصطناعي زراعية مصرية تجمع بين تشخيص أمراض النبات بالصورة (EfficientNetV2B2)، المستشار الزراعي المعتمد (Agri-RAG)، الطقس اللحظي لـ 27 محافظة، والمحادثة الصوتية باللهجة المصرية.">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-deep: #06120e;
-            --bg-dark: #0a1d17;
-            --bg-card: rgba(16, 40, 31, 0.72);
-            --bg-card-solid: #0f2920;
+            --bg-deep: #040d0a;
+            --bg-dark: #081813;
+            --bg-card: rgba(13, 35, 27, 0.78);
+            --bg-card-hover: rgba(18, 48, 37, 0.9);
             --primary: #10b981;
             --primary-bright: #34d399;
             --primary-dark: #059669;
@@ -20,7 +20,8 @@
             --accent-sky: #38bdf8;
             --text-light: #f8fafc;
             --text-muted: #94a3b8;
-            --border-glass: rgba(16, 185, 129, 0.22);
+            --border-glass: rgba(16, 185, 129, 0.24);
+            --shadow-glow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 35px rgba(16, 185, 129, 0.12);
         }
 
         * {
@@ -37,12 +38,67 @@
             font-family: 'Cairo', sans-serif;
             background-color: var(--bg-deep);
             background-image:
-                radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.14) 0%, transparent 45%),
-                radial-gradient(circle at 85% 25%, rgba(245, 158, 11, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 50% 85%, rgba(56, 189, 248, 0.08) 0%, transparent 45%);
+                radial-gradient(circle at 12% 12%, rgba(16, 185, 129, 0.16) 0%, transparent 42%),
+                radial-gradient(circle at 88% 20%, rgba(245, 158, 11, 0.10) 0%, transparent 38%),
+                radial-gradient(circle at 50% 80%, rgba(56, 189, 248, 0.08) 0%, transparent 45%),
+                linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 44px 44px, 44px 44px;
             color: var(--text-light);
             line-height: 1.7;
             overflow-x: hidden;
+        }
+
+        /* ─── Demo Day Top Strip ─── */
+        .demo-top-bar {
+            background: linear-gradient(90deg, rgba(6, 78, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 50%, rgba(6, 78, 59, 0.95) 100%);
+            border-bottom: 1px solid rgba(52, 211, 153, 0.3);
+            padding: 0.45rem 1.5rem;
+            font-size: 0.82rem;
+            text-align: center;
+        }
+
+        .demo-top-inner {
+            max-width: 1320px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .demo-badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: rgba(245, 158, 11, 0.18);
+            border: 1px solid rgba(245, 158, 11, 0.45);
+            color: #fde68a;
+            padding: 0.15rem 0.7rem;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 0.76rem;
+        }
+
+        .demo-quick-links {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .demo-quick-links a {
+            color: #a7f3d0;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.8rem;
+            transition: color 0.2s;
+        }
+
+        .demo-quick-links a:hover {
+            color: #ffffff;
+            text-decoration: underline;
         }
 
         /* ─── Navbar ─── */
@@ -50,10 +106,11 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            background: rgba(6, 18, 14, 0.85);
-            backdrop-filter: blur(16px);
+            background: rgba(4, 13, 10, 0.86);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
             border-bottom: 1px solid var(--border-glass);
-            padding: 0.9rem 2rem;
+            padding: 0.85rem 2rem;
         }
 
         .nav-container {
@@ -80,11 +137,11 @@
             border-radius: 14px;
             object-fit: cover;
             border: 2px solid var(--primary);
-            box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);
+            box-shadow: 0 0 18px rgba(16, 185, 129, 0.4);
         }
 
         .brand-title {
-            font-size: 1.25rem;
+            font-size: 1.28rem;
             font-weight: 900;
             line-height: 1.2;
             background: linear-gradient(90deg, #ffffff, #6ee7b7);
@@ -93,15 +150,15 @@
         }
 
         .brand-sub {
-            font-size: 0.75rem;
+            font-size: 0.74rem;
             color: var(--text-muted);
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .nav-links {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1.4rem;
             list-style: none;
         }
 
@@ -109,18 +166,21 @@
             color: #cbd5e1;
             text-decoration: none;
             font-weight: 700;
-            font-size: 0.95rem;
+            font-size: 0.93rem;
             transition: color 0.2s;
+            padding: 0.25rem 0.4rem;
+            border-radius: 8px;
         }
 
         .nav-links a:hover {
             color: var(--primary-bright);
+            background: rgba(16, 185, 129, 0.08);
         }
 
         .nav-actions {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.7rem;
             flex-wrap: wrap;
         }
 
@@ -129,14 +189,14 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            padding: 0.65rem 1.35rem;
+            padding: 0.62rem 1.3rem;
             border-radius: 12px;
             font-family: inherit;
-            font-size: 0.92rem;
+            font-size: 0.9rem;
             font-weight: 800;
             text-decoration: none;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             border: 1px solid transparent;
             white-space: nowrap;
         }
@@ -144,111 +204,115 @@
         .btn-primary {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: #ffffff;
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 8px 22px rgba(16, 185, 129, 0.32);
+            border-color: rgba(52, 211, 153, 0.35);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.45);
+            box-shadow: 0 12px 30px rgba(16, 185, 129, 0.48);
         }
 
         .btn-outline {
             background: rgba(255, 255, 255, 0.05);
             color: var(--text-light);
-            border-color: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.18);
         }
 
         .btn-outline:hover {
             background: rgba(16, 185, 129, 0.14);
             border-color: var(--primary-bright);
             color: var(--primary-bright);
+            transform: translateY(-2px);
         }
 
         .btn-gold {
-            background: rgba(245, 158, 11, 0.16);
-            color: #fcd34d;
-            border-color: rgba(245, 158, 11, 0.4);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.15));
+            color: #fde68a;
+            border-color: rgba(245, 158, 11, 0.45);
         }
 
         .btn-gold:hover {
-            background: rgba(245, 158, 11, 0.26);
+            background: rgba(245, 158, 11, 0.28);
             transform: translateY(-2px);
+            box-shadow: 0 8px 22px rgba(245, 158, 11, 0.22);
         }
 
         /* ─── Hero Section ─── */
         .hero {
             max-width: 1320px;
             margin: 0 auto;
-            padding: 4.5rem 2rem 3.5rem;
+            padding: 3.5rem 2rem 3rem;
             display: grid;
-            grid-template-columns: 1.15fr 0.85fr;
-            gap: 3rem;
+            grid-template-columns: 1.08fr 0.92fr;
+            gap: 2.8rem;
             align-items: center;
         }
 
         .hero-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.4rem 1rem;
+            gap: 0.55rem;
+            padding: 0.38rem 1rem;
             border-radius: 999px;
             background: rgba(16, 185, 129, 0.14);
-            border: 1px solid rgba(16, 185, 129, 0.35);
+            border: 1px solid rgba(16, 185, 129, 0.38);
             color: #6ee7b7;
-            font-size: 0.85rem;
+            font-size: 0.84rem;
             font-weight: 800;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.15rem;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.12);
         }
 
         .hero h1 {
-            font-size: clamp(2rem, 3.6vw, 3.25rem);
+            font-size: clamp(2rem, 3.5vw, 3.15rem);
             font-weight: 900;
-            line-height: 1.3;
-            margin-bottom: 1.2rem;
+            line-height: 1.28;
+            margin-bottom: 1.15rem;
             color: #ffffff;
         }
 
         .hero h1 .highlight {
-            background: linear-gradient(90deg, #34d399, #fbbf24);
+            background: linear-gradient(90deg, #34d399 0%, #fbbf24 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .hero-desc {
-            font-size: 1.1rem;
+            font-size: 1.06rem;
             color: #cbd5e1;
-            margin-bottom: 2rem;
-            max-width: 640px;
+            margin-bottom: 1.85rem;
+            max-width: 630px;
         }
 
         .hero-cta-group {
             display: flex;
-            gap: 0.9rem;
+            gap: 0.85rem;
             flex-wrap: wrap;
-            margin-bottom: 2rem;
+            margin-bottom: 1.85rem;
         }
 
         .btn-lg {
-            padding: 0.9rem 1.75rem;
-            font-size: 1.02rem;
+            padding: 0.85rem 1.65rem;
+            font-size: 0.98rem;
             border-radius: 14px;
         }
 
         .hero-trust {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1.35rem;
             flex-wrap: wrap;
-            padding-top: 1.25rem;
+            padding-top: 1.15rem;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 0.86rem;
+            font-size: 0.84rem;
             color: var(--text-muted);
         }
 
         .hero-trust span {
             display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
+            gap: 0.38rem;
             font-weight: 700;
             color: #e2e8f0;
         }
@@ -259,21 +323,31 @@
         }
 
         .showcase-card {
-            background: linear-gradient(160deg, rgba(16, 42, 33, 0.92), rgba(8, 22, 17, 0.95));
-            border: 1px solid rgba(16, 185, 129, 0.35);
+            background: linear-gradient(160deg, rgba(14, 38, 29, 0.95), rgba(6, 17, 13, 0.98));
+            border: 1px solid rgba(52, 211, 153, 0.38);
             border-radius: 24px;
-            padding: 1.6rem;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 40px rgba(16, 185, 129, 0.12);
+            padding: 1.45rem;
+            box-shadow: var(--shadow-glow);
             position: relative;
             overflow: hidden;
+        }
+
+        .showcase-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #10b981, #fbbf24, #38bdf8);
         }
 
         .showcase-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.1rem;
-            padding-bottom: 0.8rem;
+            margin-bottom: 0.9rem;
+            padding-bottom: 0.75rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
@@ -281,11 +355,11 @@
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             font-weight: 800;
             color: #34d399;
             background: rgba(16, 185, 129, 0.14);
-            padding: 0.28rem 0.75rem;
+            padding: 0.25rem 0.7rem;
             border-radius: 999px;
             border: 1px solid rgba(16, 185, 129, 0.3);
         }
@@ -301,43 +375,151 @@
 
         @keyframes pulse {
             0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.35); opacity: 0.6; }
+            50% { transform: scale(1.35); opacity: 0.55; }
+        }
+
+        /* Scenario Switcher Tabs */
+        .scenario-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.45rem;
+            margin-bottom: 0.95rem;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 0.35rem;
+            border-radius: 13px;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .scenario-tab {
+            background: transparent;
+            border: 1px solid transparent;
+            color: #94a3b8;
+            font-family: inherit;
+            font-size: 0.78rem;
+            font-weight: 800;
+            padding: 0.45rem 0.5rem;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .scenario-tab:hover {
+            color: #f8fafc;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .scenario-tab.active {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: rgba(52, 211, 153, 0.45);
+            color: #6ee7b7;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         }
 
         .mock-scan-box {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.36);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            border-radius: 15px;
+            padding: 0.95rem 1rem;
+            margin-bottom: 0.9rem;
         }
 
         .mock-scan-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 0.6rem;
+            gap: 0.6rem;
+            margin-bottom: 0.55rem;
+            flex-wrap: wrap;
         }
 
         .mock-tag {
-            font-size: 0.76rem;
+            font-size: 0.75rem;
             font-weight: 800;
-            padding: 0.2rem 0.65rem;
+            padding: 0.18rem 0.65rem;
             border-radius: 8px;
             background: rgba(245, 158, 11, 0.18);
             color: #fbbf24;
             border: 1px solid rgba(245, 158, 11, 0.35);
         }
 
+        .conf-bar-track {
+            width: 100%;
+            height: 7px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 0.45rem 0 0.55rem;
+        }
+
+        .conf-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            border-radius: 999px;
+            transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
         .mock-chat-bubble {
-            background: rgba(16, 185, 129, 0.1);
+            background: rgba(16, 185, 129, 0.09);
             border-right: 4px solid var(--primary);
-            border-radius: 12px;
-            padding: 1rem;
-            font-size: 0.9rem;
+            border-radius: 13px;
+            padding: 0.95rem 1rem;
+            font-size: 0.88rem;
             color: #e2e8f0;
-            margin-bottom: 1rem;
+            margin-bottom: 0.9rem;
+            transition: opacity 0.2s ease;
+        }
+
+        .showcase-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+            margin-bottom: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm-voice {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            padding: 0.55rem 0.9rem;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 800;
+            cursor: pointer;
+            background: rgba(245, 158, 11, 0.16);
+            color: #fde68a;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            transition: all 0.2s;
+        }
+
+        .btn-sm-voice:hover {
+            background: rgba(245, 158, 11, 0.26);
+        }
+
+        .btn-sm-launch {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.55rem 0.95rem;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-decoration: none;
+            background: rgba(16, 185, 129, 0.18);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.38);
+            transition: all 0.2s;
+        }
+
+        .btn-sm-launch:hover {
+            background: var(--primary);
+            color: #042f2e;
         }
 
         .mock-weather-bar {
@@ -347,46 +529,62 @@
             background: rgba(56, 189, 248, 0.1);
             border: 1px solid rgba(56, 189, 248, 0.25);
             border-radius: 12px;
-            padding: 0.65rem 1rem;
-            font-size: 0.82rem;
+            padding: 0.58rem 0.95rem;
+            font-size: 0.8rem;
             color: #bae6fd;
+            flex-wrap: wrap;
+            gap: 0.4rem;
         }
 
         /* ─── Stats Strip ─── */
         .stats-strip {
             max-width: 1320px;
-            margin: 0 auto 4rem;
+            margin: 0 auto 4.5rem;
             padding: 0 2rem;
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 1.25rem;
-            background: rgba(15, 41, 32, 0.75);
+            gap: 1.2rem;
+            background: rgba(12, 33, 25, 0.82);
             border: 1px solid var(--border-glass);
             border-radius: 22px;
-            padding: 1.75rem 2rem;
-            backdrop-filter: blur(12px);
+            padding: 1.65rem 1.8rem;
+            backdrop-filter: blur(14px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
         }
 
         .stat-item {
             text-align: center;
-            padding: 0.5rem;
+            padding: 0.4rem;
+            border-left: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .stat-item:last-child {
+            border-left: none;
         }
 
         .stat-num {
-            font-size: 2.2rem;
+            font-size: 2.15rem;
             font-weight: 900;
-            color: var(--primary-bright);
+            background: linear-gradient(90deg, #34d399, #a7f3d0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             line-height: 1.2;
         }
 
         .stat-label {
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             color: #cbd5e1;
             font-weight: 700;
             margin-top: 0.25rem;
+        }
+
+        .stat-sub {
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
         }
 
         /* ─── Section Shared ─── */
@@ -398,78 +596,94 @@
 
         .section-header {
             text-align: center;
-            max-width: 720px;
-            margin: 0 auto 3rem;
+            max-width: 740px;
+            margin: 0 auto 2.8rem;
         }
 
         .section-tag {
             display: inline-block;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             font-weight: 800;
             color: var(--primary-bright);
             background: rgba(16, 185, 129, 0.14);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            padding: 0.3rem 0.9rem;
+            border: 1px solid rgba(16, 185, 129, 0.32);
+            padding: 0.28rem 0.9rem;
             border-radius: 999px;
             margin-bottom: 0.75rem;
         }
 
         .section-title {
-            font-size: clamp(1.6rem, 2.6vw, 2.35rem);
+            font-size: clamp(1.55rem, 2.5vw, 2.3rem);
             font-weight: 900;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.7rem;
             color: #ffffff;
         }
 
         .section-sub {
             color: var(--text-muted);
-            font-size: 1rem;
+            font-size: 0.98rem;
         }
 
-        /* ─── Features Grid ─── */
-        .features-grid {
+        /* ─── AI Architecture Pipeline (For Demo Day Judges) ─── */
+        .pipeline-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            position: relative;
         }
 
-        .feature-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-glass);
+        .pipeline-card {
+            background: linear-gradient(165deg, rgba(15, 41, 31, 0.88), rgba(8, 22, 17, 0.95));
+            border: 1px solid rgba(52, 211, 153, 0.25);
             border-radius: 20px;
-            padding: 1.8rem;
+            padding: 1.5rem 1.35rem;
+            position: relative;
             transition: all 0.25s ease;
         }
 
-        .feature-card:hover {
+        .pipeline-card:hover {
             transform: translateY(-5px);
             border-color: var(--primary-bright);
-            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.42);
         }
 
-        .feature-icon {
-            width: 54px;
-            height: 54px;
-            border-radius: 14px;
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            display: flex;
+        .pipeline-step-badge {
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.65rem;
-            margin-bottom: 1.1rem;
+            padding: 0.2rem 0.65rem;
+            border-radius: 8px;
+            font-size: 0.73rem;
+            font-weight: 900;
+            background: rgba(16, 185, 129, 0.18);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            margin-bottom: 0.85rem;
         }
 
-        .feature-card h3 {
-            font-size: 1.2rem;
-            font-weight: 800;
-            margin-bottom: 0.6rem;
+        .pipeline-card h3 {
+            font-size: 1.08rem;
+            font-weight: 900;
             color: #ffffff;
+            margin-bottom: 0.45rem;
         }
 
-        .feature-card p {
+        .pipeline-tech {
+            font-size: 0.76rem;
+            font-family: monospace;
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.22);
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 0.65rem;
+            direction: ltr;
+        }
+
+        .pipeline-card p {
+            font-size: 0.86rem;
             color: #cbd5e1;
-            font-size: 0.93rem;
         }
 
         /* ─── Interfaces Cards ─── */
@@ -480,10 +694,10 @@
         }
 
         .interface-card {
-            background: linear-gradient(155deg, rgba(16, 42, 33, 0.85), rgba(9, 25, 19, 0.95));
+            background: linear-gradient(155deg, rgba(16, 42, 33, 0.88), rgba(9, 25, 19, 0.96));
             border: 1px solid var(--border-glass);
             border-radius: 22px;
-            padding: 2rem;
+            padding: 1.9rem;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -493,6 +707,7 @@
         .interface-card:hover {
             transform: translateY(-5px);
             border-color: var(--primary-bright);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
         }
 
         .interface-badge {
@@ -505,33 +720,51 @@
             width: fit-content;
         }
 
-        /* ─── Steps Grid ─── */
-        .steps-grid {
+        /* ─── Features Grid ─── */
+        .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.4rem;
         }
 
-        .step-card {
+        .feature-card {
             background: var(--bg-card);
             border: 1px solid var(--border-glass);
             border-radius: 20px;
-            padding: 1.8rem;
-            position: relative;
+            padding: 1.7rem;
+            transition: all 0.25s ease;
         }
 
-        .step-num {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: var(--primary);
-            color: #042f2e;
-            font-weight: 900;
-            font-size: 1.15rem;
+        .feature-card:hover {
+            transform: translateY(-4px);
+            background: var(--bg-card-hover);
+            border-color: var(--primary-bright);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+        }
+
+        .feature-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.6rem;
             margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.16rem;
+            font-weight: 800;
+            margin-bottom: 0.55rem;
+            color: #ffffff;
+        }
+
+        .feature-card p {
+            color: #cbd5e1;
+            font-size: 0.91rem;
         }
 
         /* ─── Crops Pills ─── */
@@ -539,27 +772,29 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 0.85rem;
+            gap: 0.8rem;
         }
 
         .crop-pill {
             background: rgba(16, 40, 31, 0.85);
             border: 1px solid rgba(16, 185, 129, 0.28);
-            padding: 0.65rem 1.25rem;
+            padding: 0.6rem 1.2rem;
             border-radius: 999px;
             font-weight: 800;
-            font-size: 0.95rem;
+            font-size: 0.93rem;
             color: #e2e8f0;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.45rem;
             transition: all 0.2s;
+            text-decoration: none;
         }
 
         .crop-pill:hover {
             border-color: var(--primary-bright);
-            background: rgba(16, 185, 129, 0.18);
-            transform: scale(1.04);
+            background: rgba(16, 185, 129, 0.2);
+            transform: translateY(-2px);
+            color: #ffffff;
         }
 
         /* ─── CTA Footer Banner ─── */
@@ -569,9 +804,9 @@
             padding: 3rem 2.5rem;
             border-radius: 28px;
             background: linear-gradient(135deg, #064e3b 0%, #0f172a 100%);
-            border: 1px solid rgba(52, 211, 153, 0.35);
+            border: 1px solid rgba(52, 211, 153, 0.38);
             text-align: center;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
         }
 
         footer {
@@ -579,18 +814,24 @@
             padding: 2rem;
             text-align: center;
             color: var(--text-muted);
-            font-size: 0.88rem;
+            font-size: 0.86rem;
         }
 
-        @media (max-width: 960px) {
+        @media (max-width: 1024px) {
             .hero {
                 grid-template-columns: 1fr;
-                padding: 2.5rem 1.25rem;
+                padding: 2.2rem 1.25rem;
                 gap: 2rem;
+            }
+            .pipeline-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
                 padding: 1.25rem;
+            }
+            .stat-item {
+                border-left: none;
             }
             .nav-links {
                 display: none;
@@ -600,12 +841,18 @@
             }
         }
 
-        @media (max-width: 520px) {
+        @media (max-width: 600px) {
+            .pipeline-grid {
+                grid-template-columns: 1fr;
+            }
             .stats-grid {
                 grid-template-columns: 1fr 1fr;
             }
             .hero-cta-group .btn {
                 width: 100%;
+            }
+            .demo-top-inner {
+                justify-content: center;
             }
             .cta-banner {
                 margin: 0 1rem 3rem;
@@ -615,6 +862,22 @@
     </style>
 </head>
 <body>
+
+    <!-- Demo Day Quick Launcher Strip -->
+    <div class="demo-top-bar">
+        <div class="demo-top-inner">
+            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                <span class="demo-badge-pill">🏆 وضع عرض Demo Day التفاعلي</span>
+                <span style="color:#e2e8f0; font-weight:600;">منصة الذكاء الاصطناعي الزراعي المصرية (Vision + Hybrid Agri-RAG + Gemini 3.8 Neural Voice)</span>
+            </div>
+            <div class="demo-quick-links">
+                <a href="/dashboard?view=desktop">💻 لوحة الكمبيوتر</a>
+                <a href="/mobile">📱 تطبيق الموبايل</a>
+                <a href="/simple">⚡ الفحص السريع</a>
+                <a href="#architecture">🧠 معمارية النظام</a>
+            </div>
+        </div>
+    </div>
 
     <!-- Navbar -->
     <nav class="navbar">
@@ -628,9 +891,9 @@
             </a>
 
             <ul class="nav-links">
-                <li><a href="#features">مميزات المنصة</a></li>
-                <li><a href="#interfaces">واجهات الاستخدام</a></li>
-                <li><a href="#how-it-works">كيف تعمل؟</a></li>
+                <li><a href="#interfaces">واجهات المنصة</a></li>
+                <li><a href="#architecture">معمارية الذكاء الاصطناعي</a></li>
+                <li><a href="#features">المميزات</a></li>
                 <li><a href="#crops">المحاصيل المدعومة</a></li>
             </ul>
 
@@ -660,8 +923,8 @@
                 <a href="/dashboard" class="btn btn-primary btn-lg" id="primaryHeroBtn">
                     🚀 ابدأ الفحص والاستشارة مجاناً
                 </a>
-                <a href="/mobile" class="btn btn-outline btn-lg">
-                    📱 افتح تطبيق الموبايل
+                <a href="/dashboard?view=desktop" class="btn btn-outline btn-lg">
+                    💻 لوحة العرض الكاملة (Desktop)
                 </a>
                 <button type="button" class="btn btn-gold btn-lg" id="heroVoiceBtn" onclick="playHeroEgyptianWelcome(this)">
                     🔊 اسمع ترحيب المهندس بالمصري
@@ -669,21 +932,21 @@
             </div>
 
             <div class="hero-trust">
-                <span>✅ فحص أوراق النبات بالذكاء الاصطناعي</span>
-                <span>✅ نطق بشري مصري طبيعي 100%</span>
+                <span>✅ فحص 38 مرض وآفة بالصورة</span>
+                <span>✅ نطق بشري مصري طبيعي (Gemini 3.8 TTS)</span>
                 <span>✅ طقس لحظي لـ 27 محافظة مصرية</span>
             </div>
         </div>
 
-        <!-- Interactive Live Preview Card -->
-        <div class="hero-visual">
+        <!-- Interactive Live Preview Card with 3 Demo Day Scenarios -->
+        <div class="hero-visual" id="live-demo">
             <div class="showcase-card">
                 <div class="showcase-header">
                     <div style="display:flex; align-items:center; gap:0.6rem;">
-                        <span style="font-size:1.3rem;">🌿</span>
+                        <span style="font-size:1.35rem;">🔬</span>
                         <div>
-                            <div style="font-weight:800; font-size:0.95rem;">معاينة حية للتشخيص والاستشارة</div>
-                            <div style="font-size:0.74rem; color:var(--text-muted);">Vision + Agri-RAG + Egyptian Neural Voice</div>
+                            <div style="font-weight:900; font-size:0.95rem;">محاكاة حية للتشخيص والروشتة (جرّب الضغط)</div>
+                            <div style="font-size:0.73rem; color:var(--text-muted);">اختر محصولاً لمعاينة تشخيص الرؤية الحاسوبية والرد الصوتي المصري</div>
                         </div>
                     </div>
                     <span class="status-pill">
@@ -692,21 +955,45 @@
                     </span>
                 </div>
 
+                <!-- 3-Scenario Switcher -->
+                <div class="scenario-tabs" role="tablist">
+                    <button type="button" class="scenario-tab active" onclick="switchDemoScenario(0, this)">🍅 طماطم (ندوة متأخرة)</button>
+                    <button type="button" class="scenario-tab" onclick="switchDemoScenario(1, this)">🥔 بطاطس (ندوة مبكرة)</button>
+                    <button type="button" class="scenario-tab" onclick="switchDemoScenario(2, this)">🥭 مانجو (بياض دقيقي)</button>
+                </div>
+
                 <div class="mock-scan-box">
                     <div class="mock-scan-row">
-                        <span style="font-weight:800; color:#34d399;">🔬 نتيجة فحص الورقة: طماطم — الندوة المتأخرة</span>
-                        <span class="mock-tag">ثقة 97.8%</span>
+                        <span id="demoDiseaseTitle" style="font-weight:900; color:#34d399; font-size:0.92rem;">🔬 التشخيص: طماطم — الندوة المتأخرة (Late Blight)</span>
+                        <span id="demoConfidenceTag" class="mock-tag">ثقة 97.8%</span>
                     </div>
-                    <div style="font-size:0.8rem; color:var(--text-muted);">
-                        النموذج: <code style="color:#93c5fd;">EfficientNetV2B2</code> • فلتر النباتات الذكي: <strong style="color:#34d399;">✅ ورقة نبات حقيقية</strong>
+                    <div class="conf-bar-track">
+                        <div id="demoConfBar" class="conf-bar-fill" style="width: 97.8%;"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.76rem; color:var(--text-muted); flex-wrap:wrap; gap:0.4rem;">
+                        <span>النموذج: <code style="color:#93c5fd;">EfficientNetV2B2</code></span>
+                        <span>فلتر النباتات: <strong style="color:#34d399;">✅ ورقة نبات حقيقية</strong></span>
+                        <span id="demoSourceBadge" style="color:#fcd34d;">📚 نشرة وزارة الزراعة #142</span>
                     </div>
                 </div>
 
-                <div class="mock-chat-bubble">
-                    <div style="font-weight:800; color:#6ee7b7; margin-bottom:0.35rem; font-size:0.84rem;">
-                        🤖 المهندس الزراعي الذكي (باللهجة المصرية):
+                <div class="mock-chat-bubble" id="demoBubbleBox">
+                    <div style="font-weight:800; color:#6ee7b7; margin-bottom:0.3rem; font-size:0.82rem; display:flex; justify-content:space-between;">
+                        <span>🤖 روشتة المهندس الزراعي الذكي (باللهجة المصرية):</span>
+                        <span style="color:#94a3b8; font-size:0.74rem;">Agri-RAG الهجين</span>
                     </div>
-                    «أهلاً بيك يا باشمهندس! بص يا سيدي، الورقة دي فيها <strong>ندوة متأخرة</strong>. أول حاجة تشيل الورق المصاب بره الأرض، وتاني حاجة ترش مبيد فطري نحاسي أو مانكوزيب آخر النهار علشان تحمي زرعك...»
+                    <div id="demoAdviceText">
+                        «يا باشمهندس، الورقة دي فيها <strong>ندوة متأخرة في الطماطم</strong> والجو الرطب بيزودها. أول خطوة توقف الري بالغمر وتقلل الرطوبة، وترش فوراً <strong>أوكسي كلور النحاس أو ريدوميل جولد</strong> بمعدل 250 جرام لكل 100 لتر ميه آخر النهار.»
+                    </div>
+                </div>
+
+                <div class="showcase-actions">
+                    <button type="button" class="btn-sm-voice" id="demoScenarioVoiceBtn" onclick="playCurrentScenarioVoice(this)">
+                        🔊 استمع لهذه الروشتة بالصوت المصري
+                    </button>
+                    <a href="/dashboard?view=desktop&demo=tomato" id="demoLaunchLink" class="btn-sm-launch">
+                        💬 افتح في المنصة ←
+                    </a>
                 </div>
 
                 <div class="mock-weather-bar" id="liveWeatherPreview">
@@ -721,30 +1008,73 @@
     <div class="stats-strip">
         <div class="stats-grid">
             <div class="stat-item">
-                <div class="stat-num">+38</div>
-                <div class="stat-label">مرض وآفة نباتية يتم تشخيصها بالصورة</div>
+                <div class="stat-num" id="statDiseases">+38</div>
+                <div class="stat-label">مرض وآفة نباتية بالصورة</div>
+                <div class="stat-sub">نموذج EfficientNetV2B2 + فلتر النباتات</div>
             </div>
             <div class="stat-item">
-                <div class="stat-num">27</div>
-                <div class="stat-label">محافظة مصرية مربوطة بالطقس والرطوبة</div>
+                <div class="stat-num" id="statGovs">27</div>
+                <div class="stat-label">محافظة مصرية مربوطة بالطقس</div>
+                <div class="stat-sub">حرارة • رطوبة • سرعة رياح • إنذار مبكر</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="statInteractions">+720</div>
+                <div class="stat-label">عملية فحص واستشارة زراعية</div>
+                <div class="stat-sub" id="statSubLive">تحديث لحظي من قاعدة بيانات المنصة</div>
             </div>
             <div class="stat-item">
                 <div class="stat-num">100%</div>
-                <div class="stat-label">تحدث واستماع بالعامية المصرية الزراعية</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-num">24/7</div>
-                <div class="stat-label">روشتات موثقة من نشرات البحوث الزراعية</div>
+                <div class="stat-label">تحدث واستماع بالعامية المصرية</div>
+                <div class="stat-sub">Gemini 3.8 Neural Egyptian Voice</div>
             </div>
         </div>
     </div>
+
+    <!-- AI Architecture Pipeline Section (Demo Day Highlight) -->
+    <section class="section" id="architecture">
+        <div class="section-header">
+            <span class="section-tag">معمارية الذكاء الاصطناعي (System Architecture)</span>
+            <h2 class="section-title">كيف تعمل المنصة خلف الكواليس في أقل من ثانية؟</h2>
+            <p class="section-sub">خط أنابيب ذكي من 4 مراحل يدمج الرؤية الحاسوبية، الاسترجاع المعرفي الهجين الموثق، والنماذج الصوتية العصبية باللهجة المصرية.</p>
+        </div>
+
+        <div class="pipeline-grid">
+            <div class="pipeline-card">
+                <span class="pipeline-step-badge">المرحلة 01 • الفلترة الذكية</span>
+                <h3>بوابة التحقق من النبات</h3>
+                <div class="pipeline-tech">OpenCV HSV + Gemini Gatekeeper</div>
+                <p>فحص جودة الإضاءة وحدة الصورة واستبعاد الصور غير النباتية أو العشوائية تلقائياً قبل التشغيل لضمان دقة التشخيص 100%.</p>
+            </div>
+
+            <div class="pipeline-card">
+                <span class="pipeline-step-badge">المرحلة 02 • الرؤية الحاسوبية</span>
+                <h3>تشخيص أمراض الأوراق</h3>
+                <div class="pipeline-tech">EfficientNetV2B2 (38 Classes)</div>
+                <p>تحليل البقع والندوات والبياض الدقيقي ونقص العناصر مع حساب نسبة الثقة وهامش التأكد (Confidence Margin) للتعلم النشط.</p>
+            </div>
+
+            <div class="pipeline-card">
+                <span class="pipeline-step-badge">المرحلة 03 • الاسترجاع الهجين</span>
+                <h3>المستشار الزراعي المعتمد</h3>
+                <div class="pipeline-tech">Multilingual-e5 + BM25 + ChromaDB</div>
+                <p>دمج البحث الدلالي واللفظي في نشرات مركز البحوث الزراعية مع طقس المحافظة ومساحة المزرعة بالفدان ونوع الري.</p>
+            </div>
+
+            <div class="pipeline-card">
+                <span class="pipeline-step-badge">المرحلة 04 • النطق العصبي المصري</span>
+                <h3>توليد الصوت المصري الطبيعي</h3>
+                <div class="pipeline-tech">Gemini 3.8 TTS + Spoken Normalizer</div>
+                <p>تحويل الأرقام والرموز العلمية إلى عامية مصرية زراعية سليمة وتوليد صوت بشري مصري (رجالي/نسائي) فائق الوضوح.</p>
+            </div>
+        </div>
+    </section>
 
     <!-- Interfaces Section -->
     <section class="section" id="interfaces">
         <div class="section-header">
             <span class="section-tag">واجهات مصممة لكل مزارع ومهندس</span>
-            <h2 class="section-title">اختر الواجهة المناسبة لجهازك</h2>
-            <p class="section-sub">صممنا المنصة بثلاث واجهات متكاملة لتناسب العمل الميداني بالموبايل في الأرض أو المتابعة التفصيلية من الكمبيوتر.</p>
+            <h2 class="section-title">اختر الواجهة المناسبة لجهازك أو لعرضك</h2>
+            <p class="section-sub">صممنا المنصة بثلاث واجهات متكاملة لتناسب العمل الميداني بالموبايل في الحقل أو العرض التفصيلي على شاشة الكمبيوتر.</p>
         </div>
 
         <div class="interfaces-grid">
@@ -761,10 +1091,10 @@
 
             <div class="interface-card">
                 <div>
-                    <span class="interface-badge" style="background:rgba(56,189,248,0.16); color:#38bdf8; border:1px solid rgba(56,189,248,0.35);">لوحة تحكم شاملة</span>
+                    <span class="interface-badge" style="background:rgba(56,189,248,0.16); color:#38bdf8; border:1px solid rgba(56,189,248,0.35);">مثالية لعرض Demo Day</span>
                     <h3 style="font-size:1.3rem; font-weight:900; margin-bottom:0.6rem;">💻 منصة الكمبيوتر المتكاملة</h3>
                     <p style="color:#cbd5e1; font-size:0.92rem; margin-bottom:1.5rem;">
-                        شاشة مزدوجة تجمع بين فحص الصور، المحادثة الذكية مع المهندس الزراعي، سجل فحوصات مزرعتك، ومؤشرات الطقس والإنذار المبكر للأمراض.
+                        شاشة مزدوجة تجمع بين فحص الصور، المحادثة الذكية مع المهندس الزراعي، أمثلة العرض الجاهزة، سجل فحوصات المزرعة، ومؤشرات الطقس والإنذار المبكر.
                     </p>
                 </div>
                 <a href="/dashboard?view=desktop" class="btn btn-outline" style="width:100%;">افتح لوحة الكمبيوتر ←</a>
@@ -830,76 +1160,49 @@
         </div>
     </section>
 
-    <!-- How It Works -->
-    <section class="section" id="how-it-works">
-        <div class="section-header">
-            <span class="section-tag">سهولة وسرعة في 3 خطوات</span>
-            <h2 class="section-title">إزاي تستخدم المنصة في أرضك؟</h2>
-        </div>
-
-        <div class="steps-grid">
-            <div class="step-card">
-                <div class="step-num">1</div>
-                <h3 style="font-size:1.18rem; font-weight:800; margin-bottom:0.5rem;">صوّر الورقة أو اسأل بصوتك</h3>
-                <p style="color:#cbd5e1; font-size:0.92rem;">صوّر ورقة النبات المصابة بكاميرا الموبايل في إضاءة واضحة، أو اضغط على الميكروفون واحكي المشكلة باللهجة المصرية.</p>
-            </div>
-
-            <div class="step-card">
-                <div class="step-num">2</div>
-                <h3 style="font-size:1.18rem; font-weight:800; margin-bottom:0.5rem;">تحليل الذكاء الاصطناعي والطقس</h3>
-                <p style="color:#cbd5e1; font-size:0.92rem;">يحدد نموذج الرؤية المرض ونسبة الثقة، ويطابقه محرك Agri-RAG مع نشرات وزارة الزراعة وحالة الجو في محافظتك.</p>
-            </div>
-
-            <div class="step-card">
-                <div class="step-num">3</div>
-                <h3 style="font-size:1.18rem; font-weight:800; margin-bottom:0.5rem;">استلم الروشتة مكتوبة ومسموعة</h3>
-                <p style="color:#cbd5e1; font-size:0.92rem;">احصل على خطة المكافحة المتكاملة والجرعات المظبوطة بالفدان، واستمع إليها باللهجة المصرية أو أرسلها على واتساب.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Supported Crops -->
+    <!-- Supported Crops (Clickable to launch demo consultation) -->
     <section class="section" id="crops">
         <div class="section-header">
             <span class="section-tag">تغطية واسعة للمحاصيل المصرية</span>
-            <h2 class="section-title">المحاصيل الزراعية المدعومة في الفحص والاستشارة</h2>
+            <h2 class="section-title">اضغط على أي محصول لبدء استشارة فورية عنه</h2>
+            <p class="section-sub">تدعم المنصة تشخيص واستشارات المحاصيل الاستراتيجية والخضر والفاكهة في البيئة الزراعية المصرية.</p>
         </div>
 
         <div class="crops-wrap">
-            <span class="crop-pill">🍅 الطماطم</span>
-            <span class="crop-pill">🥔 البطاطس</span>
-            <span class="crop-pill">🥭 المانجو</span>
-            <span class="crop-pill">🍇 العنب</span>
-            <span class="crop-pill">🌽 الذرة</span>
-            <span class="crop-pill">🫑 الفلفل</span>
-            <span class="crop-pill">🌾 القمح</span>
-            <span class="crop-pill">🍊 الموالح والبرتقال</span>
-            <span class="crop-pill">🍎 التفاح</span>
-            <span class="crop-pill">🍑 الخوخ</span>
-            <span class="crop-pill">🍓 الفراولة</span>
-            <span class="crop-pill">🥒 الخيار والقرعيات</span>
-            <span class="crop-pill">🫒 الزيتون</span>
-            <span class="crop-pill">🌴 النخيل</span>
+            <a href="/dashboard?view=desktop&crop=طماطم" class="crop-pill">🍅 الطماطم</a>
+            <a href="/dashboard?view=desktop&crop=بطاطس" class="crop-pill">🥔 البطاطس</a>
+            <a href="/dashboard?view=desktop&crop=مانجو" class="crop-pill">🥭 المانجو</a>
+            <a href="/dashboard?view=desktop&crop=قمح" class="crop-pill">🌾 القمح</a>
+            <a href="/dashboard?view=desktop&crop=ذرة" class="crop-pill">🌽 الذرة</a>
+            <a href="/dashboard?view=desktop&crop=أرز" class="crop-pill">🌾 الأرز</a>
+            <a href="/dashboard?view=desktop&crop=عنب" class="crop-pill">🍇 العنب</a>
+            <a href="/dashboard?view=desktop&crop=فلفل" class="crop-pill">🫑 الفلفل</a>
+            <a href="/dashboard?view=desktop&crop=موالح" class="crop-pill">🍊 الموالح والبرتقال</a>
+            <a href="/dashboard?view=desktop&crop=فراولة" class="crop-pill">🍓 الفراولة</a>
+            <a href="/dashboard?view=desktop&crop=خيار" class="crop-pill">🥒 الخيار والقرعيات</a>
+            <a href="/dashboard?view=desktop&crop=زيتون" class="crop-pill">🫒 الزيتون</a>
+            <a href="/dashboard?view=desktop&crop=نخيل" class="crop-pill">🌴 النخيل</a>
         </div>
     </section>
 
     <!-- Bottom CTA Banner -->
     <div class="cta-banner">
         <h2 style="font-size:clamp(1.5rem, 2.5vw, 2.2rem); font-weight:900; margin-bottom:0.75rem;">
-            جاهز تطمّن على زرعك وتستشير المهندس الزراعي الذكي؟
+            جاهز لتجربة المنصة الحية أو استعراضها أمام لجنة التحكيم؟
         </h2>
-        <p style="color:#cbd5e1; max-width:620px; margin:0 auto 1.75rem; font-size:1rem;">
-            افتح المنصة الآن مجاناً أو سجل حساب مزرعتك لحفظ تاريخ الفحوصات والاستشارات الخاصة بأرضك.
+        <p style="color:#cbd5e1; max-width:650px; margin:0 auto 1.75rem; font-size:1rem;">
+            افتح لوحة التحكم الكاملة بضغطة واحدة، أو سجّل حساب مزرعتك لحفظ تاريخ الفحوصات والاستشارات الخاصة بأرضك.
         </p>
         <div style="display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
-            <a href="/dashboard" class="btn btn-primary btn-lg">🚀 ابدأ الآن على المنصة</a>
-            <a href="/login?next=/dashboard" class="btn btn-outline btn-lg" id="bottomLoginBtn">👤 تسجيل دخول / حساب مزارع جديد</a>
+            <a href="/dashboard?view=desktop" class="btn btn-primary btn-lg">💻 افتح لوحة العرض الكاملة</a>
+            <a href="/mobile" class="btn btn-gold btn-lg">📱 افتح تطبيق الموبايل</a>
+            <a href="/login?next=/dashboard" class="btn btn-outline btn-lg" id="bottomLoginBtn">👤 تسجيل دخول / حساب مزارع</a>
         </div>
     </div>
 
     <footer>
         <div>منصة الزراعة الذكية (Smart Agriculture AI) — جميع الحقوق محفوظة © 2026</div>
-        <div style="margin-top:0.4rem; font-size:0.8rem;">
+        <div style="margin-top:0.45rem; font-size:0.82rem;">
             <a href="/dashboard?view=desktop" style="color:#6ee7b7; text-decoration:none; margin:0 8px;">نسخة الكمبيوتر</a> •
             <a href="/mobile" style="color:#6ee7b7; text-decoration:none; margin:0 8px;">تطبيق الموبايل</a> •
             <a href="/simple" style="color:#6ee7b7; text-decoration:none; margin:0 8px;">الفحص السريع</a> •
@@ -908,6 +1211,116 @@
     </footer>
 
     <script>
+        // Demo Day Interactive Scenarios Data
+        const DEMO_SCENARIOS = [
+            {
+                key: 'tomato',
+                title: '🔬 التشخيص: طماطم — الندوة المتأخرة (Late Blight)',
+                confText: 'ثقة 97.8%',
+                confPct: 97.8,
+                source: '📚 نشرة وزارة الزراعة #142',
+                adviceHtml: '«يا باشمهندس، الورقة دي فيها <strong>ندوة متأخرة في الطماطم</strong> والجو الرطب بيزودها. أول خطوة توقف الري بالغمر وتقلل الرطوبة، وترش فوراً <strong>أوكسي كلور النحاس أو ريدوميل جولد</strong> بمعدل 250 جرام لكل 100 لتر ميه آخر النهار.»',
+                speechText: 'يا باشمهندس، الورقة دي فيها ندوة متأخرة في الطماطم، والجو الرطب بيزودها. أول خطوة توقف الري بالغمر وتقلل الرطوبة، وترش فوراً أوكسي كلور النحاس أو ريدوميل جولد بمعدل 250 جرام لكل 100 لتر ميه آخر النهار.'
+            },
+            {
+                key: 'potato',
+                title: '🔬 التشخيص: بطاطس — الندوة المبكرة (Early Blight)',
+                confText: 'ثقة 96.4%',
+                confPct: 96.4,
+                source: '📚 نشرة معهد أمراض النبات #89',
+                adviceHtml: '«بص يا حاج، الحلقات البنية دي <strong>ندوة مبكرة في البطاطس</strong>. لم الورق السفلي المصاب بره الغيط، ورش <strong>أزوكسي ستروبين أو مانكوزيب</strong> بمعدل 250 جرام لكل 100 لتر ميه، مع اهتمامك بتسميد البوتاسيوم عشان يقوي العرش.»',
+                speechText: 'بص يا حاج، الحلقات البنية دي ندوة مبكرة في البطاطس. لم الورق السفلي المصاب بره الغيط، ورش أزوكسي ستروبين أو مانكوزيب بمعدل 250 جرام لكل 100 لتر ميه، مع اهتمامك بتسميد البوتاسيوم علشان يقوي العرش.'
+            },
+            {
+                key: 'mango',
+                title: '🔬 التشخيص: مانجو — البياض الدقيقي ولفحة الأزهار',
+                confText: 'ثقة 95.9%',
+                confPct: 95.9,
+                source: '📚 نشرة بحوث البساتين — المانجو',
+                adviceHtml: '«خلي بالك يا باشمهندس، الشماريخ الزهرية عليها <strong>بياض دقيقي في المانجو</strong>. رش فوراً <strong>كبريت ميكروني</strong> بمعدل 250 جرام لكل 100 لتر ميه في الصباح الباكر أو قبل الغروب، وابعد عن الرش وقت الحر الشديد.»',
+                speechText: 'خلي بالك يا باشمهندس، الشماريخ الزهرية عليها بياض دقيقي في المانجو. رش فوراً كبريت ميكروني بمعدل 250 جرام لكل 100 لتر ميه في الصباح الباكر أو قبل الغروب، وابعد عن الرش وقت الحر الشديد.'
+            }
+        ];
+
+        let currentScenarioIdx = 0;
+        let heroAudio = null;
+
+        function stopActiveAudio() {
+            if (heroAudio) {
+                heroAudio.pause();
+                heroAudio = null;
+            }
+            const topBtn = document.getElementById('heroVoiceBtn');
+            if (topBtn) topBtn.innerHTML = '🔊 اسمع ترحيب المهندس بالمصري';
+            const scenBtn = document.getElementById('demoScenarioVoiceBtn');
+            if (scenBtn) scenBtn.innerHTML = '🔊 استمع لهذه الروشتة بالصوت المصري';
+        }
+
+        function switchDemoScenario(idx, tabBtn) {
+            stopActiveAudio();
+            currentScenarioIdx = idx;
+            const s = DEMO_SCENARIOS[idx] || DEMO_SCENARIOS[0];
+
+            document.querySelectorAll('.scenario-tab').forEach(b => b.classList.remove('active'));
+            if (tabBtn) tabBtn.classList.add('active');
+
+            const titleEl = document.getElementById('demoDiseaseTitle');
+            const confTag = document.getElementById('demoConfidenceTag');
+            const confBar = document.getElementById('demoConfBar');
+            const srcBadge = document.getElementById('demoSourceBadge');
+            const adviceEl = document.getElementById('demoAdviceText');
+            const launchLink = document.getElementById('demoLaunchLink');
+
+            if (titleEl) titleEl.textContent = s.title;
+            if (confTag) confTag.textContent = s.confText;
+            if (confBar) confBar.style.width = s.confPct + '%';
+            if (srcBadge) srcBadge.textContent = s.source;
+            if (adviceEl) adviceEl.innerHTML = s.adviceHtml;
+            if (launchLink) launchLink.href = `/dashboard?view=desktop&demo=${s.key}`;
+        }
+
+        async function playEgyptianTTSText(textToSpeak, btn, defaultLabel) {
+            if (heroAudio) {
+                stopActiveAudio();
+                return;
+            }
+            btn.innerHTML = '⏳ جاري تجهيز الصوت المصري...';
+            try {
+                const res = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: textToSpeak, voice: 'ar-EG-ShakirNeural', colloquial: true })
+                });
+                if (!res.ok) throw new Error('TTS failed');
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const audio = new Audio(url);
+                heroAudio = audio;
+                btn.innerHTML = '⏹️ إيقاف الصوت المصري';
+                const done = () => {
+                    URL.revokeObjectURL(url);
+                    heroAudio = null;
+                    btn.innerHTML = defaultLabel;
+                };
+                audio.onended = done;
+                audio.onerror = done;
+                await audio.play();
+            } catch (e) {
+                heroAudio = null;
+                btn.innerHTML = defaultLabel;
+            }
+        }
+
+        function playHeroEgyptianWelcome(btn) {
+            const welcomeText = 'أهلاً بيك يا باشمهندس في منصة الزراعة الذكية! صور ورقة الزرع أو اسألني بصوتك بالمصري، وهقولك التشخيص والروشتة المظبوطة من نشرات مركز البحوث الزراعية.';
+            playEgyptianTTSText(welcomeText, btn, '🔊 اسمع ترحيب المهندس بالمصري');
+        }
+
+        function playCurrentScenarioVoice(btn) {
+            const s = DEMO_SCENARIOS[currentScenarioIdx] || DEMO_SCENARIOS[0];
+            playEgyptianTTSText(s.speechText, btn, '🔊 استمع لهذه الروشتة بالصوت المصري');
+        }
+
         // 1. Load live weather snippet for Hero preview
         (async function loadHeroWeather() {
             const el = document.getElementById('heroWeatherText');
@@ -925,7 +1338,25 @@
             }
         })();
 
-        // 2. Check if farmer is already logged in
+        // 2. Load live platform telemetry counters from /api/public-stats
+        (async function loadPublicStats() {
+            try {
+                const res = await fetch('/api/public-stats');
+                if (!res.ok) return;
+                const d = await res.json();
+                const totalOps = (Number(d.total_visits) || 0) + (Number(d.total_diagnoses) || 0) + (Number(d.total_consultations) || 0);
+                const interEl = document.getElementById('statInteractions');
+                const subEl = document.getElementById('statSubLive');
+                if (interEl && totalOps > 0) {
+                    interEl.textContent = `+${totalOps}`;
+                }
+                if (subEl && d.total_diagnoses != null && d.total_consultations != null) {
+                    subEl.textContent = `${d.total_diagnoses} فحص صورة • ${d.total_consultations} استشارة ذكية • ${d.registered_farmers || 8} مزارعين مسجلين`;
+                }
+            } catch (e) {}
+        })();
+
+        // 3. Check if farmer is already logged in
         (async function checkLandingAuth() {
             try {
                 const tok = localStorage.getItem('agri_auth_token') || '';
@@ -952,43 +1383,6 @@
                 }
             } catch (e) {}
         })();
-
-        // 3. Interactive Egyptian Voice Welcome on Hero
-        let heroAudio = null;
-        async function playHeroEgyptianWelcome(btn) {
-            if (heroAudio) {
-                heroAudio.pause();
-                heroAudio = null;
-                btn.innerHTML = '🔊 اسمع ترحيب المهندس بالمصري';
-                return;
-            }
-            const welcomeText = 'أهلاً بيك يا باشمهندس في منصة الزراعة الذكية! صور ورقة الزرع أو اسألني بصوتك بالمصري، وهقولك التشخيص والروشتة المظبوطة من نشرات مركز البحوث الزراعية.';
-            btn.innerHTML = '⏳ جاري تجهيز الصوت المصري...';
-            try {
-                const res = await fetch('/api/tts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: welcomeText, voice: 'ar-EG-ShakirNeural', colloquial: true })
-                });
-                if (!res.ok) throw new Error('TTS failed');
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const audio = new Audio(url);
-                heroAudio = audio;
-                btn.innerHTML = '⏹️ إيقاف الصوت';
-                const done = () => {
-                    URL.revokeObjectURL(url);
-                    heroAudio = null;
-                    btn.innerHTML = '🔊 اسمع ترحيب المهندس بالمصري';
-                };
-                audio.onended = done;
-                audio.onerror = done;
-                await audio.play();
-            } catch (e) {
-                heroAudio = null;
-                btn.innerHTML = '🔊 اسمع ترحيب المهندس بالمصري';
-            }
-        }
     </script>
 </body>
 </html>
