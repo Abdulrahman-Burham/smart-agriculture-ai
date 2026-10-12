@@ -143,6 +143,8 @@ class SocialQuickAuthPayload(BaseModel):
     irrigation_type: str = "تنقيط"
     credential_jwt: str = ""
     access_token: str = ""
+    code: str = ""
+    redirect_uri: str = ""
     avatar_url: str = ""
 
 
@@ -575,6 +577,7 @@ def _load_oauth_config() -> Dict[str, str]:
     """Load Google/Microsoft OAuth Client IDs from data/oauth_config.json or environment variables."""
     cfg = {
         "google_client_id": os.environ.get("GOOGLE_CLIENT_ID", "").strip(),
+        "google_client_secret": os.environ.get("GOOGLE_CLIENT_SECRET", "").strip(),
         "microsoft_client_id": os.environ.get("MICROSOFT_CLIENT_ID", "").strip(),
     }
     if _OAUTH_CONFIG_FILE.exists():
@@ -582,6 +585,8 @@ def _load_oauth_config() -> Dict[str, str]:
             saved = json.loads(_OAUTH_CONFIG_FILE.read_text(encoding="utf-8"))
             if saved.get("google_client_id"):
                 cfg["google_client_id"] = str(saved["google_client_id"]).strip()
+            if saved.get("google_client_secret"):
+                cfg["google_client_secret"] = str(saved["google_client_secret"]).strip()
             if saved.get("microsoft_client_id"):
                 cfg["microsoft_client_id"] = str(saved["microsoft_client_id"]).strip()
         except Exception:
@@ -609,6 +614,7 @@ async def google_oauth_redirect_login(request: Request, next: str = Query("/")):
 
     cfg = _load_oauth_config()
     client_id = cfg.get("google_client_id", "").strip()
+    client_secret = cfg.get("google_client_secret", "").strip()
     if not client_id:
         return RedirectResponse(url=f"/login?next={next}", status_code=302)
 
@@ -619,7 +625,7 @@ async def google_oauth_redirect_login(request: Request, next: str = Query("/")):
     params = {
         "client_id": client_id,
         "redirect_uri": redirect_uri,
-        "response_type": "token",
+        "response_type": "code" if client_secret else "token",
         "scope": "openid email profile",
         "include_granted_scopes": "true",
         "prompt": "select_account",
@@ -637,14 +643,49 @@ async def google_oauth_callback_page():
 
 @app.post("/api/auth/social", tags=["Authentication"])
 async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_request: Request):
-    """Sign in or auto-register with Google (OAuth2 userinfo / GSI ID Token), Microsoft, Apple, One-Tap Phone, or Passkey."""
+    """Sign in or auto-register with Google (OAuth2 code / userinfo / GSI ID Token), Microsoft, Apple, One-Tap Phone, or Passkey."""
     client_info = extract_client_info(http_request)
     identifier = (payload.identifier or "").strip()
     full_name = (payload.full_name or "").strip()
     avatar_url = (payload.avatar_url or "").strip()
     provider = (payload.provider or "google").strip().lower()
 
-    # 1. If a real Google OAuth2 access_token is provided (from google.accounts.oauth2.initTokenClient popup),
+    # 0. If a Google OAuth2 authorization code is provided, exchange it for access_token / id_token
+    if payload.code and provider == "google":
+        cfg = _load_oauth_config()
+        cid = cfg.get("google_client_id", "").strip()
+        csec = cfg.get("google_client_secret", "").strip()
+        proto = http_request.headers.get("x-forwarded-proto") or http_request.url.scheme or "https"
+        host = http_request.headers.get("x-forwarded-host") or http_request.headers.get("host") or "plantapi-abdo.uaenorth.cloudapp.azure.com"
+        red_uri = (payload.redirect_uri or "").strip() or f"{proto}://{host}/api/auth/google/callback"
+
+        def _exchange_google_code(code_str: str):
+            try:
+                r = ext_requests.post(
+                    "https://oauth2.googleapis.com/token",
+                    data={
+                        "code": code_str,
+                        "client_id": cid,
+                        "client_secret": csec,
+                        "redirect_uri": red_uri,
+                        "grant_type": "authorization_code",
+                    },
+                    timeout=8,
+                )
+                if r.status_code == 200:
+                    return r.json()
+            except Exception:
+                pass
+            return None
+
+        tok_data = await asyncio.to_thread(_exchange_google_code, payload.code.strip())
+        if tok_data:
+            if tok_data.get("access_token"):
+                payload.access_token = tok_data["access_token"]
+            elif tok_data.get("id_token"):
+                payload.credential_jwt = tok_data["id_token"]
+
+    # 1. If a real Google OAuth2 access_token is provided (from google.accounts.oauth2.initTokenClient popup or code exchange),
     #    fetch the user's real email, full name, and profile photo directly from Google's userinfo API!
     if payload.access_token and provider == "google":
         def _fetch_google_userinfo(token_str: str):

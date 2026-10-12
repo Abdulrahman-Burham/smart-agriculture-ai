@@ -252,6 +252,8 @@
             // Login Page (login.html)
             "🏠 رجوع لصفحة العرض الرئيسية": "🏠 Back to Landing Page",
             "سجّل دخولك لحفظ تشخيصات محصولك وتوصيات مزرعتك": "Sign in to save your crop diagnoses and farm prescriptions",
+            "الدخول السريع بحساب Google": "Sign in with Google",
+            "أو عبر رقم الموبايل / البريد الإلكتروني": "Or with Mobile Number / Email",
             "إنشاء حساب مزارع جديد": "Create New Farmer Account",
             "رقم الموبايل أو البريد الإلكتروني": "Egyptian Mobile Number or Email",
             "مثال: 01012345678 أو email@domain.com": "e.g., 01012345678 or email@domain.com",
@@ -485,6 +487,8 @@
             "📊 عدد الاستشارات": "📊 Consultations",
             "🏠 رجوع لصفحة العرض الرئيسية": "🏠 Retour à l'Accueil",
             "سجّل دخولك لحفظ تشخيصات محصولك وتوصيات مزرعتك": "Connectez-vous pour sauvegarder vos diagnostics et recommandations",
+            "الدخول السريع بحساب Google": "Continuer avec Google",
+            "أو عبر رقم الموبايل / البريد الإلكتروني": "Ou par Téléphone / Email",
             "إنشاء حساب مزارع جديد": "Créer un Compte Agriculteur",
             "رقم الموبايل أو البريد الإلكتروني": "Numéro de Mobile ou Email",
             "كلمة المرور": "Mot de Passe",

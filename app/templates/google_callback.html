@@ -134,7 +134,8 @@
 
     const accessToken = hParams.get('access_token') || qParams.get('access_token') || '';
     const idToken = hParams.get('id_token') || qParams.get('id_token') || '';
-    const stateNext = hParams.get('state') || qParams.get('next') || '/';
+    const authCode = qParams.get('code') || hParams.get('code') || '';
+    const stateNext = hParams.get('state') || qParams.get('state') || qParams.get('next') || '/dashboard';
     const isSetup = qParams.get('setup') === '1';
     const errParam = hParams.get('error') || qParams.get('error') || '';
 
@@ -173,7 +174,7 @@
     }
 
     async function completeGoogleSignIn() {
-        if (isSetup && !accessToken && !idToken) {
+        if (isSetup && !accessToken && !idToken && !authCode) {
             document.getElementById('loadingCard').style.display = 'none';
             document.getElementById('setupCard').style.display = 'block';
             return;
@@ -186,7 +187,7 @@
             return;
         }
 
-        if (!accessToken && !idToken) {
+        if (!accessToken && !idToken && !authCode) {
             window.location.href = '/login';
             return;
         }
@@ -201,6 +202,8 @@
                     provider: 'google',
                     access_token: accessToken,
                     credential_jwt: idToken,
+                    code: authCode,
+                    redirect_uri: window.location.origin + '/api/auth/google/callback',
                     governorate: savedGov
                 })
             });
