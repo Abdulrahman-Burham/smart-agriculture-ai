@@ -1395,6 +1395,32 @@ async def diagnose_endpoint(
                     f"3. ارفع صورة النبات تاني وهطلعلك التشخيص والروشتة المعتمدة فوراً!"
                 )
                 latency = round(time.time() - start_time, 3)
+                try:
+                    await asyncio.to_thread(
+                        save_image_record,
+                        image_bytes=image_bytes,
+                        filename=image.filename or "non_plant.jpg",
+                        content_type=image.content_type or "image/jpeg",
+                        source_endpoint="/api/diagnose (rejected)",
+                        model_used=cv_result.get("model_used", model_choice),
+                        predicted_class="Not_A_Plant",
+                        predicted_class_ar=f"⚠️ ليست صورة نبات ({detected_obj})",
+                        confidence="مرفوضة",
+                        top_predictions=[],
+                        user_query=query,
+                        rag_advice=warning_advice,
+                        client_ip=client_info["client_ip"],
+                        user_agent=client_info["user_agent"],
+                        device_type=client_info["device_type"],
+                        visitor_hash=client_info["visitor_hash"],
+                        latency_ms=round(latency * 1000, 2),
+                        weather_snapshot=location or "القاهرة",
+                        user_id=u_id,
+                        user_name=u_name,
+                        user_identifier=u_ident,
+                    )
+                except Exception as db_err:
+                    logger.warning(f"Database save warning on rejected image: {db_err}")
                 return DiagnoseResponse(
                     is_plant=False,
                     rejection_reason=reject_reason,

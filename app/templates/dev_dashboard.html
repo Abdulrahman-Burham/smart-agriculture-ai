@@ -906,7 +906,7 @@
                         }
                     </td>
                     <td>
-                        <div><strong>📍 المحافظة المثبتة: ${esc(cp.governorate || 'القاهرة')}</strong> ${srcBadge}</div>
+                        <div><strong>📍 المحافظة المثبتة: ${esc(cp.pinned_governorate || cp.governorate || 'القاهرة')}</strong> ${srcBadge}</div>
                         ${gpsCoords}
                         <div style="font-size:0.74rem; color:var(--text-muted); margin-top:3px;">
                             🌐 مدينة الـ IP (الراوتر/الشبكة): <span style="color:#fbbf24;">${esc(cp.ip_city || 'غير محدد')}</span>
@@ -917,7 +917,7 @@
                         <div>📐 المساحة: <strong>${cp.farm_size_feddan || 1} فدان</strong> | 💧 الري: <strong>${esc(cp.irrigation_type || 'تنقيط')}</strong></div>
                     </td>
                     <td>
-                        <span class="badge badge-blue">🌐 زيارات: ${cp.visits_count || 0}</span>
+                        <span class="badge badge-blue">🌐 زيارات: ${cp.visit_count ?? cp.visits_count ?? 0}</span>
                         <span class="badge badge-green" style="margin-right:4px;">💬 شات: ${cp.chats_count || 0}</span>
                         <span class="badge badge-purple" style="margin-right:4px;">📸 صور: ${cp.images_count || 0}</span>
                     </td>
@@ -979,7 +979,8 @@
                         <div style="color:var(--text-muted);">${esc(u.device_type || '')}</div>
                     </td>
                 </tr>
-            `).join('') || '<tr><td colspan="7" style="text-align:center; padding:24px;">لا يوجد مستخدمون مسجلون بعد</td></tr>';
+            `;
+            }).join('') || '<tr><td colspan="7" style="text-align:center; padding:24px;">لا يوجد مستخدمون مسجلون بعد</td></tr>';
 
             // Render Chats Table
             document.getElementById('chatsTableBody').innerHTML = chats.map(c => `
