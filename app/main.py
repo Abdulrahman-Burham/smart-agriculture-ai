@@ -437,8 +437,22 @@ def _is_mobile_request(request: Request) -> bool:
 
 @app.get("/", include_in_schema=False)
 @app.head("/", include_in_schema=False)
+@app.get("/landing", include_in_schema=False)
+@app.head("/landing", include_in_schema=False)
+async def serve_landing_page(request: Request):
+    """Serve the official Arabic AgriTech Landing Page at root (/), or platform if ?view= is specified."""
+    view_param = (request.query_params.get("view") or "").lower()
+    if view_param == "desktop":
+        return FileResponse("app/static/index.html", headers=_NO_CACHE_HEADERS)
+    if view_param == "mobile":
+        return FileResponse("app/static/mobile.html", headers=_NO_CACHE_HEADERS)
+    return FileResponse("app/static/landing.html", headers=_NO_CACHE_HEADERS)
+
+
 @app.get("/dashboard", include_in_schema=False)
 @app.head("/dashboard", include_in_schema=False)
+@app.get("/app", include_in_schema=False)
+@app.head("/app", include_in_schema=False)
 async def serve_dashboard(request: Request):
     """Serve the dedicated mobile app UI on phones or the desktop dashboard on PC."""
     if _is_mobile_request(request):

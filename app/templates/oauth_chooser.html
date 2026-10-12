@@ -558,7 +558,7 @@
 <script>
     const params = new URLSearchParams(window.location.search);
     const provider = (params.get('provider') || 'google').toLowerCase();
-    const nextUrl = params.get('next') || '/';
+    const nextUrl = params.get('next') || '/dashboard';
 
     function handleBackClick() {
         if (window.opener && !window.opener.closed) {

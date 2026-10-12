@@ -1003,7 +1003,7 @@
                     localStorage.setItem('agri_user', JSON.stringify(event.data.user));
                 }
                 const params = new URLSearchParams(window.location.search);
-                const nextUrl = params.get('next') || '/';
+                const nextUrl = params.get('next') || '/dashboard';
                 window.location.href = nextUrl;
             }
         });
@@ -1011,7 +1011,7 @@
         window.addEventListener('storage', (event) => {
             if (event.key === 'agri_auth_token' && event.newValue) {
                 const params = new URLSearchParams(window.location.search);
-                const nextUrl = params.get('next') || '/';
+                const nextUrl = params.get('next') || '/dashboard';
                 window.location.href = nextUrl;
             }
         });
@@ -1023,7 +1023,7 @@
         function openSocialProviderFlow(provider) {
             hideAlert();
             const params = new URLSearchParams(window.location.search);
-            const nextUrl = params.get('next') || '/';
+            const nextUrl = params.get('next') || '/dashboard';
 
             if (provider === 'google') {
                 if (googleTokenClient) {
@@ -1198,7 +1198,7 @@
                 showAlert(`أهلاً بك يا ${data.user.full_name}! تم سحب بيانات حسابك والدخول بنجاح...`, false);
 
                 const params = new URLSearchParams(window.location.search);
-                const nextUrl = params.get('next') || '/';
+                const nextUrl = params.get('next') || '/dashboard';
                 setTimeout(() => { window.location.href = nextUrl; }, 450);
             } catch (err) {
                 if (errEl) {
@@ -1516,7 +1516,7 @@
                 showAlert(`أهلاً بيك يا ${data.user.full_name}! جاري تحويلك...`, false);
 
                 const params = new URLSearchParams(window.location.search);
-                const nextUrl = params.get('next') || '/';
+                const nextUrl = params.get('next') || '/dashboard';
                 setTimeout(() => { window.location.href = nextUrl; }, 500);
             } catch (err) {
                 showAlert('حدث خطأ في الاتصال بالخادم.', true);
@@ -1571,7 +1571,7 @@
                 showAlert(`تم إنشاء حسابك بنجاح يا ${data.user.full_name}! جاري تحويلك...`, false);
 
                 const params = new URLSearchParams(window.location.search);
-                const nextUrl = params.get('next') || '/';
+                const nextUrl = params.get('next') || '/dashboard';
                 setTimeout(() => { window.location.href = nextUrl; }, 500);
             } catch (err) {
                 showAlert('حدث خطأ في الاتصال بالخادم.', true);
