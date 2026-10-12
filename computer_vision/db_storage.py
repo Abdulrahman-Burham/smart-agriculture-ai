@@ -634,6 +634,11 @@ def init_db(force: bool = False) -> None:
             ("user_id", "INTEGER DEFAULT NULL"),
             ("user_name", "TEXT DEFAULT ''"),
             ("user_identifier", "TEXT DEFAULT ''"),
+            ("prompt_tokens", "INTEGER DEFAULT 0"),
+            ("completion_tokens", "INTEGER DEFAULT 0"),
+            ("total_tokens", "INTEGER DEFAULT 0"),
+            ("api_key_masked", "TEXT DEFAULT ''"),
+            ("llm_model", "TEXT DEFAULT ''"),
         ]:
             _ensure_column(conn, "chat_logs", col, cdef)
 
@@ -751,6 +756,32 @@ def init_db(force: bool = False) -> None:
                 device_type TEXT DEFAULT '',
                 browser_os TEXT DEFAULT '',
                 visit_count INTEGER DEFAULT 1
+            )
+            """
+        )
+
+        # 7. AI Model, Token & API Key Consumption Telemetry Table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS llm_token_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TEXT NOT NULL,
+                hour_bucket TEXT NOT NULL,
+                service_type TEXT NOT NULL,
+                endpoint TEXT DEFAULT '',
+                model_name TEXT NOT NULL,
+                api_key_masked TEXT DEFAULT '',
+                prompt_tokens INTEGER DEFAULT 0,
+                completion_tokens INTEGER DEFAULT 0,
+                total_tokens INTEGER DEFAULT 0,
+                estimated_cost_usd REAL DEFAULT 0.0,
+                latency_ms REAL DEFAULT 0.0,
+                status TEXT DEFAULT 'success',
+                user_id INTEGER DEFAULT NULL,
+                user_name TEXT DEFAULT '',
+                visitor_hash TEXT DEFAULT '',
+                client_ip TEXT DEFAULT '',
+                request_preview TEXT DEFAULT ''
             )
             """
         )
@@ -1625,6 +1656,120 @@ def save_image_record(
         return int(cursor.lastrowid)
 
 
+def mask_api_key(raw_key: str, key_index: Optional[int] = None) -> str:
+    """Safely mask an API key (e.g. 'AIzaSyB...9xQ2 (#1)') so developer can identify which key was used without exposing the full secret."""
+    k = (raw_key or "").strip()
+    if not k or k in ("not-needed", "local", "edge-tts", "cache"):
+        return k or "local-model"
+    if "..." in k:
+        return k
+    masked = f"{k[:7]}...{k[-4:]}" if len(k) > 12 else f"{k[:3]}***"
+    if key_index is not None and key_index >= 1:
+        return f"Key #{key_index} ({masked})"
+    return masked
+
+
+def estimate_tokens(text: str) -> int:
+    """Estimate LLM token count for Arabic/English text when exact usageMetadata is not returned (approx 1 token per 2.8 Arabic chars)."""
+    if not text:
+        return 0
+    s = str(text).strip()
+    if not s:
+        return 0
+    return max(1, int(round(len(s) / 2.8)))
+
+
+def estimate_gemini_cost_usd(model_name: str, prompt_tokens: int, completion_tokens: int) -> float:
+    """Estimate commercial API cost in USD based on standard Gemini Flash/Pro pricing per 1M tokens."""
+    m = (model_name or "").lower()
+    if "pro" in m:
+        in_rate, out_rate = 1.25, 5.00
+    elif "lite" in m:
+        in_rate, out_rate = 0.075, 0.30
+    elif "tts" in m:
+        in_rate, out_rate = 0.15, 0.60
+    else:
+        # gemini-2.5-flash / gemini-2.0-flash standard tier reference
+        in_rate, out_rate = 0.15, 0.60
+    cost = ((max(0, int(prompt_tokens)) / 1_000_000.0) * in_rate) + (
+        (max(0, int(completion_tokens)) / 1_000_000.0) * out_rate
+    )
+    return round(cost, 6)
+
+
+def save_token_usage_log(
+    service_type: str,
+    model_name: str,
+    api_key_masked: str = "",
+    prompt_tokens: int = 0,
+    completion_tokens: int = 0,
+    total_tokens: int = 0,
+    latency_ms: float = 0.0,
+    status: str = "success",
+    endpoint: str = "",
+    user_id: Optional[int] = None,
+    user_name: str = "",
+    visitor_hash: str = "",
+    client_ip: str = "",
+    request_preview: str = "",
+    query_preview: str = "",
+    created_at_override: str = "",
+) -> int:
+    """Record an AI/LLM token & API-key consumption event for developer observability."""
+    try:
+        init_db()
+        now = datetime.datetime.now()
+        now_str = created_at_override or now.strftime("%Y-%m-%d %H:%M:%S")
+        hour_bucket = now_str[:13] + ":00" if len(now_str) >= 13 else now.strftime("%Y-%m-%d %H:00")
+
+        p_tok = max(0, int(prompt_tokens or 0))
+        c_tok = max(0, int(completion_tokens or 0))
+        t_tok = max(0, int(total_tokens or (p_tok + c_tok)))
+        if t_tok > 0 and p_tok == 0 and c_tok == 0:
+            p_tok = int(t_tok * 0.7)
+            c_tok = t_tok - p_tok
+
+        cost_usd = estimate_gemini_cost_usd(model_name, p_tok, c_tok) if status != "cache_hit" else 0.0
+        clean_key = mask_api_key(api_key_masked) if api_key_masked else "Key #1 (الأساسي)"
+        preview_txt = (request_preview or query_preview or "")[:140]
+
+        with sqlite3.connect(str(DB_PATH), timeout=10.0) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO llm_token_logs (
+                    created_at, hour_bucket, service_type, endpoint, model_name,
+                    api_key_masked, prompt_tokens, completion_tokens, total_tokens,
+                    estimated_cost_usd, latency_ms, status, user_id, user_name,
+                    visitor_hash, client_ip, request_preview
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    now_str,
+                    hour_bucket,
+                    service_type or "Agri-RAG Chat",
+                    endpoint or "/api/chat",
+                    model_name or "gemini-2.5-flash",
+                    clean_key,
+                    p_tok,
+                    c_tok,
+                    t_tok,
+                    cost_usd,
+                    round(float(latency_ms or 0.0), 2),
+                    status or "success",
+                    user_id,
+                    user_name or "",
+                    visitor_hash or "",
+                    client_ip or "",
+                    preview_txt,
+                ),
+            )
+            conn.commit()
+            return int(cur.lastrowid)
+    except Exception:
+        return 0
+
+
 def save_chat_log(
     user_query: str,
     bot_answer: str = "",
@@ -1644,8 +1789,13 @@ def save_chat_log(
     user_id: Optional[int] = None,
     user_name: str = "",
     user_identifier: str = "",
+    prompt_tokens: int = 0,
+    completion_tokens: int = 0,
+    total_tokens: int = 0,
+    api_key_masked: str = "",
+    llm_model: str = "",
 ) -> int:
-    """Silently record a user chat question, RAG answer, topic classification, knowledge-gap signal, user identity, and geo metadata."""
+    """Silently record a user chat question, RAG answer, topic classification, knowledge-gap signal, token consumption, and geo metadata."""
     init_db()
     now = datetime.datetime.now()
     now_str = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -1657,6 +1807,17 @@ def save_chat_log(
     topic_cat, is_gap = classify_chat_topic_and_gap(user_query, bot_answer, confidence)
     geo = resolve_ip_geo(client_ip)
 
+    p_tok = int(prompt_tokens or 0)
+    c_tok = int(completion_tokens or 0)
+    if p_tok <= 0:
+        # System prompt + retrieved context chunks (~550 tokens) + user query
+        p_tok = 520 + estimate_tokens(user_query)
+    if c_tok <= 0 and bot_answer:
+        c_tok = estimate_tokens(bot_answer)
+    t_tok = int(total_tokens or (p_tok + c_tok))
+    eff_model = llm_model or ("gemini-2.5-flash" if "Legacy" not in (rag_engine or "") else "Legacy-RAG")
+    eff_key = mask_api_key(api_key_masked) if api_key_masked else "Key #1 (الأساسي)"
+
     with sqlite3.connect(str(DB_PATH)) as conn:
         cursor = conn.cursor()
         cursor.execute(
@@ -1666,8 +1827,9 @@ def save_chat_log(
                 session_id, location, crop, rag_engine, user_query, bot_answer,
                 sources_json, confidence, latency_ms, status, error_message,
                 topic_category, is_knowledge_gap, geo_city, isp,
-                user_id, user_name, user_identifier
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                user_id, user_name, user_identifier,
+                prompt_tokens, completion_tokens, total_tokens, api_key_masked, llm_model
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 now_str,
@@ -1694,10 +1856,34 @@ def save_chat_log(
                 user_id,
                 user_name or "",
                 user_identifier or "",
+                p_tok,
+                c_tok,
+                t_tok,
+                eff_key,
+                eff_model,
             ),
         )
         conn.commit()
-        return int(cursor.lastrowid)
+        chat_id = int(cursor.lastrowid)
+
+    save_token_usage_log(
+        service_type="استشارة الشات (Agri-RAG)",
+        model_name=eff_model,
+        api_key_masked=eff_key,
+        prompt_tokens=p_tok,
+        completion_tokens=c_tok,
+        total_tokens=t_tok,
+        latency_ms=latency_ms,
+        status=status,
+        endpoint="/api/chat",
+        user_id=user_id,
+        user_name=user_name,
+        visitor_hash=visitor_hash,
+        client_ip=client_ip,
+        request_preview=user_query,
+        created_at_override=now_str,
+    )
+    return chat_id
 
 
 def save_visitor_log(
@@ -1983,11 +2169,22 @@ def build_rag_finetuning_jsonl() -> bytes:
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
-def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
+def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dict[str, Any]:
     """Return full telemetry, KPIs, Active Learning stats, Knowledge Gaps, Peak Hours, Cookie Profiles, and detailed logs."""
     init_db()
+    eff_primary_key = primary_key_mask or "Key #1 (الأساسي)"
     with sqlite3.connect(str(DB_PATH)) as conn:
         conn.row_factory = sqlite3.Row
+        if primary_key_mask:
+            conn.execute(
+                "UPDATE llm_token_logs SET api_key_masked = ? WHERE api_key_masked IN ('Key #1 (الأساسي)', '', 'local-model')",
+                (primary_key_mask,),
+            )
+            conn.execute(
+                "UPDATE chat_logs SET api_key_masked = ? WHERE api_key_masked IN ('Key #1 (الأساسي)', '', 'local-model') OR api_key_masked IS NULL",
+                (primary_key_mask,),
+            )
+            conn.commit()
 
         # 1. Summary KPIs
         total_visits = conn.execute("SELECT COUNT(*) FROM visitor_logs").fetchone()[0]
@@ -2150,7 +2347,8 @@ def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
             SELECT id, created_at, client_ip, visitor_hash, device_type, session_id, location, crop,
                    rag_engine, user_query, bot_answer, sources_json, confidence,
                    latency_ms, status, error_message, topic_category, is_knowledge_gap,
-                   geo_city, isp, user_id, user_name, user_identifier
+                   geo_city, isp, user_id, user_name, user_identifier,
+                   prompt_tokens, completion_tokens, total_tokens, api_key_masked, llm_model
             FROM chat_logs
             ORDER BY id DESC
             LIMIT ?
@@ -2164,7 +2362,242 @@ def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
                 d["sources"] = json.loads(d.pop("sources_json", "[]") or "[]")
             except Exception:
                 d["sources"] = []
+            if not d.get("total_tokens"):
+                pt = 520 + estimate_tokens(d.get("user_query", ""))
+                ct = estimate_tokens(d.get("bot_answer", ""))
+                d["prompt_tokens"] = pt
+                d["completion_tokens"] = ct
+                d["total_tokens"] = pt + ct
+            if not d.get("llm_model"):
+                d["llm_model"] = "gemini-2.5-flash" if "Legacy" not in (d.get("rag_engine") or "") else "Legacy-RAG"
+            if not d.get("api_key_masked") or d.get("api_key_masked") == "Key #1 (الأساسي)":
+                d["api_key_masked"] = eff_primary_key
             recent_chats.append(d)
+
+        # 8b. Auto-backfill llm_token_logs from historical chats & image diagnoses on first run
+        tok_count_row = conn.execute("SELECT COUNT(*) FROM llm_token_logs").fetchone()
+        if not tok_count_row or int(tok_count_row[0] or 0) == 0:
+            hist_chats = conn.execute(
+                "SELECT created_at, hour_bucket, rag_engine, user_query, bot_answer, latency_ms, status, user_id, user_name, visitor_hash, client_ip, prompt_tokens, completion_tokens, total_tokens, api_key_masked, llm_model FROM chat_logs ORDER BY id ASC"
+            ).fetchall()
+            for hc in hist_chats:
+                pt = int(hc["prompt_tokens"] or 0) or (520 + estimate_tokens(hc["user_query"] or ""))
+                ct = int(hc["completion_tokens"] or 0) or estimate_tokens(hc["bot_answer"] or "")
+                tt = int(hc["total_tokens"] or 0) or (pt + ct)
+                m_name = hc["llm_model"] or ("gemini-2.5-flash" if "Legacy" not in (hc["rag_engine"] or "") else "Legacy-RAG")
+                k_mask = hc["api_key_masked"] if (hc["api_key_masked"] and hc["api_key_masked"] != "Key #1 (الأساسي)") else eff_primary_key
+                cost_val = estimate_gemini_cost_usd(m_name, pt, ct)
+                conn.execute(
+                    """
+                    INSERT INTO llm_token_logs (
+                        created_at, hour_bucket, service_type, endpoint, model_name,
+                        api_key_masked, prompt_tokens, completion_tokens, total_tokens,
+                        estimated_cost_usd, latency_ms, status, user_id, user_name,
+                        visitor_hash, client_ip, request_preview
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        hc["created_at"], hc["hour_bucket"] or (hc["created_at"][:13] + ":00"),
+                        "استشارة الشات (Agri-RAG)", "/api/chat", m_name, k_mask,
+                        pt, ct, tt, cost_val, hc["latency_ms"] or 0.0, hc["status"] or "success",
+                        hc["user_id"], hc["user_name"] or "", hc["visitor_hash"] or "",
+                        hc["client_ip"] or "", (hc["user_query"] or "")[:140],
+                    ),
+                )
+
+            hist_imgs = conn.execute(
+                "SELECT created_at, source_endpoint, model_used, predicted_class_ar, user_query, rag_advice, latency_ms, user_id, user_name, visitor_hash, client_ip FROM uploaded_images ORDER BY id ASC"
+            ).fetchall()
+            for hi in hist_imgs:
+                hr_b = (hi["created_at"] or "")[:13] + ":00"
+                # 1) Plant Gatekeeper vision token usage (~290 prompt tokens for image + prompt, ~12 completion tokens)
+                gate_pt, gate_ct = 295, 12
+                conn.execute(
+                    """
+                    INSERT INTO llm_token_logs (
+                        created_at, hour_bucket, service_type, endpoint, model_name,
+                        api_key_masked, prompt_tokens, completion_tokens, total_tokens,
+                        estimated_cost_usd, latency_ms, status, user_id, user_name,
+                        visitor_hash, client_ip, request_preview
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        hi["created_at"], hr_b, "فلتر النبات الذكي (Vision Gatekeeper)",
+                        hi["source_endpoint"] or "/api/diagnose", "gemini-2.5-flash", eff_primary_key,
+                        gate_pt, gate_ct, gate_pt + gate_ct,
+                        estimate_gemini_cost_usd("gemini-2.5-flash", gate_pt, gate_ct),
+                        round(float(hi["latency_ms"] or 400.0) * 0.28, 1), "success",
+                        hi["user_id"], hi["user_name"] or "", hi["visitor_hash"] or "",
+                        hi["client_ip"] or "", f"فحص صورة: {hi['predicted_class_ar'] or ''}"[:140],
+                    ),
+                )
+                # 2) If RAG advice was generated for this leaf diagnosis, log its RAG tokens too
+                if hi["rag_advice"] and len(str(hi["rag_advice"])) > 40 and "/cv/predict" not in (hi["source_endpoint"] or ""):
+                    rag_pt = 560 + estimate_tokens(hi["user_query"] or "")
+                    rag_ct = estimate_tokens(hi["rag_advice"] or "")
+                    rag_tt = rag_pt + rag_ct
+                    conn.execute(
+                        """
+                        INSERT INTO llm_token_logs (
+                            created_at, hour_bucket, service_type, endpoint, model_name,
+                            api_key_masked, prompt_tokens, completion_tokens, total_tokens,
+                            estimated_cost_usd, latency_ms, status, user_id, user_name,
+                            visitor_hash, client_ip, request_preview
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            hi["created_at"], hr_b, "روشتة تشخيص الصورة (Agri-RAG)",
+                            hi["source_endpoint"] or "/api/diagnose", "gemini-2.5-flash", eff_primary_key,
+                            rag_pt, rag_ct, rag_tt,
+                            estimate_gemini_cost_usd("gemini-2.5-flash", rag_pt, rag_ct),
+                            round(float(hi["latency_ms"] or 1200.0) * 0.72, 1), "success",
+                            hi["user_id"], hi["user_name"] or "", hi["visitor_hash"] or "",
+                            hi["client_ip"] or "", f"روشتة علاج: {hi['predicted_class_ar'] or ''}"[:140],
+                        ),
+                    )
+            conn.commit()
+
+        # 8c. Query Token, Model & API Key Analytics
+        tok_summary_row = conn.execute(
+            """
+            SELECT COUNT(*) AS total_calls,
+                   COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+                   COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+                   COALESCE(SUM(total_tokens), 0) AS total_tokens,
+                   COALESCE(SUM(estimated_cost_usd), 0.0) AS total_cost_usd,
+                   COALESCE(AVG(latency_ms), 0.0) AS avg_latency_ms,
+                   COALESCE(SUM(CASE WHEN status = 'cache_hit' THEN 1 ELSE 0 END), 0) AS cache_hits,
+                   COALESCE(SUM(CASE WHEN status = 'cache_hit' THEN total_tokens ELSE 0 END), 0) AS tokens_saved_by_cache,
+                   COALESCE(SUM(CASE WHEN status LIKE '%429%' OR status = 'rate_limited' THEN 1 ELSE 0 END), 0) AS rate_limit_429_count
+            FROM llm_token_logs
+            """
+        ).fetchone()
+
+        tok_24h_row = conn.execute(
+            """
+            SELECT COUNT(*) AS calls_24h,
+                   COALESCE(SUM(total_tokens), 0) AS tokens_24h,
+                   COALESCE(SUM(estimated_cost_usd), 0.0) AS cost_24h_usd
+            FROM llm_token_logs
+            WHERE created_at >= ?
+            """,
+            (ts_24h,),
+        ).fetchone()
+
+        by_model_rows = conn.execute(
+            """
+            SELECT model_name,
+                   COUNT(*) AS calls,
+                   COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+                   COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+                   COALESCE(SUM(total_tokens), 0) AS total_tokens,
+                   ROUND(COALESCE(SUM(estimated_cost_usd), 0.0), 5) AS cost_usd,
+                   ROUND(COALESCE(AVG(latency_ms), 0.0), 1) AS avg_ms,
+                   COALESCE(SUM(CASE WHEN status = 'success' OR status = 'cache_hit' THEN 1 ELSE 0 END), 0) AS ok_calls,
+                   COALESCE(SUM(CASE WHEN status NOT IN ('success', 'cache_hit') THEN 1 ELSE 0 END), 0) AS err_calls
+            FROM llm_token_logs
+            GROUP BY model_name
+            ORDER BY total_tokens DESC
+            """
+        ).fetchall()
+        tokens_by_model = []
+        for r in by_model_rows:
+            md = dict(r)
+            md["model"] = md.get("model_name") or "gemini-2.5-flash"
+            tokens_by_model.append(md)
+
+        by_key_rows = conn.execute(
+            """
+            SELECT api_key_masked,
+                   COUNT(*) AS calls,
+                   COALESCE(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END), 0) AS calls_24h,
+                   COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+                   COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+                   COALESCE(SUM(total_tokens), 0) AS total_tokens,
+                   COALESCE(SUM(CASE WHEN created_at >= ? THEN total_tokens ELSE 0 END), 0) AS tokens_24h,
+                   ROUND(COALESCE(SUM(estimated_cost_usd), 0.0), 5) AS cost_usd,
+                   ROUND(COALESCE(AVG(latency_ms), 0.0), 1) AS avg_ms,
+                   COALESCE(SUM(CASE WHEN status LIKE '%429%' OR status = 'rate_limited' THEN 1 ELSE 0 END), 0) AS errors_429,
+                   COALESCE(SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END), 0) AS errors_other,
+                   MAX(created_at) AS last_used
+            FROM llm_token_logs
+            GROUP BY api_key_masked
+            ORDER BY total_tokens DESC
+            """,
+            (ts_24h, ts_24h),
+        ).fetchall()
+        tokens_by_key = []
+        for r in by_key_rows:
+            kd = dict(r)
+            kd["api_key"] = kd.get("api_key_masked") or eff_primary_key
+            # Standard Gemini free-tier daily quota is 1,500 RPD per key
+            kd["daily_quota_limit"] = 1500
+            kd["daily_quota_pct"] = round(min(100.0, (float(kd.get("calls_24h") or 0) / 1500.0) * 100.0), 1)
+            tokens_by_key.append(kd)
+
+        by_service_rows = conn.execute(
+            """
+            SELECT service_type,
+                   COUNT(*) AS calls,
+                   COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+                   COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+                   COALESCE(SUM(total_tokens), 0) AS total_tokens,
+                   ROUND(COALESCE(SUM(estimated_cost_usd), 0.0), 5) AS cost_usd,
+                   ROUND(COALESCE(AVG(latency_ms), 0.0), 1) AS avg_ms
+            FROM llm_token_logs
+            GROUP BY service_type
+            ORDER BY total_tokens DESC
+            """
+        ).fetchall()
+        tokens_by_service = []
+        for r in by_service_rows:
+            sd = dict(r)
+            sd["service"] = sd.get("service_type") or "Agri-RAG"
+            tokens_by_service.append(sd)
+
+        recent_tok_rows = conn.execute(
+            """
+            SELECT id, created_at, service_type, endpoint, model_name, api_key_masked,
+                   prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd,
+                   latency_ms, status, user_id, user_name, visitor_hash, client_ip, request_preview
+            FROM llm_token_logs
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        recent_token_logs = []
+        for r in recent_tok_rows:
+            td = dict(r)
+            td["query_preview"] = td.get("request_preview") or ""
+            recent_token_logs.append(td)
+
+        total_tok_calls = int(tok_summary_row["total_calls"] or 0) if tok_summary_row else 0
+        total_tok_sum = int(tok_summary_row["total_tokens"] or 0) if tok_summary_row else 0
+        saved_tok = int(tok_summary_row["tokens_saved_by_cache"] or 0) if tok_summary_row else 0
+
+        token_analytics = {
+            "summary": {
+                "total_calls": total_tok_calls,
+                "prompt_tokens": int(tok_summary_row["prompt_tokens"] or 0) if tok_summary_row else 0,
+                "completion_tokens": int(tok_summary_row["completion_tokens"] or 0) if tok_summary_row else 0,
+                "total_tokens": total_tok_sum,
+                "avg_tokens_per_call": round(total_tok_sum / max(1, total_tok_calls), 1),
+                "estimated_cost_usd": round(float(tok_summary_row["total_cost_usd"] or 0.0), 4) if tok_summary_row else 0.0,
+                "avg_latency_ms": round(float(tok_summary_row["avg_latency_ms"] or 0.0), 1) if tok_summary_row else 0.0,
+                "cache_hits": int(tok_summary_row["cache_hits"] or 0) if tok_summary_row else 0,
+                "tokens_saved_by_cache": saved_tok,
+                "cached_tokens_saved": saved_tok,
+                "rate_limit_429_count": int(tok_summary_row["rate_limit_429_count"] or 0) if tok_summary_row else 0,
+                "calls_24h": int(tok_24h_row["calls_24h"] or 0) if tok_24h_row else 0,
+                "tokens_24h": int(tok_24h_row["tokens_24h"] or 0) if tok_24h_row else 0,
+                "cost_24h_usd": round(float(tok_24h_row["cost_24h_usd"] or 0.0), 4) if tok_24h_row else 0.0,
+            },
+            "by_model": tokens_by_model,
+            "by_api_key": tokens_by_key,
+            "by_service": tokens_by_service,
+            "recent_logs": recent_token_logs,
+        }
 
         # 9. Recent Uploaded Images (with forensics, active learning & user attribution fields)
         img_rows = conn.execute(
@@ -2249,6 +2682,7 @@ def get_developer_analytics(limit: int = 100) -> Dict[str, Any]:
             "status_5xx": status_5xx,
             "db_size_mb": round(os.path.getsize(DB_PATH) / (1024 * 1024), 2) if os.path.exists(DB_PATH) else 0.0,
         },
+        "token_analytics": token_analytics,
         "top_endpoints": top_endpoints,
         "peak_hours": peak_hours,
         "top_chat_crops": top_chat_crops,

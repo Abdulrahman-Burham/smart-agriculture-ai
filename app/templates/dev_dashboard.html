@@ -549,8 +549,11 @@
     <div class="header-actions">
         <span id="lastUpdated" style="font-size: 0.78rem; color: var(--text-muted);"></span>
         <button class="btn btn-primary" onclick="loadAnalytics()">🔄 تحديث الآن</button>
-        <a id="exportDatasetZipBtn" class="btn btn-purple" href="#" target="_blank">📦 تحميل Dataset الصور للتدريب (ZIP)</a>
-        <a id="exportFinetuneBtn" class="btn btn-blue" href="#" target="_blank">🤖 تحميل تدريب الشات (JSONL)</a>
+        <button class="btn" style="border-color:#f59e0b; color:#fbbf24;" onclick="testAllGeminiKeys()">⚡ فحص المفاتيح الآن</button>
+        <button class="btn" style="border-color:#38bdf8; color:#7dd3fc;" onclick="clearServerCache()">🧹 مسح الكاش</button>
+        <a id="exportDatasetZipBtn" class="btn btn-purple" href="#" target="_blank">📦 Dataset الصور (ZIP)</a>
+        <a id="exportFinetuneBtn" class="btn btn-blue" href="#" target="_blank">🤖 تدريب الشات (JSONL)</a>
+        <a id="exportCsvTokensBtn" class="btn" style="border-color:#10b981; color:#34d399;" href="#" target="_blank">🪙 التوكنز CSV</a>
         <a id="exportCsvUsersBtn" class="btn" href="#" target="_blank">👥 المسجلين CSV</a>
         <a id="exportCsvChatsBtn" class="btn" href="#" target="_blank">📊 الشات CSV</a>
         <a id="exportCsvImagesBtn" class="btn" href="#" target="_blank">🖼️ الصور CSV</a>
@@ -673,6 +676,87 @@
         </div>
     </div>
 
+    <!-- 🪙 AI Token, Model & API Key Observatory -->
+    <div style="background:linear-gradient(180deg, rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.96)); border:1px solid rgba(16, 185, 129, 0.35); border-radius:16px; padding:18px 20px; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <span style="font-size:1.35rem;">🪙</span>
+                <div>
+                    <h2 style="font-size:1.02rem; font-weight:800; color:#f8fafc;">مرصد استهلاك التوكنز والموديلات ومفاتيح الـ API (AI Token, Model & Key Observatory)</h2>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">مراقبة تفصيلية لكل طلب ذكاء اصطناعي: عدد التوكنز (إدخال/إخراج)، الموديل المستخدم، ومفتاح الـ API وحصته اليومية</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <button type="button" class="btn btn-primary" onclick="testAllGeminiKeys()" id="btnTestKeysLive">⚡ فحص حي لكل المفاتيح الآن</button>
+                <button type="button" class="btn btn-purple" onclick="switchToTokensTab()">📜 عرض سجل التوكنز التفصيلي</button>
+            </div>
+        </div>
+
+        <!-- Token KPI Strip -->
+        <div class="kpi-grid" style="margin-bottom:16px;">
+            <div class="kpi-card" style="background:rgba(15, 23, 42, 0.85); border-color:rgba(16, 185, 129, 0.3);">
+                <div class="kpi-label">🪙 إجمالي التوكنز المستهلكة (Total Tokens)</div>
+                <div class="kpi-value mono" id="tokTotalAll" style="color:#34d399;">0</div>
+                <div class="kpi-sub">إدخال (Prompt): <strong id="tokPromptAll" style="color:#93c5fd;">0</strong> | إخراج (Output): <strong id="tokCompletionAll" style="color:#c4b5fd;">0</strong></div>
+            </div>
+            <div class="kpi-card" style="background:rgba(15, 23, 42, 0.85); border-color:rgba(59, 130, 246, 0.3);">
+                <div class="kpi-label">⚡ استهلاك آخر 24 ساعة (24h Load)</div>
+                <div class="kpi-value mono" id="tokTotal24h" style="color:#60a5fa;">0</div>
+                <div class="kpi-sub">طلبات 24س: <strong id="tokCalls24h" style="color:#f8fafc;">0</strong> (من إجمالي <strong id="tokCallsAll">0</strong> طلب) | متوسط/طلب: <strong id="tokAvgPerCall">0</strong></div>
+            </div>
+            <div class="kpi-card" style="background:rgba(15, 23, 42, 0.85); border-color:rgba(139, 92, 246, 0.3);">
+                <div class="kpi-label">💚 التوكنز الموفّرة بالكاش (Cache Savings)</div>
+                <div class="kpi-value mono" id="tokSavedCache" style="color:#c4b5fd;">0</div>
+                <div class="kpi-sub">مرات ضرب الكاش (بدون استهلاك API): <strong id="tokCacheHits" style="color:#34d399;">0</strong> مرة</div>
+            </div>
+            <div class="kpi-card" style="background:rgba(15, 23, 42, 0.85); border-color:rgba(245, 158, 11, 0.3);">
+                <div class="kpi-label">💰 القيمة التقديرية وحالة الحصة (Quota & Cost)</div>
+                <div class="kpi-value mono" id="tokEstCostUsd" style="color:#fbbf24;">$0.0000</div>
+                <div class="kpi-sub">ضمن الباقة المجانية (Free Tier) | تنبيهات 429: <strong id="tok429Count" style="color:#f87171;">0</strong></div>
+            </div>
+        </div>
+
+        <!-- Live Ping Test Results Banner (Hidden until clicked) -->
+        <div id="liveKeyTestResultBox" style="display:none; background:#0f172a; border:1px solid #334155; border-radius:12px; padding:12px 14px; margin-bottom:16px;"></div>
+
+        <!-- 3-Column Breakdown: Per API Key + Per Model + Per Service -->
+        <div class="insights-grid" style="margin-bottom:0;">
+            <div class="panel" style="background:rgba(15, 23, 42, 0.85);">
+                <div class="panel-title">
+                    <span>🔑 استهلاك وحصة كل مفتاح API (By API Key)</span>
+                    <span class="badge badge-green" id="activeKeysCountBadge">0 مفاتيح</span>
+                </div>
+                <div id="byApiKeyList">جاري التحميل...</div>
+            </div>
+            <div class="panel" style="background:rgba(15, 23, 42, 0.85);">
+                <div class="panel-title">
+                    <span>🤖 استهلاك كل موديل (By AI Model)</span>
+                    <span class="badge badge-blue" id="activeModelBadge">gemini-2.5-flash</span>
+                </div>
+                <div id="byModelList">جاري التحميل...</div>
+            </div>
+            <div class="panel" style="background:rgba(15, 23, 42, 0.85);">
+                <div class="panel-title">
+                    <span>🧩 توزيع التوكنز حسب الخدمة + التحكم الفوري</span>
+                </div>
+                <div id="byServiceList" style="margin-bottom:12px;">جاري التحميل...</div>
+                <div style="padding-top:10px; border-top:1px dashed #334155;">
+                    <div style="font-size:0.78rem; font-weight:700; color:#34d399; margin-bottom:6px;">🎛️ تبديل الموديل الأساسي للنظام فوراً:</div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <select id="primaryModelSelect" class="verify-input" style="flex:1; min-width:150px; direction:ltr;">
+                            <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (الحالي — فائق السرعة)</option>
+                            <option value="gemini-2.5-flash">gemini-2.5-flash (موصى به — متوازن ودقيق)</option>
+                            <option value="gemini-2.0-flash">gemini-2.0-flash (خفيف وعالي الحصة)</option>
+                            <option value="gemini-2.5-pro">gemini-2.5-pro (تحليل عميق متقدم)</option>
+                        </select>
+                        <button type="button" class="btn btn-primary" onclick="switchPrimaryGeminiModel()">💾 تطبيق</button>
+                    </div>
+                    <div id="modelSwitchStatus" style="font-size:0.74rem; color:var(--text-muted); margin-top:4px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Insights -->
     <div class="insights-grid">
         <div class="panel">
@@ -712,7 +796,8 @@
     <!-- Tabs & Search -->
     <div class="tabs-bar">
         <div class="tabs-group">
-            <button class="tab-btn active" onclick="switchTab('cookies', this)">🍪 الكوكيز وربط الزوار والمواقع (<span id="countCookies">0</span>)</button>
+            <button class="tab-btn active" onclick="switchTab('cookies', this)">🍪 الكوكيز وربط الزوار (<span id="countCookies">0</span>)</button>
+            <button class="tab-btn" id="tabBtnTokens" onclick="switchTab('tokens', this)">🪙 التوكنز والموديلات والمفاتيح (<span id="countTokens">0</span>)</button>
             <button class="tab-btn" onclick="switchTab('chats', this)">💬 سجل أسئلة الشات (<span id="countChats">0</span>)</button>
             <button class="tab-btn" id="tabBtnImages" onclick="switchTab('images', this)">🖼️ الصور المرفوعة + فحص الجودة (<span id="countImages">0</span>)</button>
             <button class="tab-btn" onclick="switchTab('users', this)">👥 المستخدمين المسجلين (<span id="countUsers">0</span>)</button>
@@ -721,7 +806,28 @@
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
             <button class="btn" onclick="filterUncertainOnly()" id="uncertainFilterBtn">🎯 عرض الصور غير المؤكدة فقط</button>
-            <input type="text" id="globalSearch" class="search-box" placeholder="🔍 ابحث (كوكي، اسم، موبايل، محافظة، سؤال، مرض، IP...)" oninput="filterTables()">
+            <input type="text" id="globalSearch" class="search-box" placeholder="🔍 ابحث (موديل، مفتاح، توكن، كوكي، اسم، سؤال، مرض، IP...)" oninput="filterTables()">
+        </div>
+    </div>
+
+    <!-- Tab Tokens: Detailed Per-Request Token, Model & Key Log -->
+    <div id="tab-tokens" class="tab-section">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الوقت</th>
+                        <th>الخدمة والمسار (Endpoint)</th>
+                        <th>الموديل المستخدم (AI Model)</th>
+                        <th>مفتاح الـ API المستخدم (Key Pool)</th>
+                        <th>تفصيل التوكنز (Prompt / Output / Total)</th>
+                        <th>التكلفة والزمن والحالة</th>
+                        <th>المستخدم / ملخص الطلب</th>
+                    </tr>
+                </thead>
+                <tbody id="tokensTableBody"></tbody>
+            </table>
         </div>
     </div>
 
@@ -867,6 +973,7 @@
     document.getElementById('exportDatasetZipBtn').href = `/api/dev/export/dataset_zip?key=${encodeURIComponent(DEV_KEY)}`;
     document.getElementById('exportFinetuneBtn').href = `/api/dev/export/finetune_jsonl?key=${encodeURIComponent(DEV_KEY)}`;
     document.getElementById('exportJsonBtn').href = `/api/dev/export/json?key=${encodeURIComponent(DEV_KEY)}`;
+    document.getElementById('exportCsvTokensBtn').href = `/api/dev/export/tokens_csv?key=${encodeURIComponent(DEV_KEY)}`;
     document.getElementById('exportCsvUsersBtn').href = `/api/dev/export/users_csv?key=${encodeURIComponent(DEV_KEY)}`;
     document.getElementById('exportCsvChatsBtn').href = `/api/dev/export/chats_csv?key=${encodeURIComponent(DEV_KEY)}`;
     document.getElementById('exportCsvImagesBtn').href = `/api/dev/export/images_csv?key=${encodeURIComponent(DEV_KEY)}`;
@@ -880,11 +987,22 @@
             .replace(/"/g, '&quot;');
     }
 
+    function fmtNum(n) {
+        return Number(n || 0).toLocaleString('en-US');
+    }
+
     function switchTab(name, btn) {
         document.querySelectorAll('.tab-section').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + name).classList.add('active');
-        btn.classList.add('active');
+        if (btn) btn.classList.add('active');
+    }
+
+    function switchToTokensTab() {
+        const btn = document.getElementById('tabBtnTokens');
+        switchTab('tokens', btn);
+        const tabEl = document.getElementById('tab-tokens');
+        if (tabEl) tabEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function openImageModal(imgId, title, metaText) {
@@ -932,13 +1050,20 @@
 
     async function loadGeminiKeys() {
         const box = document.getElementById('geminiKeysStatus');
-        if (!box) return;
         try {
             const res = await fetch(`/api/dev/gemini-keys?key=${encodeURIComponent(DEV_KEY)}`);
             if (!res.ok) return;
             const data = await res.json();
             const badges = (data.masked_keys || []).map(k => `<span class="badge badge-green mono" style="margin:2px;">${esc(k)}</span>`).join(' ');
-            box.innerHTML = `عدد المفاتيح النشطة: <strong>${data.count || 0}</strong> | الموديل: <span class="badge badge-blue">${esc(data.primary_model || 'gemini-2.5-flash')}</span><div style="margin-top:6px;">${badges}</div>`;
+            if (box) {
+                box.innerHTML = `عدد المفاتيح النشطة: <strong>${data.count || 0}</strong> | الموديل: <span class="badge badge-blue">${esc(data.primary_model || 'gemini-2.5-flash')}</span><div style="margin-top:6px;">${badges}</div>`;
+            }
+            const countBadge = document.getElementById('activeKeysCountBadge');
+            if (countBadge) countBadge.textContent = `${data.count || 0} مفاتيح بالتدوير`;
+            const modelBadge = document.getElementById('activeModelBadge');
+            if (modelBadge) modelBadge.textContent = data.primary_model || 'gemini-2.5-flash';
+            const sel = document.getElementById('primaryModelSelect');
+            if (sel && data.primary_model) sel.value = data.primary_model;
         } catch (e) {}
     }
 
@@ -957,6 +1082,86 @@
         }
         inp.value = '';
         loadGeminiKeys();
+        loadAnalytics();
+    }
+
+    async function switchPrimaryGeminiModel() {
+        const sel = document.getElementById('primaryModelSelect');
+        const st = document.getElementById('modelSwitchStatus');
+        if (!sel || !sel.value) return;
+        if (st) st.innerHTML = '<span style="color:#60a5fa;">⏳ جاري التحديث...</span>';
+        try {
+            const res = await fetch(`/api/dev/gemini-config?key=${encodeURIComponent(DEV_KEY)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ primary_model: sel.value })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                if (st) st.innerHTML = `<span style="color:#34d399;">✅ تم التبديل إلى ${esc(data.primary_model)} بنجاح!</span>`;
+                loadGeminiKeys();
+                loadAnalytics();
+            } else {
+                if (st) st.innerHTML = `<span style="color:#f87171;">❌ تعذر التبديل</span>`;
+            }
+        } catch (e) {
+            if (st) st.innerHTML = `<span style="color:#f87171;">❌ خطأ في الاتصال</span>`;
+        }
+    }
+
+    async function testAllGeminiKeys() {
+        const box = document.getElementById('liveKeyTestResultBox');
+        const btn = document.getElementById('btnTestKeysLive');
+        if (box) {
+            box.style.display = 'block';
+            box.innerHTML = '<div style="color:#60a5fa; font-size:0.84rem;">⏳ جاري إرسال طلب اختبار حي لكل مفاتيح Gemini API في التدوير...</div>';
+        }
+        if (btn) btn.disabled = true;
+        try {
+            const res = await fetch(`/api/dev/gemini-keys/test?key=${encodeURIComponent(DEV_KEY)}`, { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Failed');
+            const rowsHtml = (data.results || []).map(r => {
+                const badgeCls = r.status === 'healthy' ? 'badge-green' : (r.status === 'rate_limited_429' ? 'badge-amber' : 'badge-red');
+                return `
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding:6px 10px; background:rgba(30,41,59,0.55); border-radius:8px; margin-top:6px;">
+                        <div>
+                            <span class="badge ${badgeCls} mono">${esc(r.masked_key)}</span>
+                            <span class="badge badge-blue mono" style="margin-right:4px;">${esc(r.model_tested)}</span>
+                        </div>
+                        <div style="font-size:0.8rem;">
+                            <strong>${esc(r.message)}</strong>
+                            <span class="mono" style="color:#94a3b8; margin-right:8px;">HTTP ${r.http_code} • ${r.latency_ms} ms • ${r.tokens_used || 0} tok</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            if (box) {
+                box.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                        <strong style="color:#34d399; font-size:0.86rem;">⚡ نتيجة الفحص الحي للمفاتيح (${data.healthy_keys}/${data.total_keys} تعمل بكفاءة على موديل ${esc(data.model_tested)}):</strong>
+                        <button class="btn" style="padding:2px 8px; font-size:0.74rem;" onclick="document.getElementById('liveKeyTestResultBox').style.display='none'">✕ إخفاء</button>
+                    </div>
+                    ${rowsHtml}
+                `;
+            }
+            loadAnalytics();
+        } catch (e) {
+            if (box) box.innerHTML = `<span style="color:#f87171;">❌ تعذر فحص المفاتيح: ${esc(e.message)}</span>`;
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    async function clearServerCache() {
+        try {
+            const res = await fetch(`/api/dev/clear-cache?key=${encodeURIComponent(DEV_KEY)}`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                alert(`✅ تم مسح الكاش بنجاح!\n• مقاطع صوتية بالذاكرة: ${data.cleared_tts_items || 0}\n• بيانات طقس مؤقتة: ${data.cleared_weather_items || 0}`);
+                loadAnalytics();
+            }
+        } catch (e) {}
     }
 
     async function loadDevOAuthConfig() {
@@ -1023,6 +1228,15 @@
         if (pct >= 65) return '#fbbf24';
         return '#34d399';
     }
+
+    const SERVICE_AR_LABELS = {
+        chat_rag: '💬 الشات الزراعي (Agri-RAG)',
+        vision_rag: '🔬 روشتة تشخيص الصور (Vision+RAG)',
+        vision_gatekeeper: '🛡️ فلتر التحقق من النبات (Gatekeeper)',
+        tts_audio: '🔊 النطق الصوتي المصري (TTS)',
+        stt_audio: '🎤 تفريغ الصوت المصري (STT)',
+        key_health_check: '⚡ فحص صحة المفاتيح (Ping Test)',
+    };
 
     async function loadAnalytics() {
         try {
@@ -1126,6 +1340,141 @@
             document.getElementById('kpiVerifiedImages').textContent = k.verified_images ?? 0;
             document.getElementById('kpiUncertainImages').textContent = k.uncertain_images ?? 0;
             document.getElementById('kpiTotalErrors').textContent = k.total_errors ?? 0;
+
+            // 🪙 Token, Model & API Key Observatory
+            const tok = data.token_analytics || {};
+            const tokSum = tok.summary || {};
+            const byKey = tok.by_api_key || [];
+            const byModel = tok.by_model || [];
+            const byService = tok.by_service || [];
+            const tokLogs = tok.recent_logs || [];
+
+            document.getElementById('tokTotalAll').textContent = fmtNum(tokSum.total_tokens || 0);
+            document.getElementById('tokPromptAll').textContent = fmtNum(tokSum.prompt_tokens || 0);
+            document.getElementById('tokCompletionAll').textContent = fmtNum(tokSum.completion_tokens || 0);
+            document.getElementById('tokTotal24h').textContent = fmtNum(tokSum.tokens_24h || 0);
+            document.getElementById('tokCalls24h').textContent = fmtNum(tokSum.calls_24h || 0);
+            document.getElementById('tokCallsAll').textContent = fmtNum(tokSum.total_calls || 0);
+            document.getElementById('tokAvgPerCall').textContent = fmtNum(tokSum.avg_tokens_per_call || 0);
+            document.getElementById('tokSavedCache').textContent = fmtNum(tokSum.cached_tokens_saved || 0);
+            document.getElementById('tokCacheHits').textContent = fmtNum(tokSum.cache_hits || 0);
+            document.getElementById('tokEstCostUsd').textContent = `$${Number(tokSum.estimated_cost_usd || 0).toFixed(4)}`;
+            document.getElementById('tok429Count').textContent = tokSum.rate_limit_429_count ?? 0;
+            document.getElementById('countTokens').textContent = tokLogs.length;
+
+            // Render Per-API-Key Breakdown with Daily Quota Progress
+            const maxKeyTok = Math.max(...byKey.map(x => x.total_tokens || 1), 1);
+            document.getElementById('byApiKeyList').innerHTML = byKey.length
+                ? byKey.map(item => {
+                    const pctTok = Math.round(((item.total_tokens || 0) / maxKeyTok) * 100);
+                    const quotaPct = Number(item.daily_quota_pct || 0);
+                    const isCache = String(item.api_key).includes('Cache');
+                    const badgeCls = item.errors_429 > 0 ? 'badge-amber' : (isCache ? 'badge-purple' : 'badge-green');
+                    return `
+                        <div style="background:rgba(30, 41, 59, 0.45); border:1px solid #1e293b; border-radius:10px; padding:9px 11px; margin-bottom:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:4px;">
+                                <span class="badge ${badgeCls} mono">${esc(item.api_key)}</span>
+                                <span class="mono" style="font-size:0.78rem; font-weight:700; color:#34d399;">${fmtNum(item.total_tokens)} tok</span>
+                            </div>
+                            <div class="bar-track" style="margin-bottom:5px;">
+                                <div class="bar-fill" style="width:${Math.max(4, pctTok)}%; background:${meterColor(quotaPct)};"></div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; font-size:0.73rem; color:var(--text-muted);">
+                                <span>الطلبات: <strong style="color:#f8fafc;">${item.calls}</strong> (24س: <strong>${item.calls_24h || 0}</strong>/1500 • ${quotaPct}%)</span>
+                                <span>⚡ ${item.avg_ms}ms ${item.errors_429 > 0 ? `<span style="color:#f87171;">• ⚠️ 429: ${item.errors_429}</span>` : ''}</span>
+                            </div>
+                            <div style="font-size:0.71rem; color:#94a3b8; margin-top:2px;">
+                                إدخال: ${fmtNum(item.prompt_tokens)} | إخراج: ${fmtNum(item.completion_tokens)} | آخر استخدام: ${esc(item.last_used || '-')}
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : '<div style="color:var(--text-muted); font-size:0.82rem;">لا توجد بيانات مفاتيح بعد</div>';
+
+            // Render Per-Model Breakdown
+            const maxModTok = Math.max(...byModel.map(x => x.total_tokens || 1), 1);
+            document.getElementById('byModelList').innerHTML = byModel.length
+                ? byModel.map(m => {
+                    const pct = Math.round(((m.total_tokens || 0) / maxModTok) * 100);
+                    return `
+                        <div style="background:rgba(30, 41, 59, 0.45); border:1px solid #1e293b; border-radius:10px; padding:9px 11px; margin-bottom:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <span class="badge badge-blue mono">${esc(m.model)}</span>
+                                <span class="mono" style="font-size:0.78rem; font-weight:700; color:#60a5fa;">${fmtNum(m.total_tokens)} tok</span>
+                            </div>
+                            <div class="bar-track" style="margin-bottom:5px;">
+                                <div class="bar-fill" style="width:${Math.max(4, pct)}%;"></div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.73rem; color:var(--text-muted);">
+                                <span>الطلبات: <strong style="color:#f8fafc;">${m.calls}</strong> | ⚡ ${m.avg_ms}ms</span>
+                                <span class="mono">In: ${fmtNum(m.prompt_tokens)} • Out: ${fmtNum(m.completion_tokens)}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : '<div style="color:var(--text-muted); font-size:0.82rem;">لا توجد بيانات موديلات بعد</div>';
+
+            // Render Per-Service Breakdown
+            const maxSrvTok = Math.max(...byService.map(x => x.total_tokens || 1), 1);
+            document.getElementById('byServiceList').innerHTML = byService.length
+                ? byService.map(s => {
+                    const pct = Math.round(((s.total_tokens || 0) / maxSrvTok) * 100);
+                    const labelAr = SERVICE_AR_LABELS[s.service] || s.service;
+                    return `
+                        <div class="bar-row">
+                            <div class="bar-header">
+                                <span>${esc(labelAr)} <span style="color:var(--text-muted);">(${s.calls} طلب)</span></span>
+                                <strong class="mono" style="color:#34d399;">${fmtNum(s.total_tokens)} tok</strong>
+                            </div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:${Math.max(4, pct)}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : '<div style="color:var(--text-muted); font-size:0.82rem;">لا توجد بيانات خدمات بعد</div>';
+
+            // Render Tokens Table (tab-tokens)
+            document.getElementById('tokensTableBody').innerHTML = tokLogs.map(t => {
+                const srvLabel = SERVICE_AR_LABELS[t.service_type] || t.service_type;
+                const stBadge = t.status === 'success'
+                    ? '<span class="badge badge-green">✅ ناجح</span>'
+                    : (t.status === 'cache_hit'
+                        ? '<span class="badge badge-purple">⚡ كاش (0 تكلفة)</span>'
+                        : (t.status === 'rate_limited_429'
+                            ? '<span class="badge badge-amber">⚠️ 429 Quota</span>'
+                            : `<span class="badge badge-red">${esc(t.status)}</span>`));
+                return `
+                <tr class="searchable-row">
+                    <td><strong>#${t.id}</strong></td>
+                    <td style="white-space:nowrap;">${esc(t.created_at)}</td>
+                    <td>
+                        <div style="font-weight:700; color:#f8fafc;">${esc(srvLabel)}</div>
+                        <div class="mono" style="font-size:0.74rem; color:#93c5fd;">${esc(t.endpoint)}</div>
+                    </td>
+                    <td>
+                        <span class="badge badge-blue mono">${esc(t.model_name)}</span>
+                    </td>
+                    <td>
+                        <span class="badge ${String(t.api_key_masked).includes('Cache') ? 'badge-purple' : 'badge-green'} mono">${esc(t.api_key_masked)}</span>
+                    </td>
+                    <td class="mono" style="font-size:0.78rem;">
+                        <div>الإجمالي: <strong style="color:#34d399;">${fmtNum(t.total_tokens)}</strong> tok</div>
+                        <div style="font-size:0.72rem; color:var(--text-muted);">Prompt: ${fmtNum(t.prompt_tokens)} | Output: ${fmtNum(t.completion_tokens)}</div>
+                    </td>
+                    <td style="white-space:nowrap;">
+                        ${stBadge}
+                        <div class="mono" style="font-size:0.75rem; margin-top:3px; color:#fbbf24;">$${Number(t.estimated_cost_usd || 0).toFixed(6)}</div>
+                        <div style="font-size:0.74rem; color:var(--text-muted);">⏱️ ${t.latency_ms || 0} ms</div>
+                    </td>
+                    <td>
+                        ${t.user_name ? `<div><span class="badge badge-green">👤 ${esc(t.user_name)}</span></div>` : ''}
+                        ${t.client_ip ? `<div class="mono" style="font-size:0.72rem;">${esc(t.client_ip)}</div>` : ''}
+                        <div style="font-size:0.76rem; color:#cbd5e1; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(t.query_preview)}">${esc(t.query_preview)}</div>
+                    </td>
+                </tr>
+                `;
+            }).join('') || '<tr><td colspan="8" style="text-align:center; padding:24px;">لا توجد سجلات توكنز بعد</td></tr>';
 
             // Insights: Top Endpoints
             const topEps = data.top_endpoints || [];
@@ -1310,7 +1659,9 @@
                         <div style="font-size:0.73rem; color:#34d399; margin-top:4px;">${esc((c.sources || []).join(' | '))}</div>
                     </td>
                     <td style="white-space:nowrap;">
-                        <span class="badge ${c.status === 'success' ? 'badge-green' : 'badge-red'}">${esc(c.rag_engine)}</span>
+                        <span class="badge ${c.status === 'success' ? 'badge-green' : 'badge-red'}">${esc(c.llm_model || c.rag_engine)}</span>
+                        ${c.api_key_masked ? `<div style="margin-top:3px;"><span class="badge badge-blue mono" style="font-size:0.7rem;">🔑 ${esc(c.api_key_masked)}</span></div>` : ''}
+                        ${c.total_tokens ? `<div style="margin-top:3px;"><span class="badge badge-purple mono" style="font-size:0.7rem;">🪙 ${fmtNum(c.total_tokens)} tok</span></div>` : ''}
                         ${c.is_knowledge_gap ? '<div style="margin-top:4px;"><span class="badge badge-amber">⚠️ فجوة مراجع</span></div>' : ''}
                         <div style="font-size:0.78rem; margin-top:4px;">⏱️ ${((c.latency_ms || 0)/1000).toFixed(2)}s</div>
                         <div style="font-size:0.75rem; color:var(--text-muted);">ثقة: ${Math.round((c.confidence || 0)*100)}%</div>

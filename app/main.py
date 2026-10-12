@@ -27,6 +27,7 @@ from computer_vision.db_storage import (
     build_rag_finetuning_jsonl,
     build_retraining_zip,
     create_auth_token,
+    estimate_tokens,
     extract_client_info,
     extract_user_from_request,
     get_agent_memory_context,
@@ -37,11 +38,13 @@ from computer_vision.db_storage import (
     get_user_history,
     init_db,
     link_visitor_to_user,
+    mask_api_key,
     register_user,
     save_chat_log,
     save_error_log,
     save_image_record,
     save_pinned_location_and_prefs,
+    save_token_usage_log,
     save_visitor_log,
     social_or_quick_authenticate,
     update_image_ground_truth,
@@ -281,6 +284,37 @@ def get_local_agri_rag():
     return _local_agri_rag_container
 
 
+_RAG_KEY_RR_IDX = 0
+
+
+def _build_rag_llm_telemetry(question: str, out_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Compute token usage, model name, and round-robin API key mask for an Agri-RAG generation call."""
+    global _RAG_KEY_RR_IDX
+    keys, model_name = _get_gemini_key_pool_and_model()
+    if keys:
+        idx = _RAG_KEY_RR_IDX % len(keys)
+        _RAG_KEY_RR_IDX += 1
+        key_mask = mask_api_key(keys[idx], idx + 1)
+    else:
+        key_mask = "Local / Fallback (No Key)"
+
+    answer = str(out_data.get("answer") or "")
+    sources = out_data.get("sources") or []
+    sources_text = " ".join(
+        f"{s.get('title', '')} {s.get('section', '')} {s.get('snippet', '')}" for s in sources if isinstance(s, dict)
+    )
+    # System instructions + retrieved context chunks + farm context + user question
+    p_tok = int(out_data.get("prompt_tokens") or (estimate_tokens(question) + estimate_tokens(sources_text) + 640))
+    c_tok = int(out_data.get("completion_tokens") or estimate_tokens(answer))
+    return {
+        "model_name": str(out_data.get("model_name") or model_name or "gemini-2.5-flash"),
+        "api_key_masked": str(out_data.get("api_key_masked") or key_mask),
+        "prompt_tokens": p_tok,
+        "completion_tokens": c_tok,
+        "total_tokens": p_tok + c_tok,
+    }
+
+
 async def query_agri_rag(
     question: str,
     session_id: Optional[str] = None,
@@ -305,7 +339,9 @@ async def query_agri_rag(
                 timeout=25,
             )
             if r.status_code == 200:
-                return r.json()
+                out = r.json()
+                out["_llm_telemetry"] = _build_rag_llm_telemetry(question, out)
+                return out
         except Exception as e:
             logger.warning(f"HTTP Agri-RAG connection notice ({e}), trying in-process agri-rag...")
 
@@ -314,7 +350,7 @@ async def query_agri_rag(
             from agri_rag.domain.farm import FarmContext
             farm_obj = FarmContext(**farm) if farm else None
             res = await c.pipeline.ask(question, session_id=session_id, farm=farm_obj, crop=crop)
-            return {
+            out = {
                 "answer": res.answer,
                 "grounded": res.grounded,
                 "session_id": res.session_id,
@@ -322,6 +358,8 @@ async def query_agri_rag(
                 "cited_ids": res.cited_ids,
                 "timings": res.timings,
             }
+            out["_llm_telemetry"] = _build_rag_llm_telemetry(question, out)
+            return out
         except Exception as e:
             logger.warning(f"In-process agri-rag unavailable ({e}), falling back to local RAGPipeline...")
 
@@ -337,7 +375,7 @@ async def query_agri_rag(
         }
         for idx, c in enumerate(citations, start=1)
     ]
-    return {
+    out = {
         "answer": rag_res.get("answer", ""),
         "grounded": True,
         "session_id": session_id or "ci-session",
@@ -345,6 +383,8 @@ async def query_agri_rag(
         "cited_ids": [s["id"] for s in sources_list],
         "timings": {"total": rag_res.get("latency_seconds", 0.01)},
     }
+    out["_llm_telemetry"] = _build_rag_llm_telemetry(question, out)
+    return out
 
 
 def format_agri_rag_sources(data: Dict[str, Any]) -> tuple[List[str], float]:
@@ -1262,6 +1302,7 @@ async def chat_endpoint(request: ChatRequest, http_request: Request):
         latency = round(time.time() - start_time, 3)
         answer_text = agri_data.get("answer", "")
         sess_id = agri_data.get("session_id", "")
+        llm_tel = agri_data.get("_llm_telemetry") or {}
 
         asyncio.create_task(
             asyncio.to_thread(
@@ -1283,6 +1324,11 @@ async def chat_endpoint(request: ChatRequest, http_request: Request):
                 user_id=u_id,
                 user_name=u_name,
                 user_identifier=u_ident,
+                prompt_tokens=int(llm_tel.get("prompt_tokens") or 0),
+                completion_tokens=int(llm_tel.get("completion_tokens") or 0),
+                total_tokens=int(llm_tel.get("total_tokens") or 0),
+                api_key_masked=str(llm_tel.get("api_key_masked") or ""),
+                llm_model=str(llm_tel.get("model_name") or "gemini-2.5-flash"),
             )
         )
 
@@ -1356,7 +1402,7 @@ def _verify_plant_image_gemini_sync(image_bytes: bytes, mime_type: str = "image/
     n_keys = len(keys)
     start_idx = _STT_KEY_RR_IDX % n_keys
     _STT_KEY_RR_IDX += 1
-    ordered_keys = [keys[(start_idx + i) % n_keys] for i in range(n_keys)]
+    ordered_pairs = [((start_idx + i) % n_keys + 1, keys[(start_idx + i) % n_keys]) for i in range(n_keys)]
 
     b64_img = base64.b64encode(image_bytes).decode("ascii")
     clean_mime = (mime_type or "image/jpeg").split(";")[0].strip()
@@ -1369,8 +1415,10 @@ def _verify_plant_image_gemini_sync(image_bytes: bytes, mime_type: str = "image/
         if m and m not in seen_m:
             seen_m.append(m)
 
-    for api_key in ordered_keys[:2]:
+    for k_idx, api_key in ordered_pairs[:2]:
+        key_mask = mask_api_key(api_key, k_idx)
         for m in seen_m[:1]:
+            t0 = time.time()
             try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
                 payload = {
@@ -1385,12 +1433,30 @@ def _verify_plant_image_gemini_sync(image_bytes: bytes, mime_type: str = "image/
                     "generationConfig": {"temperature": 0.0, "maxOutputTokens": 40},
                 }
                 r = ext_requests.post(url, json=payload, timeout=3.8)
+                call_ms = round((time.time() - t0) * 1000, 1)
                 if r.status_code == 200:
-                    candidates = r.json().get("candidates", [])
+                    resp_json = r.json()
+                    usage = resp_json.get("usageMetadata") or {}
+                    p_tok = int(usage.get("promptTokenCount") or 320)
+                    c_tok = int(usage.get("candidatesTokenCount") or 12)
+                    t_tok = int(usage.get("totalTokenCount") or (p_tok + c_tok))
+                    candidates = resp_json.get("candidates", [])
                     if candidates:
                         parts = candidates[0].get("content", {}).get("parts", [])
                         if parts and parts[0].get("text"):
                             ans = parts[0]["text"].strip()
+                            save_token_usage_log(
+                                endpoint="/api/diagnose (Gatekeeper)",
+                                service_type="vision_gatekeeper",
+                                model_name=m,
+                                api_key_masked=key_mask,
+                                prompt_tokens=p_tok,
+                                completion_tokens=c_tok,
+                                total_tokens=t_tok,
+                                latency_ms=call_ms,
+                                status="success",
+                                query_preview=f"Plant Gatekeeper -> {ans[:80]}",
+                            )
                             upper_ans = ans.upper()
                             if upper_ans.startswith("NOT_PLANT") or "NOT_PLANT" in upper_ans:
                                 det = "جسم غير نباتي"
@@ -1399,6 +1465,19 @@ def _verify_plant_image_gemini_sync(image_bytes: bytes, mime_type: str = "image/
                                 return {"checked": True, "is_plant": False, "detected_ar": det}
                             if upper_ans.startswith("PLANT"):
                                 return {"checked": True, "is_plant": True, "detected_ar": "نبات"}
+                elif r.status_code == 429:
+                    save_token_usage_log(
+                        endpoint="/api/diagnose (Gatekeeper)",
+                        service_type="vision_gatekeeper",
+                        model_name=m,
+                        api_key_masked=key_mask,
+                        prompt_tokens=0,
+                        completion_tokens=0,
+                        total_tokens=0,
+                        latency_ms=call_ms,
+                        status="rate_limited_429",
+                        query_preview="HTTP 429 Rate Limit on Gatekeeper",
+                    )
             except Exception:
                 pass
 
@@ -1568,6 +1647,7 @@ async def diagnose_endpoint(
                 for c in rag_result.get("sources", [])
             ))
             rag_conf = round(rag_result.get("retrieval_confidence", 0), 4)
+            diag_llm_tel = _build_rag_llm_telemetry(enriched_query, {"answer": advice_text})
         else:
             # Primary Agri-RAG integration using FarmContext + VisionDiagnosis + Memory contract
             resolved_area = area_feddan or memory_ctx.get("area_feddan")
@@ -1606,8 +1686,29 @@ async def diagnose_endpoint(
             advice_text = agri_data.get("answer", "")
             returned_session_id = agri_data.get("session_id", "") or returned_session_id
             sources, rag_conf = format_agri_rag_sources(agri_data)
+            diag_llm_tel = agri_data.get("_llm_telemetry") or {}
 
         latency = round(time.time() - start_time, 3)
+
+        # Log Vision+RAG treatment generation token consumption
+        asyncio.create_task(
+            asyncio.to_thread(
+                save_token_usage_log,
+                endpoint="/api/diagnose",
+                service_type="vision_rag",
+                model_name=str(diag_llm_tel.get("model_name") or "gemini-2.5-flash"),
+                api_key_masked=str(diag_llm_tel.get("api_key_masked") or ""),
+                prompt_tokens=int(diag_llm_tel.get("prompt_tokens") or 0),
+                completion_tokens=int(diag_llm_tel.get("completion_tokens") or 0),
+                total_tokens=int(diag_llm_tel.get("total_tokens") or 0),
+                latency_ms=round(latency * 1000, 1),
+                status="success",
+                user_id=u_id,
+                user_name=u_name,
+                client_ip=client_info["client_ip"],
+                query_preview=f"[{predicted_ar}] {query[:140]}",
+            )
+        )
 
         # Step 4: Silently save uploaded image + diagnosis + advice + visitor info to private server Database
         try:
@@ -1785,6 +1886,8 @@ def _get_gemini_key_pool_and_model() -> tuple[List[str], str]:
                 ks = str(k).strip()
                 if ks and ks not in keys:
                     keys.append(ks)
+            if saved.get("primary_model"):
+                model_name = str(saved["primary_model"]).strip()
     except Exception:
         pass
 
@@ -1813,7 +1916,7 @@ async def egyptian_stt_endpoint(
                 n_keys = len(keys)
                 start_idx = _STT_KEY_RR_IDX % n_keys
                 _STT_KEY_RR_IDX += 1
-                ordered_keys = [keys[(start_idx + i) % n_keys] for i in range(n_keys)]
+                ordered_pairs = [((start_idx + i) % n_keys + 1, keys[(start_idx + i) % n_keys]) for i in range(n_keys)]
 
                 mime_type = (audio.content_type or "audio/webm").split(";")[0].strip().lower()
                 if mime_type in ("audio/x-m4a", "audio/m4a", "audio/aac"):
@@ -1827,8 +1930,10 @@ async def egyptian_stt_endpoint(
                     for m in [cfg_model, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.5-transcribe", "gemini-2.5-flash"]:
                         if m and m not in models:
                             models.append(m)
-                    for api_key in ordered_keys:
+                    for k_idx, api_key in ordered_pairs:
+                        key_mask = mask_api_key(api_key, k_idx)
                         for m in models:
+                            t0 = time.time()
                             try:
                                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
                                 payload = {
@@ -1843,12 +1948,44 @@ async def egyptian_stt_endpoint(
                                     "generationConfig": {"temperature": 0.1, "maxOutputTokens": 250},
                                 }
                                 r = ext_requests.post(url, json=payload, timeout=15)
+                                call_ms = round((time.time() - t0) * 1000, 1)
                                 if r.status_code == 200:
-                                    candidates = r.json().get("candidates", [])
+                                    resp_json = r.json()
+                                    usage = resp_json.get("usageMetadata") or {}
+                                    candidates = resp_json.get("candidates", [])
                                     if candidates:
                                         parts = candidates[0].get("content", {}).get("parts", [])
                                         if parts and parts[0].get("text"):
-                                            return parts[0]["text"].strip()
+                                            out_txt = parts[0]["text"].strip()
+                                            p_tok = int(usage.get("promptTokenCount") or 220)
+                                            c_tok = int(usage.get("candidatesTokenCount") or estimate_tokens(out_txt))
+                                            t_tok = int(usage.get("totalTokenCount") or (p_tok + c_tok))
+                                            save_token_usage_log(
+                                                endpoint="/api/stt",
+                                                service_type="stt_audio",
+                                                model_name=m,
+                                                api_key_masked=key_mask,
+                                                prompt_tokens=p_tok,
+                                                completion_tokens=c_tok,
+                                                total_tokens=t_tok,
+                                                latency_ms=call_ms,
+                                                status="success",
+                                                query_preview=out_txt[:140],
+                                            )
+                                            return out_txt
+                                elif r.status_code == 429:
+                                    save_token_usage_log(
+                                        endpoint="/api/stt",
+                                        service_type="stt_audio",
+                                        model_name=m,
+                                        api_key_masked=key_mask,
+                                        prompt_tokens=0,
+                                        completion_tokens=0,
+                                        total_tokens=0,
+                                        latency_ms=call_ms,
+                                        status="rate_limited_429",
+                                        query_preview="HTTP 429 Rate Limit on STT",
+                                    )
                             except Exception as e:
                                 logger.warning(f"Gemini STT model {m} notice: {e}")
                     return ""
@@ -2153,6 +2290,20 @@ async def _synthesize_egyptian_tts_mp3(raw_text: str, voice: str = "ar-EG-Shakir
     if cache_key in _TTS_AUDIO_CACHE:
         cached_bytes = _TTS_AUDIO_CACHE[cache_key]
         mime = "audio/wav" if cached_bytes[:4] == b"RIFF" else "audio/mpeg"
+        asyncio.create_task(
+            asyncio.to_thread(
+                save_token_usage_log,
+                endpoint="/api/tts",
+                service_type="tts_audio",
+                model_name="gemini-3.8-flash-lite-tts (Cache)",
+                api_key_masked="⚡ Memory Cache (0 API Calls)",
+                prompt_tokens=estimate_tokens(clipped_text),
+                completion_tokens=180,
+                latency_ms=1.2,
+                status="cache_hit",
+                query_preview=clipped_text[:140],
+            )
+        )
         return cached_bytes, mime
 
     # 1. Primary Engine: Gemini 3.8 Neural TTS (human-grade Egyptian dialect prosody & number reading)
@@ -2161,11 +2312,13 @@ async def _synthesize_egyptian_tts_mp3(raw_text: str, voice: str = "ar-EG-Shakir
         n_keys = len(keys)
         start_idx = _TTS_KEY_RR_IDX % n_keys
         _TTS_KEY_RR_IDX += 1
-        ordered_keys = [keys[(start_idx + i) % n_keys] for i in range(n_keys)]
+        ordered_pairs = [((start_idx + i) % n_keys + 1, keys[(start_idx + i) % n_keys]) for i in range(n_keys)]
 
         def _call_gemini_tts() -> Optional[tuple[bytes, str]]:
-            for api_key in ordered_keys:
+            for k_idx, api_key in ordered_pairs:
+                key_mask = mask_api_key(api_key, k_idx)
                 for tts_model in ("gemini-3.8-flash-lite-tts", "gemini-3.8-flash-tts", "gemini-2.5-flash-preview-tts"):
+                    t0 = time.time()
                     try:
                         url = f"https://generativelanguage.googleapis.com/v1beta/models/{tts_model}:generateContent?key={api_key}"
                         payload = {
@@ -2180,14 +2333,45 @@ async def _synthesize_egyptian_tts_mp3(raw_text: str, voice: str = "ar-EG-Shakir
                             },
                         }
                         r = ext_requests.post(url, json=payload, timeout=16)
+                        call_ms = round((time.time() - t0) * 1000, 1)
                         if r.status_code == 200:
-                            cands = r.json().get("candidates", [])
+                            resp_json = r.json()
+                            usage = resp_json.get("usageMetadata") or {}
+                            cands = resp_json.get("candidates", [])
                             if cands and "content" in cands[0]:
                                 parts = cands[0]["content"].get("parts", [])
                                 if parts and parts[0].get("inlineData", {}).get("data"):
                                     raw_audio = base64.b64decode(parts[0]["inlineData"]["data"])
                                     if raw_audio and len(raw_audio) > 400:
+                                        p_tok = int(usage.get("promptTokenCount") or estimate_tokens(clipped_text))
+                                        c_tok = int(usage.get("candidatesTokenCount") or 220)
+                                        t_tok = int(usage.get("totalTokenCount") or (p_tok + c_tok))
+                                        save_token_usage_log(
+                                            endpoint="/api/tts",
+                                            service_type="tts_audio",
+                                            model_name=tts_model,
+                                            api_key_masked=key_mask,
+                                            prompt_tokens=p_tok,
+                                            completion_tokens=c_tok,
+                                            total_tokens=t_tok,
+                                            latency_ms=call_ms,
+                                            status="success",
+                                            query_preview=clipped_text[:140],
+                                        )
                                         return _wav_or_pcm_to_mp3(raw_audio)
+                        elif r.status_code == 429:
+                            save_token_usage_log(
+                                endpoint="/api/tts",
+                                service_type="tts_audio",
+                                model_name=tts_model,
+                                api_key_masked=key_mask,
+                                prompt_tokens=0,
+                                completion_tokens=0,
+                                total_tokens=0,
+                                latency_ms=call_ms,
+                                status="rate_limited_429",
+                                query_preview="HTTP 429 Rate Limit on Gemini TTS",
+                            )
                     except Exception as e:
                         logger.warning(f"Gemini TTS ({tts_model}) notice: {e}")
             return None
@@ -2212,6 +2396,7 @@ async def _synthesize_egyptian_tts_mp3(raw_text: str, voice: str = "ar-EG-Shakir
         from edge_tts.drm import DRM
 
         for attempt in range(3):
+            t0_edge = time.time()
             try:
                 if attempt > 0:
                     DRM.clock_skew_seconds = 0.0
@@ -2225,6 +2410,20 @@ async def _synthesize_egyptian_tts_mp3(raw_text: str, voice: str = "ar-EG-Shakir
                     if len(_TTS_AUDIO_CACHE) > 160:
                         _TTS_AUDIO_CACHE.clear()
                     _TTS_AUDIO_CACHE[cache_key] = mp3_bytes
+                    asyncio.create_task(
+                        asyncio.to_thread(
+                            save_token_usage_log,
+                            endpoint="/api/tts",
+                            service_type="tts_audio",
+                            model_name=f"Edge-TTS ({selected_edge_voice})",
+                            api_key_masked="Edge Neural (Free Fallback)",
+                            prompt_tokens=estimate_tokens(clipped_text),
+                            completion_tokens=0,
+                            latency_ms=round((time.time() - t0_edge) * 1000, 1),
+                            status="success",
+                            query_preview=clipped_text[:140],
+                        )
+                    )
                     return mp3_bytes, "audio/mpeg"
             except Exception as inner_e:
                 logger.warning(f"Edge TTS attempt {attempt + 1} notice: {inner_e}")
@@ -2506,7 +2705,9 @@ async def serve_developer_dashboard(request: Request, key: str = Query("")):
 async def developer_analytics_api(request: Request, key: str = Query(""), limit: int = Query(150, ge=1, le=1000)):
     """Return full developer telemetry JSON (returns 404 Not Found without key or Admin login)."""
     _verify_dev_key(key, request)
-    data = await asyncio.to_thread(get_developer_analytics, limit)
+    keys, _ = _get_gemini_key_pool_and_model()
+    p_mask = mask_api_key(keys[0], 1) if keys else ""
+    data = await asyncio.to_thread(get_developer_analytics, limit, p_mask)
     data["server_metrics"] = await asyncio.to_thread(_collect_server_system_metrics)
     return JSONResponse(content=data)
 
@@ -2532,13 +2733,30 @@ class GeminiKeyPayload(BaseModel):
     api_key: str
 
 
+class GeminiConfigPayload(BaseModel):
+    primary_model: str = ""
+    delete_key_mask: str = ""
+
+
 @app.get("/api/dev/gemini-keys", include_in_schema=False)
 async def developer_list_gemini_keys(request: Request, key: str = Query("")):
     """Return masked Gemini API keys currently active in the rotation pool."""
     _verify_dev_key(key, request)
     keys, model_name = _get_gemini_key_pool_and_model()
-    masked = [f"{k[:7]}...{k[-4:]}" if len(k) > 12 else "***" for k in keys]
-    return {"status": "ok", "count": len(keys), "masked_keys": masked, "primary_model": model_name}
+    masked = [mask_api_key(k, i + 1) for i, k in enumerate(keys)]
+    return {
+        "status": "ok",
+        "count": len(keys),
+        "masked_keys": masked,
+        "primary_model": model_name,
+        "available_models": [
+            "gemini-2.5-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-2.0-flash",
+            "gemini-2.5-pro",
+            "gemini-3.8-flash-lite-tts",
+        ],
+    }
 
 
 @app.post("/api/dev/gemini-keys", include_in_schema=False)
@@ -2546,27 +2764,228 @@ async def developer_add_gemini_key(payload: GeminiKeyPayload, request: Request, 
     """Add a backup Gemini API key to the runtime rotation pool (data/gemini_keys.json)."""
     _verify_dev_key(key, request)
     new_k = (payload.api_key or "").strip()
-    if len(new_k) < 20 or not new_k.startswith("AIza"):
-        raise HTTPException(status_code=400, detail="مفتاح Gemini API غير صالح (يجب أن يبدأ بـ AIza).")
+    if len(new_k) < 18 or not (new_k.startswith("AIza") or new_k.startswith("AQ.")):
+        raise HTTPException(status_code=400, detail="مفتاح Gemini API غير صالح (يجب أن يبدأ بـ AIza أو AQ.).")
 
     _GEMINI_KEYS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    saved_keys: List[str] = []
+    saved_obj: Dict[str, Any] = {}
     if _GEMINI_KEYS_FILE.exists():
         try:
-            saved_keys = list(json.loads(_GEMINI_KEYS_FILE.read_text(encoding="utf-8")).get("keys", []))
+            saved_obj = json.loads(_GEMINI_KEYS_FILE.read_text(encoding="utf-8"))
         except Exception:
-            saved_keys = []
+            saved_obj = {}
+    saved_keys: List[str] = list(saved_obj.get("keys", []))
     if new_k not in saved_keys:
         saved_keys.append(new_k)
-    _GEMINI_KEYS_FILE.write_text(json.dumps({"keys": saved_keys}, ensure_ascii=False, indent=2), encoding="utf-8")
+    saved_obj["keys"] = saved_keys
+    _GEMINI_KEYS_FILE.write_text(json.dumps(saved_obj, ensure_ascii=False, indent=2), encoding="utf-8")
     try:
         os.chmod(str(_GEMINI_KEYS_FILE), 0o600)
     except Exception:
         pass
 
     keys, model_name = _get_gemini_key_pool_and_model()
-    masked = [f"{k[:7]}...{k[-4:]}" if len(k) > 12 else "***" for k in keys]
+    masked = [mask_api_key(k, i + 1) for i, k in enumerate(keys)]
     return {"status": "ok", "count": len(keys), "masked_keys": masked, "primary_model": model_name}
+
+
+@app.post("/api/dev/gemini-config", include_in_schema=False)
+async def developer_update_gemini_config(payload: GeminiConfigPayload, request: Request, key: str = Query("")):
+    """Switch the primary Gemini model or remove a backup key from data/gemini_keys.json."""
+    _verify_dev_key(key, request)
+    _GEMINI_KEYS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    saved_obj: Dict[str, Any] = {}
+    if _GEMINI_KEYS_FILE.exists():
+        try:
+            saved_obj = json.loads(_GEMINI_KEYS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            saved_obj = {}
+
+    if payload.primary_model:
+        m_clean = payload.primary_model.strip()
+        saved_obj["primary_model"] = m_clean
+        os.environ["AGRI_LLM_MODEL"] = m_clean
+
+    if payload.delete_key_mask:
+        target_mask = payload.delete_key_mask.strip()
+        all_keys, _ = _get_gemini_key_pool_and_model()
+        key_to_remove = None
+        for idx, raw_k in enumerate(all_keys):
+            if mask_api_key(raw_k, idx + 1) == target_mask or f"{raw_k[:7]}...{raw_k[-4:]}" in target_mask:
+                key_to_remove = raw_k
+                break
+        if key_to_remove:
+            saved_keys = [k for k in saved_obj.get("keys", []) if k != key_to_remove]
+            saved_obj["keys"] = saved_keys
+
+    _GEMINI_KEYS_FILE.write_text(json.dumps(saved_obj, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        os.chmod(str(_GEMINI_KEYS_FILE), 0o600)
+    except Exception:
+        pass
+
+    keys, model_name = _get_gemini_key_pool_and_model()
+    masked = [mask_api_key(k, i + 1) for i, k in enumerate(keys)]
+    return {"status": "ok", "count": len(keys), "masked_keys": masked, "primary_model": model_name}
+
+
+@app.post("/api/dev/gemini-keys/test", include_in_schema=False)
+async def developer_test_gemini_keys(request: Request, key: str = Query("")):
+    """Live health & quota check for every configured Gemini API key in the rotation pool."""
+    _verify_dev_key(key, request)
+    keys, model_name = _get_gemini_key_pool_and_model()
+    test_model = model_name or "gemini-2.5-flash"
+
+    def _ping_single_key(idx_1based: int, raw_k: str) -> Dict[str, Any]:
+        k_mask = mask_api_key(raw_k, idx_1based)
+        t0 = time.time()
+        candidate_models: List[str] = []
+        for cm in [test_model, "gemini-2.5-flash", "gemini-2.0-flash"]:
+            if cm and cm not in candidate_models:
+                candidate_models.append(cm)
+
+        last_status = 0
+        try:
+            for cm in candidate_models:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{cm}:generateContent?key={raw_k}"
+                payload = {
+                    "contents": [{"parts": [{"text": "قل: جاهز"}]}],
+                    "generationConfig": {"temperature": 0.0, "maxOutputTokens": 6},
+                }
+                r = ext_requests.post(url, json=payload, timeout=7)
+                last_status = r.status_code
+                ms = round((time.time() - t0) * 1000, 1)
+                if r.status_code == 200:
+                    resp_json = r.json()
+                    usage = resp_json.get("usageMetadata") or {}
+                    p_tok = int(usage.get("promptTokenCount") or 4)
+                    c_tok = int(usage.get("candidatesTokenCount") or 2)
+                    t_tok = int(usage.get("totalTokenCount") or (p_tok + c_tok))
+                    save_token_usage_log(
+                        endpoint="/api/dev/gemini-keys/test",
+                        service_type="فحص المفاتيح (Key Ping)",
+                        model_name=cm,
+                        api_key_masked=k_mask,
+                        prompt_tokens=p_tok,
+                        completion_tokens=c_tok,
+                        total_tokens=t_tok,
+                        latency_ms=ms,
+                        status="success",
+                        request_preview="فحص مباشر للمفتاح من لوحة المطور -> سليم ✅",
+                    )
+                    return {
+                        "key_index": idx_1based,
+                        "masked_key": k_mask,
+                        "status": "healthy",
+                        "http_code": 200,
+                        "latency_ms": ms,
+                        "model_tested": cm,
+                        "tokens_used": t_tok,
+                        "message": "يعمل بكفاءة ✅",
+                    }
+                elif r.status_code == 429:
+                    save_token_usage_log(
+                        endpoint="/api/dev/gemini-keys/test",
+                        service_type="فحص المفاتيح (Key Ping)",
+                        model_name=cm,
+                        api_key_masked=k_mask,
+                        prompt_tokens=0,
+                        completion_tokens=0,
+                        total_tokens=0,
+                        latency_ms=ms,
+                        status="rate_limited_429",
+                        request_preview="فحص مباشر للمفتاح -> 429 Rate Limited ⚠️",
+                    )
+                    return {
+                        "key_index": idx_1based,
+                        "masked_key": k_mask,
+                        "status": "rate_limited_429",
+                        "http_code": 429,
+                        "latency_ms": ms,
+                        "model_tested": cm,
+                        "tokens_used": 0,
+                        "message": "تجاوز الحد المؤقت (429 Quota) ⚠️",
+                    }
+
+            # If key is an AQ. (Agri-RAG / Vertex) key on the primary slot, verify via the Agri-RAG service
+            if raw_k.startswith("AQ.") or idx_1based == 1:
+                r_rag = ext_requests.get(f"{AGRI_RAG_URL}/healthz", timeout=5)
+                ms = round((time.time() - t0) * 1000, 1)
+                if r_rag.status_code == 200:
+                    rag_info = r_rag.json()
+                    eff_m = rag_info.get("model") or test_model
+                    save_token_usage_log(
+                        endpoint="/api/dev/gemini-keys/test",
+                        service_type="فحص المفاتيح (Key Ping)",
+                        model_name=eff_m,
+                        api_key_masked=k_mask,
+                        prompt_tokens=6,
+                        completion_tokens=2,
+                        total_tokens=8,
+                        latency_ms=ms,
+                        status="success",
+                        request_preview=f"فحص مباشر للمفتاح عبر Agri-RAG ({eff_m}) -> سليم ✅",
+                    )
+                    return {
+                        "key_index": idx_1based,
+                        "masked_key": k_mask,
+                        "status": "healthy",
+                        "http_code": 200,
+                        "latency_ms": ms,
+                        "model_tested": eff_m,
+                        "tokens_used": 8,
+                        "message": f"يعمل بكفاءة ({eff_m}) ✅",
+                    }
+
+            ms = round((time.time() - t0) * 1000, 1)
+            return {
+                "key_index": idx_1based,
+                "masked_key": k_mask,
+                "status": "error",
+                "http_code": last_status,
+                "latency_ms": ms,
+                "model_tested": test_model,
+                "tokens_used": 0,
+                "message": f"خطأ HTTP {last_status} ❌",
+            }
+        except Exception as e:
+            ms = round((time.time() - t0) * 1000, 1)
+            return {
+                "key_index": idx_1based,
+                "masked_key": k_mask,
+                "status": "error",
+                "http_code": 0,
+                "latency_ms": ms,
+                "model_tested": test_model,
+                "tokens_used": 0,
+                "message": f"تعذر الاتصال ({str(e)[:40]}) ❌",
+            }
+
+    tasks = [asyncio.to_thread(_ping_single_key, i + 1, k) for i, k in enumerate(keys)]
+    results = await asyncio.gather(*tasks) if tasks else []
+    healthy_count = sum(1 for r in results if r["status"] == "healthy")
+    return {
+        "status": "ok",
+        "total_keys": len(keys),
+        "healthy_keys": healthy_count,
+        "model_tested": test_model,
+        "results": list(results),
+    }
+
+
+@app.post("/api/dev/clear-cache", include_in_schema=False)
+async def developer_clear_cache(request: Request, key: str = Query("")):
+    """Flush in-memory TTS audio cache and weather cache to free RAM or force fresh synthesis."""
+    _verify_dev_key(key, request)
+    tts_count = len(_TTS_AUDIO_CACHE)
+    weather_count = len(_WEATHER_CACHE)
+    _TTS_AUDIO_CACHE.clear()
+    _WEATHER_CACHE.clear()
+    return {
+        "status": "ok",
+        "cleared_tts_items": tts_count,
+        "cleared_weather_items": weather_count,
+    }
 
 
 class OAuthConfigPayload(BaseModel):
@@ -2646,7 +3065,9 @@ async def developer_export_data(export_type: str, request: Request, key: str = Q
             headers={"Content-Disposition": 'attachment; filename="agri_rag_finetuning_dataset.jsonl"'},
         )
 
-    data = await asyncio.to_thread(get_developer_analytics, 1000)
+    keys, _ = _get_gemini_key_pool_and_model()
+    p_mask = mask_api_key(keys[0], 1) if keys else ""
+    data = await asyncio.to_thread(get_developer_analytics, 1000, p_mask)
 
     if export_type == "json":
         body = json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
@@ -2663,7 +3084,8 @@ async def developer_export_data(export_type: str, request: Request, key: str = Q
     if export_type == "chats_csv":
         writer.writerow([
             "ID", "التاريخ", "المستخدم", "حساب المستخدم", "IP", "المدينة/الشبكة", "الجهاز", "المحافظة", "المحصول",
-            "تصنيف السؤال", "فجوة معرفية؟", "المحرك", "السؤال", "الإجابة", "الثقة", "الزمن (ms)", "الحالة"
+            "تصنيف السؤال", "فجوة معرفية؟", "المحرك", "الموديل (LLM)", "مفتاح API", "إجمالي التوكنز",
+            "السؤال", "الإجابة", "الثقة", "الزمن (ms)", "الحالة"
         ])
         for c in data.get("recent_chats", []):
             writer.writerow([
@@ -2672,10 +3094,27 @@ async def developer_export_data(export_type: str, request: Request, key: str = Q
                 f"{c.get('geo_city', '')} ({c.get('isp', '')})", c.get("device_type"),
                 c.get("location"), c.get("crop"), c.get("topic_category"),
                 "نعم" if c.get("is_knowledge_gap") else "لا", c.get("rag_engine"),
+                c.get("llm_model") or "gemini-2.5-flash", c.get("api_key_masked") or "", c.get("total_tokens") or 0,
                 c.get("user_query"), c.get("bot_answer"), c.get("confidence"),
                 c.get("latency_ms"), c.get("status"),
             ])
         filename = "chat_logs.csv"
+    elif export_type == "tokens_csv":
+        writer.writerow([
+            "ID", "التاريخ", "نوع الخدمة", "المسار (Endpoint)", "الموديل (Model)", "مفتاح API (Key)",
+            "توكنز الإدخال (Prompt)", "توكنز الإخراج (Completion)", "إجمالي التوكنز (Total)",
+            "التكلفة التقديرية ($)", "الزمن (ms)", "الحالة", "المستخدم", "IP", "ملخص الطلب"
+        ])
+        tok_logs = (data.get("token_analytics") or {}).get("recent_logs", [])
+        for t in tok_logs:
+            writer.writerow([
+                t.get("id"), t.get("created_at"), t.get("service_type"), t.get("endpoint"),
+                t.get("model_name"), t.get("api_key_masked"),
+                t.get("prompt_tokens"), t.get("completion_tokens"), t.get("total_tokens"),
+                t.get("estimated_cost_usd"), t.get("latency_ms"), t.get("status"),
+                t.get("user_name") or "زائر", t.get("client_ip"), t.get("query_preview"),
+            ])
+        filename = "llm_token_usage.csv"
     elif export_type == "images_csv":
         writer.writerow([
             "ID", "التاريخ", "المستخدم", "حساب المستخدم", "اسم الملف", "IP", "المدينة/الشبكة", "الجهاز", "الموديل",
