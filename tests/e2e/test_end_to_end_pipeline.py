@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import io
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -27,7 +26,6 @@ def test_standalone_cv_prediction():
     cv_client = TestClient(cv_app)
     
     # Create fake image with 3 channels
-    import io
     from PIL import Image
     img = Image.new("RGB", (224, 224), color="green")
     buf = io.BytesIO()
@@ -45,7 +43,6 @@ def test_standalone_cv_prediction():
 
 def test_end_to_end_diagnose_and_advise_with_image():
     """Verify full integration flow: Image + Query -> CV -> RAG -> Grounded Advice Payload."""
-    import io
     from PIL import Image
     img = Image.new("RGB", (224, 224), color="green")
     buf = io.BytesIO()

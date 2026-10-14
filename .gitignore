@@ -57,7 +57,9 @@ data/oauth_config.json
 data/gemini_keys.json
 data/guest_policy.json
 data/uploaded_images/
+data/backups/
 reports/
 *.zip
+*.db.gz
 agri_rag_model/
 

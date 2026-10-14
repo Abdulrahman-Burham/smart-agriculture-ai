@@ -49,7 +49,7 @@ def run_load_stress_test(num_requests: int = 50) -> Dict[str, Any]:
                 successes += 1
             else:
                 failures += 1
-        except Exception as err:
+        except Exception:
             failures += 1
             latencies.append(time.time() - req_start)
 

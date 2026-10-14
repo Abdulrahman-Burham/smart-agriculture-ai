@@ -10,11 +10,12 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.core.guest_policy import enforce_guest_gate_or_401
+from app.core.rate_limiter import ai_chat_limiter
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.llm_service import (
     IRRIG_TO_ENUM,
@@ -54,7 +55,11 @@ async def get_chat_memory_endpoint(
 
 
 @router.post("/api/chat", response_model=ChatResponse, tags=["RAG"])
-async def chat_endpoint(request: ChatRequest, http_request: Request) -> ChatResponse:
+async def chat_endpoint(
+    request: ChatRequest,
+    http_request: Request,
+    _rate_limit: bool = Depends(ai_chat_limiter),
+) -> ChatResponse:
     """Agri-RAG powered agricultural Q&A chat endpoint with persistent multi-turn memory and silent telemetry."""
     start_time = time.time()
     client_info = extract_client_info(http_request)

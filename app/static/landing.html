@@ -6,6 +6,8 @@
     <title>منصة الزراعة الذكية | Smart Agriculture AI — مهندس زراعي ذكي في جيبك</title>
     <meta name="description" content="أول منصة ذكاء اصطناعي زراعية مصرية تجمع بين تشخيص أمراض النبات بالصورة (EfficientNetV2B2)، المستشار الزراعي المعتمد (Agri-RAG)، الطقس اللحظي لـ 27 محافظة، والمحادثة الصوتية باللهجة المصرية.">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="/logo.png">
+    <link rel="manifest" href="/manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script>
         (function() {
@@ -1464,6 +1466,15 @@
                 }
             } catch (e) {}
         })();
+
+        // Register Progressive Web App Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(reg => console.log('Landing PWA registered:', reg.scope))
+                    .catch(err => console.warn('Landing PWA registration:', err));
+            });
+        }
     </script>
     <script src="/static/i18n.js"></script>
 </body>

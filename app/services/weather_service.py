@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import requests as ext_requests
 
-from app.schemas.weather import WeatherResponse
+from app.schemas.weather import AgronomicAlert, WeatherResponse
 from computer_vision.storage.telemetry_repository import get_developer_analytics
 
 _WEATHER_CACHE: Dict[str, Tuple[float, WeatherResponse]] = {}
@@ -63,6 +63,118 @@ def nearest_governorate(lat: float, lon: float) -> str:
             best_dist = d
             best_gov = gov
     return best_gov
+
+
+def calculate_agronomic_disease_risks(
+    temperature: float,
+    humidity: float,
+    wind_speed: float,
+    season: str,
+    governorate: str,
+) -> list[AgronomicAlert]:
+    """Analyze real-time meteorological conditions and infer epidemic plant disease risks."""
+    alerts: list[AgronomicAlert] = []
+
+    # 1. Late Blight (الندوة المتأخرة في البطاطس والطماطم)
+    if humidity >= 78.0 and 13.0 <= temperature <= 23.0:
+        alerts.append(
+            AgronomicAlert(
+                id="late_blight_risk",
+                title="⚠️ تحذير وبائي: خطر انتشار الندوة المتأخرة",
+                level="danger",
+                disease_or_hazard="الندوة المتأخرة (Phytophthora infestans)",
+                target_crops=["بطاطس", "طماطم"],
+                advice="الرطوبة الجوية العالية مع درجات الحرارة الحالية توفر بيئة مثالية لإنبات جراثيم الندوة المتأخرة. يُوصى بالرش الوقائي بمركبات أوكسي كلورور النحاس أو ميتالاكسيل-إم.",
+                icon="🚨",
+            )
+        )
+
+    # 2. Powdery Mildew (البياض الدقيقي)
+    if temperature >= 24.0 and 50.0 <= humidity <= 75.0:
+        alerts.append(
+            AgronomicAlert(
+                id="powdery_mildew_risk",
+                title="⚠️ تنبيه وقائي: نشاط جراثيم البياض الدقيقي",
+                level="warning",
+                disease_or_hazard="البياض الدقيقي (Erysiphe / Leveillula)",
+                target_crops=["مانجو", "عنب", "قرعيات", "طماطم"],
+                advice="الطقس الدافئ مع الرطوبة المتوسطة يسرع انتشار البياض الدقيقي. افحص السطح العلوي للأوراق ورش كبريت ميكروني وقائياً في الصباح الباكر.",
+                icon="⚠️",
+            )
+        )
+
+    # 3. Downy Mildew (البياض الزغبي)
+    if humidity >= 84.0 and 16.0 <= temperature <= 26.0:
+        alerts.append(
+            AgronomicAlert(
+                id="downy_mildew_risk",
+                title="⚠️ تنبيه رطوبة: احتمالية الإصابة بالبياض الزغبي",
+                level="warning",
+                disease_or_hazard="البياض الزغبي (Pseudoperonospora)",
+                target_crops=["خيار", "بصل", "عنب", "كوسة"],
+                advice="رطوبة شديدة تعزز إنبات الفطريات البيضية. احرص على تحسين التهوية بين الشتلات ورش دايميثومورف أو ميتالاكسيل وقائياً.",
+                icon="🌧️",
+            )
+        )
+
+    # 4. Frost Hazard (خطر الصقيع)
+    if temperature <= 5.0:
+        alerts.append(
+            AgronomicAlert(
+                id="frost_hazard",
+                title="❄️ تنبيه حرج: خطر الصقيع على القمم النامية",
+                level="danger",
+                disease_or_hazard="الصقيع الليلي والانجماد",
+                target_crops=["طماطم", "بطاطس", "شتلات الخضر", "موز"],
+                advice="انخفاض الحرارة دون 5° مئوية يهدد أنسجة النبات. قم بتشغيل ري خفيف ليلاً أو استخدم الرشاشات لرفع حرارة التربة وحماية الجذور.",
+                icon="❄️",
+            )
+        )
+
+    # 5. Extreme Heat & Sucking Pests (موجة حرارية وزيادة نشاط الآفات الماصة)
+    if temperature >= 35.0:
+        alerts.append(
+            AgronomicAlert(
+                id="heatwave_pests",
+                title="🔥 تحذير حراري: إجهاد نباتي وتكاثر الآفات الماصة",
+                level="warning",
+                disease_or_hazard="الإجهاد الحراري ونشاط العنكبوت الأحمر والتريبس",
+                target_crops=["جميع المحاصيل الصيفية", "ذرة", "قطن"],
+                advice="قرب فترات الري لتقليل الإجهاد الحراري واقتصر على الري الصباحي أو المسائي، وافحص الأوراق السفلية لرصد العنكبوت الأحمر مبكراً.",
+                icon="🔥",
+            )
+        )
+
+    # 6. High Wind Warning (رياح شديدة وتأجيل الرش)
+    if wind_speed >= 25.0:
+        alerts.append(
+            AgronomicAlert(
+                id="high_wind",
+                title="💨 تنبيه رياح: يُنصح بتأجيل رش المبيدات",
+                level="info",
+                disease_or_hazard="رياح شديدة وانجراف محاليل الرش",
+                target_crops=["جميع المحاصيل"],
+                advice="سرعة الرياح تتجاوز 25 كم/ساعة. يُرجى تأجيل عمليات الرش الورقي والتسميد لتفادي تطاير المحلول وضياع كفاءة المعاملة.",
+                icon="💨",
+            )
+        )
+
+    # Fallback info alert if all conditions are optimal
+    if not alerts:
+        alerts.append(
+            AgronomicAlert(
+                id="optimal_conditions",
+                title="🌱 الظروف الجوية مثالية ومستقرة",
+                level="info",
+                disease_or_hazard="استقرار جوي ملائم",
+                target_crops=["كافة الزراعات"],
+                advice=f"الطقس معتدل في محافظة {governorate} ومناسب تماماً للري المنتظم والرش والتسميد لموسم {season}.",
+                icon="🌱",
+            )
+        )
+
+    return alerts
+
 
 
 async def fetch_weather_forecast(
@@ -118,6 +230,14 @@ async def fetch_weather_forecast(
     else:
         season_ar = "الخريفي / النيلي"
 
+    alerts = calculate_agronomic_disease_risks(
+        temperature=temp,
+        humidity=hum,
+        wind_speed=wind,
+        season=season_ar,
+        governorate=gov_key,
+    )
+
     resp = WeatherResponse(
         temperature=temp,
         wind_speed=wind,
@@ -130,6 +250,7 @@ async def fetch_weather_forecast(
         lat=q_lat,
         lon=q_lon,
         source=location_source,
+        alerts=alerts,
     )
     _WEATHER_CACHE[cache_key] = (now_ts, resp)
     return resp

@@ -95,3 +95,49 @@ async def serve_favicon():
 async def serve_logo():
     """Serve brand logo image."""
     return FileResponse(STATIC_DIR / "logo.png", media_type="image/png")
+
+
+@router.get("/manifest.json")
+async def serve_pwa_manifest():
+    """Serve Progressive Web App manifest."""
+    return FileResponse(STATIC_DIR / "manifest.json", media_type="application/manifest+json")
+
+
+@router.get("/service-worker.js")
+async def serve_service_worker():
+    """Serve Progressive Web App service worker script."""
+    return FileResponse(STATIC_DIR / "service-worker.js", media_type="application/javascript")
+
+
+@router.get("/prescription/{image_id}")
+async def serve_prescription_page(image_id: int):
+    """Serve official printable agricultural treatment prescription."""
+    import asyncio
+    import jinja2
+    from fastapi.responses import HTMLResponse
+    from computer_vision.storage.image_repository import get_image_record_by_id
+
+    record = await asyncio.to_thread(get_image_record_by_id, image_id)
+    if not record:
+        return HTMLResponse(
+            content="""
+            <!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+            <title>الروشتة غير موجودة</title>
+            <style>body{font-family:sans-serif;text-align:center;padding:50px;color:#333;background:#f9fafb;}a{color:#059669;font-weight:bold;text-decoration:none;}</style>
+            </head><body>
+            <h2>⚠️ عذراً، الروشتة المطلوبة غير متوفرة أو انتهت صلاحيتها</h2>
+            <p>تأكد من رقم الروشتة وحاول الفحص مجدداً.</p>
+            <br><a href="/dashboard">← العودة للمنصة الرئيسية</a>
+            </body></html>
+            """,
+            status_code=404,
+        )
+
+    jinja_env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(str(TEMPLATES_DIR)),
+        autoescape=jinja2.select_autoescape(["html", "xml"]),
+    )
+    template = jinja_env.get_template("prescription.html")
+    html_content = template.render(**record, image_id=image_id)
+    return HTMLResponse(content=html_content, headers=_NO_CACHE_HEADERS)
+

@@ -11,7 +11,6 @@ import platform
 import shutil
 import socket
 import time
-from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 from app.core.config import DATA_DIR

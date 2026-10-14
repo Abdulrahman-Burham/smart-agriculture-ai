@@ -15,14 +15,12 @@ import json
 import logging
 import os
 import sys
-import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests as ext_requests
 
 from app.core.config import AGRI_RAG_URL, DATA_DIR
-from computer_vision.storage.telemetry_repository import save_token_usage_log
 from computer_vision.storage.utils import estimate_tokens, mask_api_key
 
 logger = logging.getLogger(__name__)

@@ -14,7 +14,6 @@ from typing import Any, Dict, Optional, Tuple
 
 from computer_vision.storage.connection import DB_PATH, init_db
 from computer_vision.storage.utils import (
-    VALID_CROPS,
     VALID_EGYPT_GOVERNORATES,
     hash_password,
     normalize_identifier,

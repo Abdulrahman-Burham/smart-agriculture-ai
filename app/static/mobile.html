@@ -7,6 +7,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>المستشار الزراعي — فحص المحاصيل والاستشارة الذكية</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/logo.png" />
+  <link rel="manifest" href="/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -820,6 +822,14 @@
             <span>🔊 اسمع التشخيص والعلاج بالمصري</span>
           </button>
         </div>
+        <div id="mobPrescriptionActions" style="margin-top:8px; display:none; grid-template-columns:1fr 1fr; gap:6px;">
+          <a id="mobRxLink" href="#" target="_blank" style="display:inline-flex; align-items:center; justify-content:center; gap:5px; padding:7px 10px; border-radius:9px; background:linear-gradient(135deg,#059669,#047857); color:#fff; text-decoration:none; font-family:inherit; font-size:0.75rem; font-weight:800;">
+            📄 الروشتة المعتمدة
+          </a>
+          <button type="button" onclick="shareMobilePrescriptionWhatsApp()" style="display:inline-flex; align-items:center; justify-content:center; gap:5px; padding:7px 10px; border-radius:9px; border:none; background:linear-gradient(135deg,#25D366,#128C7E); color:#fff; font-family:inherit; font-size:0.75rem; font-weight:800; cursor:pointer;">
+            📲 مشاركة واتساب
+          </button>
+        </div>
       </div>
     </section>
 
@@ -1600,6 +1610,18 @@
           scanSpeakBtn.innerHTML = '<span>🔊 اسمع التشخيص والعلاج بالمصري</span>';
         }
 
+        const rxActions = document.getElementById('mobPrescriptionActions');
+        const rxLink = document.getElementById('mobRxLink');
+        const finalRxUrl = data.prescription_url || (data.image_id ? `/prescription/${data.image_id}` : null);
+        if (rxActions && rxLink && finalRxUrl) {
+          rxLink.href = finalRxUrl;
+          window._mobRxUrl = finalRxUrl;
+          window._mobRxCrop = predAr;
+          rxActions.style.display = 'grid';
+        } else if (rxActions) {
+          rxActions.style.display = 'none';
+        }
+
         lastDiagnosisSummary = `${predAr} (${confStr})`;
         localStorage.setItem('agri_last_diag', lastDiagnosisSummary);
         const msgText = `**نتيجة فحص الورقة:** ${predAr} (${confStr})\n\n${adviceText}`;
@@ -1609,6 +1631,14 @@
         badgeEl.textContent = 'تنبيه';
         adviceEl.textContent = err.message || 'يرجى التأكد من وضوح الصورة والمحاولة مرة أخرى.';
       }
+    }
+
+    function shareMobilePrescriptionWhatsApp() {
+      const rxUrl = window._mobRxUrl || (window.location.origin + '/m');
+      const crop = window._mobRxCrop || 'تشخيص زراعي';
+      const fullUrl = rxUrl.startsWith('http') ? rxUrl : (window.location.origin + rxUrl);
+      const msg = `📄 روشتة علاج زراعية معتمدة من منصة الخبير الزراعي الذكي\n🌱 التشخيص: ${crop}\n🔗 تفاصيل الروشتة والجرعات الرسمية:\n${fullUrl}`;
+      window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
     }
 
     // ── Authentic Egyptian Voice TTS Player ──
@@ -2021,6 +2051,15 @@
     }
 
     initProfileAndLocation();
+
+    // Register Progressive Web App Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(reg => console.log('Mobile PWA registered:', reg.scope))
+          .catch(err => console.warn('PWA registration:', err));
+      });
+    }
   </script>
   <script src="/static/i18n.js"></script>
 </body>

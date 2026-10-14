@@ -9,6 +9,7 @@
     <title>الخبير الزراعي الذكي | Smart Agriculture AI</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" href="/logo.png">
+    <link rel="manifest" href="/manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -1500,6 +1501,9 @@
         </div>
     </div>
 
+    <!-- Agri-Weather Epidemiological Early Warning Banner -->
+    <div id="agri-weather-alerts-container" style="max-width: 1400px; margin: 0 auto 0.75rem auto; padding: 0 1rem; display: none;"></div>
+
     <div class="main-container" id="main-container" data-mobile-tab="chat">
         
         <!-- Left Panel: Vision & Diagnosis -->
@@ -1599,6 +1603,14 @@
                         </button>
                     </div>
                     <div id="cv-inline-advice-text" style="font-size: 0.9rem; line-height: 1.65; color: var(--text-light); background: rgba(0,0,0,0.2); padding: 0.85rem; border-radius: 12px; border-right: 3px solid var(--primary-green);"></div>
+                    <div id="cv-prescription-actions" style="margin-top: 0.75rem; display: none; grid-template-columns: 1fr 1fr; gap: 0.55rem;">
+                        <a id="btn-view-prescription" href="#" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:6px; padding: 0.65rem 0.5rem; border-radius: 10px; background: linear-gradient(135deg, #059669, #047857); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.85rem; box-shadow: 0 3px 8px rgba(5,150,105,0.25);">
+                            📄 الروشتة المعتمدة للطباعة
+                        </a>
+                        <button type="button" id="btn-share-prescription" onclick="sharePrescriptionViaWhatsApp()" style="display:flex; align-items:center; justify-content:center; gap:6px; padding: 0.65rem 0.5rem; border-radius: 10px; background: linear-gradient(135deg, #25D366, #128C7E); color: #fff; border:none; font-weight: 700; font-size: 0.85rem; cursor:pointer; box-shadow: 0 3px 8px rgba(37,211,102,0.25);">
+                            📲 مشاركة عبر واتساب
+                        </button>
+                    </div>
                     <button type="button" onclick="switchMobileTab('chat')" style="width: 100%; margin-top: 0.75rem; padding: 0.75rem; border-radius: 12px; background: linear-gradient(135deg, #2D6A4F, #1B4332); color: #fff; border: none; font-weight: 700; font-size: 0.9rem; cursor: pointer;">
                         متابعة النقاش والسؤال عن هذه الحالة في المحادثة
                     </button>
@@ -2260,6 +2272,9 @@
                             localStorage.setItem('agri_gov', gov);
                         }
                         isGps = !!data.is_gps;
+                        if (data.alerts && data.alerts.length > 0) {
+                            renderWeatherAlerts(data.alerts);
+                        }
                     }
                 } catch(e) {
                     console.log("Weather API notice:", e);
@@ -2275,6 +2290,50 @@
         }
         
         fetchWeather(null, null, false);
+
+        function renderWeatherAlerts(alerts) {
+            const container = document.getElementById('agri-weather-alerts-container');
+            if (!container) return;
+            const criticalAlerts = alerts.filter(a => a.level === 'warning' || a.level === 'danger');
+            if (!criticalAlerts || criticalAlerts.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            const a = criticalAlerts[0];
+            const isDanger = a.level === 'danger';
+            const borderCol = isDanger ? '#ef4444' : '#f59e0b';
+            const bgCol = isDanger ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)';
+            const textCol = isDanger ? '#b91c1c' : '#92400e';
+            const cropsBadge = (a.target_crops && a.target_crops.length > 0)
+                ? `<span style="display:inline-block; margin-right:8px; background:rgba(0,0,0,0.06); padding:2px 8px; border-radius:12px; font-size:0.78rem;">المحاصيل المهددة: ${a.target_crops.join('، ')}</span>`
+                : '';
+
+            container.innerHTML = `
+                <div style="background:${bgCol}; border:1.5px solid ${borderCol}; border-radius:12px; padding:0.75rem 1rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.5rem;">
+                    <div style="display:flex; align-items:center; gap:0.65rem; flex:1; min-width:260px;">
+                        <span style="font-size:1.4rem;">${a.icon || '⚠️'}</span>
+                        <div>
+                            <div style="font-weight:800; font-size:0.9rem; color:${textCol};">
+                                ${a.title} ${cropsBadge}
+                            </div>
+                            <div style="font-size:0.82rem; color:var(--text-light); margin-top:2px; line-height:1.5;">
+                                ${a.advice}
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="document.getElementById('agri-weather-alerts-container').style.display='none'" style="background:transparent; border:none; font-size:1rem; cursor:pointer; color:var(--text-muted); padding:4px;" title="إغلاق التنبيه">✕</button>
+                </div>
+            `;
+            container.style.display = 'block';
+        }
+
+        function sharePrescriptionViaWhatsApp() {
+            const rxUrl = window._activePrescriptionUrl || (window.location.origin + '/dashboard');
+            const crop = window._activePrescriptionCrop || 'تشخيص زراعي';
+            const fullUrl = rxUrl.startsWith('http') ? rxUrl : (window.location.origin + rxUrl);
+            const msg = `📄 روشتة علاج زراعية معتمدة من منصة الخبير الزراعي الذكي\n🌱 التشخيص: ${crop}\n🔗 تفاصيل الروشتة وجرعات الرش الرسمية:\n${fullUrl}`;
+            window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
+        }
 
         function getConfidenceColor(percent) {
             if (percent > 80) return '#10b981';
@@ -2680,7 +2739,7 @@
                         const data = await res.json();
                         imageAlreadyDiagnosed = true;
                         if (data.session_id) persistSessionId(data.session_id);
-                        displayCVResults(data.cv_result, data.advice);
+                        displayCVResults(data.cv_result, data.advice, data.prescription_url, data.image_id);
                         const msgDiv = addMessage(data.advice, false, data.sources);
                         if (shouldSpeakReply && data.advice) {
                             const spkBtn = msgDiv ? msgDiv.querySelector('.egy-tts-btn') : null;
@@ -2742,8 +2801,11 @@
             }
         }
 
-        function displayCVResults(cvData, adviceText = '') {
+        function displayCVResults(cvData, adviceText = '', prescriptionUrl = null, imageId = null) {
             if (!cvData) return;
+
+            const rxActions = document.getElementById('cv-prescription-actions');
+            const rxBtn = document.getElementById('btn-view-prescription');
 
             const cvBadge = document.getElementById('cv-model-badge');
             const panelBadge = document.getElementById('panel-model-badge');
@@ -2862,6 +2924,18 @@
                     inlineSpeakBtn.onclick = function() {
                         speakArabic(adviceText, inlineSpeakBtn);
                     };
+                }
+            }
+
+            if (rxActions && rxBtn) {
+                const finalRxUrl = prescriptionUrl || (imageId ? `/prescription/${imageId}` : null);
+                if (finalRxUrl) {
+                    rxBtn.href = finalRxUrl;
+                    window._activePrescriptionUrl = finalRxUrl;
+                    window._activePrescriptionCrop = (cvData.predicted_class_ar || cvData.disease_name || 'تشخيص زراعي');
+                    rxActions.style.display = 'grid';
+                } else {
+                    rxActions.style.display = 'none';
                 }
             }
             
@@ -3437,6 +3511,15 @@
         restoreChatMemoryOnLoad();
         initAuthHeader();
         handleLandingDeepLinks();
+
+        // Register Progressive Web App Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(reg => console.log('Smart Agri PWA registered:', reg.scope))
+                    .catch(err => console.warn('PWA registration:', err));
+            });
+        }
     </script>
     <script src="/static/i18n.js"></script>
 </body>

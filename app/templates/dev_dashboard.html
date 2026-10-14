@@ -551,6 +551,7 @@
         <button class="btn btn-primary" onclick="loadAnalytics()">🔄 تحديث الآن</button>
         <button class="btn" style="border-color:#f59e0b; color:#fbbf24;" onclick="testAllGeminiKeys()">⚡ فحص المفاتيح الآن</button>
         <button class="btn" style="border-color:#38bdf8; color:#7dd3fc;" onclick="clearServerCache()">🧹 مسح الكاش</button>
+        <button class="btn" style="border-color:#10b981; color:#34d399;" onclick="createDatabaseBackup()">💾 نسخة احتياطية (Backup)</button>
         <a id="exportDatasetZipBtn" class="btn btn-purple" href="#" target="_blank">📦 Dataset الصور (ZIP)</a>
         <a id="exportFinetuneBtn" class="btn btn-blue" href="#" target="_blank">🤖 تدريب الشات (JSONL)</a>
         <a id="exportCsvTokensBtn" class="btn" style="border-color:#10b981; color:#34d399;" href="#" target="_blank">🪙 التوكنز CSV</a>
@@ -1325,6 +1326,23 @@
                 loadAnalytics();
             }
         } catch (e) {}
+    }
+
+    async function createDatabaseBackup() {
+        if (!confirm('هل تريد أخذ نسخة احتياطية فورية مضغوطة (.db.gz) لقاعدة البيانات وتنزيلها الآن؟')) return;
+        try {
+            const res = await fetch(`/api/dev/backups/create?key=${encodeURIComponent(DEV_KEY)}`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                const b = data.backup;
+                alert(`✅ تم إنشاء النسخة الاحتياطية بنجاح!\n• الملف: ${b.filename}\n• الحجم: ${b.size_kb} KB\n• التاريخ: ${b.created_at}`);
+                window.open(`/api/dev/backups/download/${encodeURIComponent(b.filename)}?key=${encodeURIComponent(DEV_KEY)}`, '_blank');
+            } else {
+                alert(`❌ فشل أخذ النسخة: ${data.detail || 'خطأ غير معروف'}`);
+            }
+        } catch (e) {
+            alert('حدث خطأ أثناء الاتصال بالسيرفر');
+        }
     }
 
     async function loadDevOAuthConfig() {

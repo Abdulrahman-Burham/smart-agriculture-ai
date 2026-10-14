@@ -164,6 +164,34 @@ def get_image_blob_by_id(image_id: int) -> Optional[Tuple[bytes, str, str]]:
         return None
 
 
+def get_image_record_by_id(image_id: int) -> Optional[Dict[str, Any]]:
+    """Retrieve full diagnostic metadata by image ID for prescription generation."""
+    init_db()
+    with sqlite3.connect(str(DB_PATH)) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.execute(
+            """
+            SELECT id, created_at, filename, content_type, model_used,
+                   predicted_class, predicted_class_ar, confidence, top_predictions_json,
+                   user_query, rag_advice, client_ip, geo_city, weather_snapshot,
+                   user_id, user_name, user_identifier
+            FROM uploaded_images
+            WHERE id = ?
+            """,
+            (int(image_id),),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        d = dict(row)
+        try:
+            d["top_predictions"] = json.loads(d.get("top_predictions_json") or "[]")
+        except Exception:
+            d["top_predictions"] = []
+        return d
+
+
+
 def build_retraining_zip() -> bytes:
     """Build an in-memory ZIP archive of all uploaded images organized by class_name/image.jpg + manifest.csv for retraining."""
     init_db()

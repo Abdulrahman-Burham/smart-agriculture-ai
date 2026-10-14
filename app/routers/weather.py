@@ -9,8 +9,6 @@ Provides:
 from __future__ import annotations
 
 import asyncio
-import datetime
-import time
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Query, Request
@@ -19,13 +17,10 @@ from app.schemas.system import HealthResponse
 from app.schemas.weather import WeatherResponse
 from app.services.vision_service import get_cv_classifier
 from app.services.weather_service import (
-    EGYPT_GOV_COORDS,
-    _WEATHER_CACHE,
     fetch_weather_forecast,
     get_public_platform_stats,
     nearest_governorate,
 )
-from computer_vision.storage.telemetry_repository import get_developer_analytics
 from computer_vision.storage.user_repository import (
     get_pinned_visitor_profile,
     save_pinned_location_and_prefs,

@@ -27,6 +27,9 @@ class DiagnoseResponse(BaseModel):
     confidence: float = Field(0.0, description="Overall diagnostic confidence")
     latency: float = Field(0.0, description="Total pipeline latency in seconds")
     session_id: str = Field("", description="Session ID for chat follow-up")
+    image_id: Optional[int] = Field(None, description="Database record ID for prescription retrieval")
+    prescription_url: Optional[str] = Field(None, description="Direct URL to view/print official prescription")
+
 
 
 class VisionPredictionResult(BaseModel):

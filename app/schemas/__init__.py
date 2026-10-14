@@ -31,7 +31,7 @@ from app.schemas.system import (
     HealthCheckResponse,
     HealthResponse,
 )
-from app.schemas.weather import WeatherResponse
+from app.schemas.weather import AgronomicAlert, WeatherResponse
 
 __all__ = [
     "RegisterPayload",
@@ -48,6 +48,7 @@ __all__ = [
     "VisionPredictionResult",
     "DiagnoseAndAdviseRequest",
     "DiagnoseAndAdviseResponse",
+    "AgronomicAlert",
     "WeatherResponse",
     "HealthResponse",
     "HealthCheckResponse",

@@ -15,7 +15,7 @@ import json
 import os
 import sqlite3
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from computer_vision.storage.connection import DB_PATH, init_db
 from computer_vision.storage.utils import (

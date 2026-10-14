@@ -9,10 +9,11 @@ Provides:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
-from fastapi import APIRouter, File, Form, Query, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile
 
+from app.core.rate_limiter import ai_audio_limiter
 from app.schemas.chat import TTSPayload
 from app.services.audio_service import synthesize_speech, transcribe_speech
 
@@ -25,6 +26,7 @@ router = APIRouter()
 async def egyptian_stt_endpoint(
     audio: Optional[UploadFile] = File(None),
     fallback_text: str = Form(""),
+    _rate_limit: bool = Depends(ai_audio_limiter),
 ) -> Dict[str, str]:
     """Transcribe spoken Egyptian Arabic audio into Egyptian agricultural dialect text with multi-key rotation."""
     audio_bytes = None
@@ -54,7 +56,10 @@ async def egyptian_tts_get_endpoint(
 
 
 @router.post("/api/tts", tags=["Speech (Egyptian Dialect)"])
-async def egyptian_tts_post_endpoint(payload: TTSPayload) -> Response:
+async def egyptian_tts_post_endpoint(
+    payload: TTSPayload,
+    _rate_limit: bool = Depends(ai_audio_limiter),
+) -> Response:
     """Synthesize natural Egyptian Arabic speech (MP3/WAV) via POST (supports long agricultural prescriptions)."""
     audio_bytes, media_type = await synthesize_speech(payload.text, payload.voice)
     return Response(content=audio_bytes, media_type=media_type)

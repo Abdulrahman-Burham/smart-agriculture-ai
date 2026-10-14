@@ -14,9 +14,15 @@ from computer_vision.storage.connection import (
     get_db_connection,
     init_db,
 )
+from computer_vision.storage.backup_service import (
+    get_backup_file_path,
+    list_backups,
+    perform_sqlite_backup,
+)
 from computer_vision.storage.image_repository import (
     build_retraining_zip,
     get_image_blob_by_id,
+    get_image_record_by_id,
     save_image_record,
     update_image_ground_truth,
 )
@@ -97,6 +103,7 @@ __all__ = [
     "get_user_history",
     "get_agent_memory_context",
     "save_image_record",
+    "get_image_record_by_id",
     "update_image_ground_truth",
     "get_image_blob_by_id",
     "build_retraining_zip",
@@ -108,4 +115,7 @@ __all__ = [
     "get_guest_usage_status",
     "get_user_360_profile",
     "get_developer_analytics",
+    "perform_sqlite_backup",
+    "list_backups",
+    "get_backup_file_path",
 ]

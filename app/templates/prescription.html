@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الروشتة الزراعية الرسمية | RX-{{ image_id }}</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #065f46;
+      --primary-dark: #064e3b;
+      --primary-light: #10b981;
+      --accent: #d97706;
+      --danger: #b91c1c;
+      --text-dark: #111827;
+      --text-muted: #4b5563;
+      --bg-page: #f3f4f6;
+      --bg-card: #ffffff;
+      --border-color: #e5e7eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-dark);
+      padding: 24px 12px;
+      line-height: 1.6;
+    }
+
+    .action-bar {
+      max-width: 840px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #059669, #047857);
+      color: white;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+    }
+    .btn-primary:hover {
+      background: #047857;
+      transform: translateY(-1px);
+    }
+
+    .btn-whatsapp {
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      color: white;
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+    }
+    .btn-whatsapp:hover {
+      background: #128C7E;
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: white;
+      color: var(--text-dark);
+      border: 1px solid var(--border-color);
+    }
+    .btn-outline:hover {
+      background: #f9fafb;
+    }
+
+    /* Official Prescription Paper (A4 container) */
+    .prescription-sheet {
+      max-width: 840px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      border: 2px solid #10b98125;
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sheet-watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-25deg);
+      font-size: 80px;
+      font-weight: 900;
+      color: rgba(16, 185, 129, 0.035);
+      white-space: nowrap;
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+    }
+
+    /* Header */
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #065f4625;
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .brand-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .rx-badge {
+      background: #ecfdf5;
+      border: 1.5px solid #a7f3d0;
+      color: #065f46;
+      padding: 10px 18px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .rx-code {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      direction: ltr;
+      display: block;
+    }
+    .rx-date {
+      font-size: 12px;
+      color: #047857;
+      margin-top: 2px;
+    }
+
+    /* Meta Info Grid */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 18px 20px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .meta-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .meta-val {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-top: 2px;
+    }
+
+    /* Diagnosis Hero Box */
+    .diagnosis-hero {
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+      border: 1.5px solid #6ee7b7;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .diag-info {
+      flex: 1;
+    }
+
+    .diag-pill {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      background: #047857;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+    }
+
+    .diag-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: #064e3b;
+      margin-bottom: 4px;
+    }
+
+    .diag-latin {
+      font-size: 14px;
+      font-weight: 600;
+      color: #047857;
+      direction: ltr;
+      display: inline-block;
+    }
+
+    .diag-confidence {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #065f46;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .diag-thumb {
+      width: 110px;
+      height: 110px;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 3px solid white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    /* Prescription Section Blocks */
+    .section-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1.5px solid #10b98130;
+      padding-bottom: 8px;
+      margin: 28px 0 16px 0;
+    }
+
+    .advice-content {
+      font-size: 15px;
+      line-height: 1.8;
+      color: #1f2937;
+      background: #ffffff;
+      white-space: pre-line;
+      position: relative;
+      z-index: 1;
+    }
+
+    .advice-content h3, .advice-content strong {
+      color: #064e3b;
+    }
+
+    /* Safety & PHI Alert Box */
+    .safety-box {
+      background: #fffbeb;
+      border: 1.5px solid #fde68a;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-top: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .safety-icon {
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .safety-text {
+      font-size: 13.5px;
+      color: #92400e;
+      line-height: 1.7;
+    }
+    .safety-text strong {
+      color: #78350f;
+    }
+
+    /* Footer & Official Stamp */
+    .sheet-footer {
+      border-top: 2px dashed #e5e7eb;
+      margin-top: 36px;
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .verification-qr {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .qr-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      padding: 4px;
+      background: white;
+    }
+
+    .qr-caption {
+      font-size: 12px;
+      color: var(--text-muted);
+      max-width: 200px;
+      line-height: 1.5;
+    }
+
+    .official-stamp {
+      text-align: center;
+      border: 2px solid #059669;
+      border-radius: 50%;
+      width: 110px;
+      height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #059669;
+      font-weight: 800;
+      transform: rotate(-10deg);
+      box-shadow: inset 0 0 0 3px #05966915;
+    }
+    .stamp-text-1 { font-size: 10px; }
+    .stamp-text-2 { font-size: 13px; font-weight: 900; }
+    .stamp-text-3 { font-size: 11px; }
+
+    /* Print styles for Clean A4 Vector Output */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .action-bar {
+        display: none !important;
+      }
+      .prescription-sheet {
+        border: none;
+        box-shadow: none;
+        padding: 10px 20px;
+        max-width: 100%;
+      }
+      .diagnosis-hero {
+        background: #f0fdf4 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .sheet-watermark {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Action Bar (Hidden on Print) -->
+  <div class="action-bar">
+    <div style="display: flex; gap: 10px;">
+      <button onclick="window.print()" class="btn btn-primary">
+        🖨️ طباعة الروشتة / حفظ PDF
+      </button>
+      <button onclick="shareWhatsApp()" class="btn btn-whatsapp">
+        📲 مشاركة عبر واتساب
+      </button>
+    </div>
+    <a href="/dashboard" class="btn btn-outline">
+      🏠 العودة للمنصة
+    </a>
+  </div>
+
+  <!-- Main Printable Sheet -->
+  <div class="prescription-sheet">
+    <div class="sheet-watermark">الخبير الزراعي المعتمد</div>
+
+    <!-- Sheet Header -->
+    <header class="sheet-header">
+      <div class="header-brand">
+        <img src="/static/logo.png" alt="الخبير الزراعي" class="header-logo">
+        <div>
+          <h1 class="brand-title">منصة الخبير الزراعي الذكي</h1>
+          <p class="brand-subtitle">مركز استشارات وقاية وتشخيص أمراض النبات والمحاصيل — جمهورية مصر العربية</p>
+        </div>
+      </div>
+      <div class="rx-badge">
+        <span class="rx-code">RX-{{ "%06d"|format(image_id) }}</span>
+        <span class="rx-date">{{ created_at[:16].replace('T', ' ') if created_at else 'تاريخ الفحص' }}</span>
+      </div>
+    </header>
+
+    <!-- Meta Info Grid -->
+    <div class="meta-grid">
+      <div class="meta-item">
+        <span class="meta-label">المزارع / صاحب الطلب:</span>
+        <span class="meta-val">{{ user_name or 'مزارع كريم' }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">الموقع الجغرافي والمناخ:</span>
+        <span class="meta-val">{{ geo_city or weather_snapshot or 'جمهورية مصر العربية' }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">محرك الفحص والذكاء:</span>
+        <span class="meta-val">{{ model_used or 'EfficientNetV2 + Agri-RAG' }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">حالة الوثيقة:</span>
+        <span class="meta-val" style="color: #059669;">معتمدة ومطابقة رقمياً ✅</span>
+      </div>
+    </div>
+
+    <!-- Diagnosis Hero -->
+    <div class="diagnosis-hero">
+      <div class="diag-info">
+        <span class="diag-pill">التشخيص النهائي المعتمد</span>
+        <h2 class="diag-title">{{ predicted_class_ar or 'إصابة نباتية' }}</h2>
+        <span class="diag-latin">{{ predicted_class or '' }}</span>
+        <div class="diag-confidence">
+          <span>دقة التعرف البصري:</span>
+          <strong>{{ confidence or '95%' }}</strong>
+        </div>
+      </div>
+      <img src="/api/dev/image/{{ image_id }}" alt="عينة الورقة المصابة" class="diag-thumb" onerror="this.style.display='none'">
+    </div>
+
+    <!-- Detailed Treatment & Advice -->
+    <div class="section-title">
+      🌿 الخطة العلاجية والتوصيات المعتمدة لمكافحة الآفة
+    </div>
+    <div class="advice-content">
+      {{ rag_advice }}
+    </div>
+
+    <!-- PHI & Precaution Box -->
+    <div class="safety-box">
+      <div class="safety-icon">⚠️</div>
+      <div class="safety-text">
+        <strong>إرشادات السلامة العامة وفترة ما قبل الحصاد (PHI):</strong>
+        يُرجى الالتزام الصارم بفترات الأمان المدونة على عبوات المبيدات الموصى بها قبل جني المحصول، وارتداء مهمات الوقاية الشخصية أثناء الرش (كمامة وقفازات)، واقتصر على الرش في الصباح الباكر أو بعد انكسار حرارة الظهيرة وتجنب الرش وقت هبوب الرياح.
+      </div>
+    </div>
+
+    <!-- Footer Stamp & QR -->
+    <footer class="sheet-footer">
+      <div class="verification-qr">
+        <img id="qrCodeImg" class="qr-img" alt="QR Code">
+        <div class="qr-caption">
+          <strong>التحقق الرقمي من صحة الروشتة:</strong>
+          امسح الكود بكاميرا الموبايل لمراجعة الروشتة وتحديثاتها الحية على المنصة.
+        </div>
+      </div>
+      <div class="official-stamp">
+        <span class="stamp-text-1">الخبير الزراعي</span>
+        <span class="stamp-text-2">مُعـتـمـد</span>
+        <span class="stamp-text-3">SMART AGRI</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Generate QR Code dynamically
+    const currentUrl = window.location.href;
+    const qrImg = document.getElementById('qrCodeImg');
+    if (qrImg) {
+      qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(currentUrl);
+    }
+
+    function shareWhatsApp() {
+      const cropDisease = "{{ predicted_class_ar or 'تشخيص زراعي' }}";
+      const text = `📄 روشتة علاج زراعية معتمدة من منصة الخبير الزراعي الذكي\n` +
+                   `🌱 التشخيص: ${cropDisease}\n` +
+                   `🔗 تفاصيل الروشتة والجرعات الرسمية:\n${currentUrl}`;
+      const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+      window.open(waUrl, '_blank');
+    }
+  </script>
+</body>
+</html>

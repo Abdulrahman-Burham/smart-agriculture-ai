@@ -563,3 +563,54 @@ async def developer_export_data(
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.get("/api/dev/backups", tags=["Developer Admin"])
+async def list_database_backups_endpoint(request: Request, key: str = Query("")) -> Dict[str, Any]:
+    """List all available compressed SQLite database backups."""
+    verify_dev_key(key, request)
+    from computer_vision.storage.backup_service import list_backups
+
+    backups = await asyncio.to_thread(list_backups)
+    return {
+        "status": "success",
+        "count": len(backups),
+        "backups": backups,
+    }
+
+
+@router.post("/api/dev/backups/create", tags=["Developer Admin"])
+async def trigger_database_backup_endpoint(request: Request, key: str = Query("")) -> Dict[str, Any]:
+    """Trigger an immediate live online WAL backup and gzip archive."""
+    verify_dev_key(key, request)
+    from computer_vision.storage.backup_service import perform_sqlite_backup
+
+    result = await asyncio.to_thread(perform_sqlite_backup)
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Backup failed"))
+    return {
+        "status": "success",
+        "message": "تم إنشاء نسخة احتياطية مشفرة ومضغوطة لقاعدة البيانات بنجاح",
+        "backup": result,
+    }
+
+
+@router.get("/api/dev/backups/download/{filename}", tags=["Developer Admin"])
+async def download_database_backup_endpoint(
+    filename: str, request: Request, key: str = Query("")
+):
+    """Download a specific compressed SQLite database backup archive."""
+    verify_dev_key(key, request)
+    from computer_vision.storage.backup_service import get_backup_file_path
+
+    file_path = get_backup_file_path(filename)
+    if not file_path or not file_path.exists():
+        raise HTTPException(status_code=404, detail="ملف النسخة الاحتياطية غير موجود أو منتهي الصلاحية")
+
+    return FileResponse(
+        path=str(file_path),
+        media_type="application/gzip",
+        filename=filename,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+

@@ -13,9 +13,10 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 
 from app.core.guest_policy import enforce_guest_gate_or_401
+from app.core.rate_limiter import ai_diagnose_limiter
 from app.schemas.diagnose import DiagnoseResponse
 from app.services.llm_service import (
     KNOWN_AGRI_RAG_CROPS,
@@ -49,6 +50,7 @@ async def diagnose_endpoint(
     session_id: Optional[str] = Form(None),
     area_feddan: Optional[float] = Form(None),
     irrigation_type: Optional[str] = Form(None),
+    _rate_limit: bool = Depends(ai_diagnose_limiter),
 ) -> DiagnoseResponse:
     """Upload a leaf image → Plant-Only Filter → CV diagnosis + Agri-RAG grounded treatment advice + Private DB Save."""
     start_time = time.time()
@@ -268,8 +270,9 @@ async def diagnose_endpoint(
         )
 
         # Step 4: Silently save uploaded image + diagnosis + advice + visitor info to private server Database
+        saved_img_id = None
         try:
-            await asyncio.to_thread(
+            saved_img_id = await asyncio.to_thread(
                 save_image_record,
                 image_bytes=image_bytes,
                 filename=image.filename or "leaf.jpg",
@@ -295,6 +298,8 @@ async def diagnose_endpoint(
         except Exception as db_err:
             logger.warning(f"Database save warning: {db_err}")
 
+        prescription_url = f"/prescription/{saved_img_id}" if saved_img_id else None
+
         return DiagnoseResponse(
             is_plant=True,
             rejection_reason="",
@@ -304,6 +309,8 @@ async def diagnose_endpoint(
             confidence=rag_conf,
             latency=latency,
             session_id=returned_session_id,
+            image_id=saved_img_id,
+            prescription_url=prescription_url,
         )
     except HTTPException:
         raise
