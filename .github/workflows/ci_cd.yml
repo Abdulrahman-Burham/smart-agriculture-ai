@@ -35,7 +35,7 @@ jobs:
       - name: 🔍 Static Code Analysis & Syntax Validation
         run: |
           echo "Running Ruff syntax & fatal error validation..."
-          ruff check app/ computer_vision/ tests/ --select=E9,F63,F7,F82 --show-source
+          ruff check app/ computer_vision/ tests/ --select=E9,F63,F7,F82
 
       - name: 🧪 Execute Full Pytest Test Suite
         run: |
