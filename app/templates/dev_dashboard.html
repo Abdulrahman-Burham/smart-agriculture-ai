@@ -790,6 +790,21 @@
                 </div>
                 <div id="devGoogleClientIdStatus" style="font-size:0.74rem; color:var(--text-muted); margin-top:4px;"></div>
             </div>
+            <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #334155;">
+                <div style="font-size:0.78rem; font-weight:700; color:#fbbf24; margin-bottom:5px;">🚪 قفل الزوار بعد عدد محاولات (لإلزامهم بتسجيل الدخول ومعرفة هويتهم):</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                    <select id="devGuestMaxUses" class="verify-input" style="flex:1; min-width:140px;">
+                        <option value="1">بعد محاولة واحدة (1 مجاناً)</option>
+                        <option value="2">بعد محاولتين (2 مجاناً)</option>
+                        <option value="3" selected>بعد 3 محاولات (3 مجاناً — موصى به)</option>
+                        <option value="5">بعد 5 محاولات (5 مجاناً)</option>
+                        <option value="10">بعد 10 محاولات (10 مجاناً)</option>
+                        <option value="0">إيقاف القفل مؤقتاً (مفتوح للزوار)</option>
+                    </select>
+                    <button type="button" class="btn btn-primary" onclick="saveDevGuestPolicy()">💾 تطبيق السياسة</button>
+                </div>
+                <div id="devGuestPolicyStatus" style="font-size:0.74rem; color:#34d399; margin-top:4px;">✅ قفل الزوار مفعّل حالياً بعد 3 تجارب مجانية</div>
+            </div>
         </div>
     </div>
 
@@ -965,6 +980,17 @@
     </div>
 </div>
 
+<!-- User 360° Activity Inspector Modal -->
+<div class="modal-overlay" id="user360Modal" onclick="closeUser360()">
+    <div class="modal-box" style="max-width:920px; width:96%; max-height:88vh; overflow-y:auto;" onclick="event.stopPropagation()">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #334155; padding-bottom:10px;">
+            <h3 id="user360Title" style="font-size:1.1rem; color:#34d399;">🕵️ ملف نشاط المستخدم الكامل (User 360° Inspector)</h3>
+            <button class="btn" onclick="closeUser360()">✕ إغلاق</button>
+        </div>
+        <div id="user360Body" style="font-size:0.86rem; color:#e2e8f0;">جاري تحميل سجل نشاط المستخدم...</div>
+    </div>
+</div>
+
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const DEV_KEY = urlParams.get('key') || '';
@@ -1014,6 +1040,143 @@
 
     function closeModal() {
         document.getElementById('imgModal').classList.remove('open');
+    }
+
+    function closeUser360() {
+        document.getElementById('user360Modal').classList.remove('open');
+    }
+
+    async function saveDevGuestPolicy() {
+        const sel = document.getElementById('devGuestMaxUses');
+        const st = document.getElementById('devGuestPolicyStatus');
+        if (!sel) return;
+        const val = parseInt(sel.value, 10);
+        const enforce = val > 0;
+        const maxUses = enforce ? val : 3;
+        if (st) st.innerHTML = '<span style="color:#60a5fa;">⏳ جاري حفظ السياسة...</span>';
+        try {
+            const res = await fetch(`/api/dev/guest-policy?key=${encodeURIComponent(DEV_KEY)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enforce_login: enforce, max_free_uses: maxUses })
+            });
+            const data = await res.json();
+            if (res.ok && data.guest_policy) {
+                const p = data.guest_policy;
+                if (st) {
+                    st.innerHTML = p.enforce_login
+                        ? `<span style="color:#34d399;">✅ مفعّل: يُطلب من الزائر تسجيل الدخول بعد <strong>${p.max_free_uses}</strong> محاولات مجانية</span>`
+                        : `<span style="color:#fbbf24;">⚠️ متوقف مؤقتاً: الاستخدام مفتوح للزوار بدون إلزام بالتسجيل</span>`;
+                }
+            }
+        } catch (e) {
+            if (st) st.innerHTML = '<span style="color:#f87171;">❌ تعذر حفظ السياسة</span>';
+        }
+    }
+
+    async function openUser360(userId, visitorId, clientIp) {
+        const modal = document.getElementById('user360Modal');
+        const body = document.getElementById('user360Body');
+        const title = document.getElementById('user360Title');
+        modal.classList.add('open');
+        body.innerHTML = '<div style="padding:24px; text-align:center; color:#60a5fa;">⏳ جاري تجميع ملف نشاط المستخدم الكامل (الصور، الأسئلة، التوكنز، والزيارات)...</div>';
+
+        const q = new URLSearchParams({ key: DEV_KEY });
+        if (userId) q.set('user_id', userId);
+        if (visitorId) q.set('visitor_id', visitorId);
+        if (clientIp) q.set('client_ip', clientIp);
+
+        try {
+            const res = await fetch(`/api/dev/user-360?${q.toString()}`);
+            if (!res.ok) throw new Error('Failed');
+            const d = await res.json();
+            const u = d.user || {};
+            const vp = d.visitor_profile || {};
+            const sum = d.summary || {};
+            const imgs = d.images || [];
+            const chats = d.chats || [];
+            const visits = d.visits || [];
+
+            const displayName = u.full_name || vp.user_name || (visitorId ? `زائر (${visitorId})` : `زائر (${clientIp})`);
+            title.textContent = `🕵️ ملف النشاط الكامل: ${displayName}`;
+
+            const featsBadges = (sum.features_used || []).map(f => `<span class="badge badge-green" style="margin:2px;">${esc(f)}</span>`).join(' ') || '<span style="color:#94a3b8;">تصفح فقط</span>';
+            const cropsBadges = (sum.crops_interested || []).map(c => `<span class="badge badge-amber" style="margin:2px;">🌾 ${esc(c)}</span>`).join(' ') || '<span style="color:#94a3b8;">عام</span>';
+
+            const imgsHtml = imgs.length ? imgs.map(im => `
+                <div style="display:flex; gap:10px; align-items:center; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:8px 10px; margin-bottom:8px;">
+                    <img src="/api/dev/image/${im.id}?key=${encodeURIComponent(DEV_KEY)}" style="width:54px; height:54px; object-fit:cover; border-radius:8px; cursor:pointer;" onclick="openImageModal(${im.id}, '${esc(im.predicted_class_ar || im.predicted_class)}', '')">
+                    <div style="flex:1;">
+                        <div style="font-weight:700; color:#34d399;">${esc(im.predicted_class_ar || im.predicted_class)} <span class="badge badge-amber">${esc(im.confidence)}</span></div>
+                        <div style="font-size:0.76rem; color:#94a3b8;">🕒 ${esc(im.created_at)} | 📐 ${im.width || '?'}×${im.height || '?'} | ${esc(im.quality_flag || '')}</div>
+                    </div>
+                </div>
+            `).join('') : '<div style="color:#94a3b8; font-size:0.8rem;">لم يقم برفع صور بعد.</div>';
+
+            const chatsHtml = chats.length ? chats.map(c => `
+                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:9px 12px; margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#94a3b8; margin-bottom:4px;">
+                        <span>🕒 ${esc(c.created_at)} | 🌾 ${esc(c.crop || 'عام')} | 📍 ${esc(c.location || '')}</span>
+                        <span class="mono" style="color:#c4b5fd;">🪙 ${fmtNum(c.total_tokens || 0)} tok (${esc(c.llm_model || 'gemini')})</span>
+                    </div>
+                    <div style="color:#fef08a; font-weight:700; margin-bottom:4px;">❓ سأل: ${esc(c.user_query)}</div>
+                    <div style="font-size:0.8rem; color:#cbd5e1; max-height:75px; overflow-y:auto;">💡 الرد: ${esc(c.bot_answer)}</div>
+                </div>
+            `).join('') : '<div style="color:#94a3b8; font-size:0.8rem;">لم يرسل أسئلة في الشات بعد.</div>';
+
+            const visitsHtml = visits.slice(0, 15).map(v => `
+                <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed #1e293b; font-size:0.76rem;">
+                    <span><span class="badge badge-blue">${esc(v.method)}</span> <span class="mono" style="color:#93c5fd;">${esc(v.path)}</span></span>
+                    <span style="color:#94a3b8;">${esc(v.created_at)} • ${v.latency_ms} ms</span>
+                </div>
+            `).join('');
+
+            body.innerHTML = `
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-bottom:14px;">
+                    <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:12px;">
+                        <div style="font-size:0.75rem; color:#94a3b8;">👤 الهوية والحساب</div>
+                        <div style="font-weight:800; font-size:1rem; color:#f8fafc; margin-top:3px;">${esc(displayName)}</div>
+                        <div class="mono" style="font-size:0.78rem; color:#60a5fa;">${esc(u.identifier || vp.user_identifier || 'زائر بدون حساب')}</div>
+                        <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">طريقة الدخول: <strong>${esc(u.auth_provider || (u.id ? 'password' : 'guest_cookie'))}</strong> | الكوكي: <span class="mono">${esc(visitorId || u.last_visitor_id || '-')}</span></div>
+                    </div>
+                    <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:12px;">
+                        <div style="font-size:0.75rem; color:#94a3b8;">📍 الموقع والأرض والشبكة</div>
+                        <div style="font-weight:700; color:#34d399; margin-top:3px;">المحافظة: ${esc(u.governorate || vp.pinned_governorate || 'القاهرة')}</div>
+                        <div style="font-size:0.78rem;">المساحة: <strong>${u.farm_size_feddan || vp.farm_size_feddan || 1} فدان</strong> | الري: <strong>${esc(u.irrigation_type || vp.irrigation_type || 'تنقيط')}</strong></div>
+                        <div style="font-size:0.75rem; color:#fbbf24; margin-top:4px;">IP: <span class="mono">${esc(u.client_ip || vp.last_ip || clientIp || '-')}</span> (${esc(u.geo_city || vp.ip_city || '')})</div>
+                    </div>
+                    <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:12px;">
+                        <div style="font-size:0.75rem; color:#94a3b8;">📊 إجمالي النشاط والتوكنز</div>
+                        <div style="margin-top:5px;">
+                            <span class="badge badge-purple">📸 صور: ${sum.images_count || 0}</span>
+                            <span class="badge badge-green">💬 شات: ${sum.chats_count || 0}</span>
+                            <span class="badge badge-blue">🌐 زيارات: ${sum.visits_count || 0}</span>
+                        </div>
+                        <div style="margin-top:6px; font-size:0.8rem;">🪙 استهلاك التوكنز: <strong class="mono" style="color:#34d399;">${fmtNum(sum.tokens_used || 0)}</strong> ($${Number(sum.estimated_cost_usd || 0).toFixed(4)})</div>
+                    </div>
+                </div>
+                <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:10px 12px; margin-bottom:14px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                    <div><strong style="font-size:0.78rem; color:#93c5fd;">🧩 الأدوات التي استخدمها:</strong> ${featsBadges}</div>
+                    <div><strong style="font-size:0.78rem; color:#fbbf24;">🌾 المحاصيل المهتم بها:</strong> ${cropsBadges}</div>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:12px;">
+                    <div>
+                        <h4 style="font-size:0.9rem; color:#60a5fa; margin-bottom:8px;">🖼️ الصور التي فحصها (${imgs.length})</h4>
+                        <div style="max-height:280px; overflow-y:auto;">${imgsHtml}</div>
+                    </div>
+                    <div>
+                        <h4 style="font-size:0.9rem; color:#34d399; margin-bottom:8px;">💬 الأسئلة والاستشارات (${chats.length})</h4>
+                        <div style="max-height:280px; overflow-y:auto;">${chatsHtml}</div>
+                    </div>
+                </div>
+                <div style="margin-top:12px; background:#0f172a; border:1px solid #334155; border-radius:12px; padding:10px 12px;">
+                    <h4 style="font-size:0.84rem; color:#c4b5fd; margin-bottom:6px;">🌐 آخر تحركاته ومساراته داخل المنصة (Navigation Trail)</h4>
+                    <div style="max-height:150px; overflow-y:auto;">${visitsHtml || '-'}</div>
+                </div>
+            `;
+        } catch (err) {
+            body.innerHTML = `<div style="color:#f87171; padding:16px;">❌ تعذر تحميل ملف المستخدم.</div>`;
+        }
     }
 
     async function saveVerifiedLabel(imgId, defaultClass) {
@@ -1525,6 +1688,18 @@
                 ${ipsHtml || '<div style="color:var(--text-muted); font-size:0.8rem;">لا توجد عناوين IP بعد</div>'}
             `;
 
+            if (data.guest_policy) {
+                const gp = data.guest_policy;
+                const gSel = document.getElementById('devGuestMaxUses');
+                const gSt = document.getElementById('devGuestPolicyStatus');
+                if (gSel) gSel.value = gp.enforce_login ? String(gp.max_free_uses || 3) : '0';
+                if (gSt) {
+                    gSt.innerHTML = gp.enforce_login
+                        ? `<span style="color:#34d399;">✅ مفعّل: يُطلب من الزائر تسجيل الدخول بعد <strong>${gp.max_free_uses}</strong> محاولات مجانية</span>`
+                        : `<span style="color:#fbbf24;">⚠️ متوقف مؤقتاً: الاستخدام مفتوح للزوار بدون إلزام بالتسجيل</span>`;
+                }
+            }
+
             const cookies = data.cookie_profiles || [];
             const chats = data.recent_chats || [];
             const images = data.recent_images || [];
@@ -1547,10 +1722,15 @@
                 const gpsCoords = (cp.gps_lat != null && cp.gps_lon != null)
                     ? `<div class="mono" style="font-size:0.72rem; margin-top:2px;">(${Number(cp.gps_lat).toFixed(4)}, ${Number(cp.gps_lon).toFixed(4)})</div>`
                     : '';
+                const lastQ = cp.last_question ? `<div style="font-size:0.73rem; color:#fef08a; margin-top:4px;">💬 آخر سؤال: ${esc(String(cp.last_question).slice(0, 55))}</div>` : '';
+                const lastD = cp.last_diagnosis ? `<div style="font-size:0.73rem; color:#34d399; margin-top:2px;">🔬 آخر فحص: ${esc(String(cp.last_diagnosis).slice(0, 50))}</div>` : '';
                 return `
                 <tr class="searchable-row">
                     <td>
                         <span class="badge badge-purple mono">🍪 ${esc(cp.visitor_id)}</span>
+                        <div style="margin-top:6px;">
+                            <button type="button" class="btn btn-blue" style="padding:3px 8px; font-size:0.72rem;" onclick="openUser360(${cp.user_id || 'null'}, '${esc(cp.visitor_id || '')}', '${esc(cp.last_ip || '')}')">🕵️ ملف النشاط الكامل</button>
+                        </div>
                     </td>
                     <td>
                         ${cp.user_id
@@ -1571,9 +1751,14 @@
                         <div>📐 المساحة: <strong>${cp.farm_size_feddan || 1} فدان</strong> | 💧 الري: <strong>${esc(cp.irrigation_type || 'تنقيط')}</strong></div>
                     </td>
                     <td>
-                        <span class="badge badge-blue">🌐 زيارات: ${cp.visit_count ?? cp.visits_count ?? 0}</span>
-                        <span class="badge badge-green" style="margin-right:4px;">💬 شات: ${cp.chats_count || 0}</span>
-                        <span class="badge badge-purple" style="margin-right:4px;">📸 صور: ${cp.images_count || 0}</span>
+                        <div>
+                            <span class="badge badge-blue">🌐 زيارات: ${cp.visit_count ?? cp.visits_count ?? 0}</span>
+                            <span class="badge badge-green" style="margin-right:4px;">💬 شات: ${cp.chats_count || 0}</span>
+                            <span class="badge badge-purple" style="margin-right:4px;">📸 صور: ${cp.images_count || 0}</span>
+                            ${cp.tokens_used ? `<span class="badge badge-amber mono" style="margin-right:4px;">🪙 ${fmtNum(cp.tokens_used)} tok</span>` : ''}
+                        </div>
+                        ${lastQ}
+                        ${lastD}
                     </td>
                     <td style="font-size:0.75rem;">
                         <div class="mono">${esc(cp.last_ip || '-')}</div>
@@ -1598,9 +1783,16 @@
                     password: '🔒 كلمة مرور'
                 };
                 const provLabel = provMap[u.auth_provider || 'password'] || esc(u.auth_provider || 'password');
+                const lastQ = u.last_question ? `<div style="font-size:0.73rem; color:#fef08a; margin-top:4px;">💬 آخر سؤال: ${esc(String(u.last_question).slice(0, 55))}</div>` : '';
+                const lastD = u.last_diagnosis ? `<div style="font-size:0.73rem; color:#34d399; margin-top:2px;">🔬 آخر فحص: ${esc(String(u.last_diagnosis).slice(0, 50))}</div>` : '';
                 return `
                 <tr class="searchable-row">
-                    <td><strong>#${u.id}</strong></td>
+                    <td>
+                        <strong>#${u.id}</strong>
+                        <div style="margin-top:6px;">
+                            <button type="button" class="btn btn-blue" style="padding:3px 8px; font-size:0.72rem;" onclick="openUser360(${u.id}, '${esc(u.last_visitor_id || '')}', '${esc(u.client_ip || '')}')">🕵️ كل نشاطه</button>
+                        </div>
+                    </td>
                     <td>
                         <div style="font-weight:700; color:#f8fafc;">👤 ${esc(u.full_name)}</div>
                         <span class="badge ${u.role === 'admin' ? 'badge-purple' : 'badge-green'}">${u.role === 'admin' ? '🛡️ Admin Developer' : '🌾 مزارع مسجل'}</span>
@@ -1619,8 +1811,14 @@
                         <div style="font-size:0.74rem; color:var(--text-muted); margin-top:2px;">${u.farm_size_feddan || 1} فدان • ري ${esc(u.irrigation_type || 'تنقيط')}</div>
                     </td>
                     <td>
-                        <span class="badge badge-blue">📸 صور: ${u.images_count || 0}</span>
-                        <span class="badge badge-green" style="margin-right:4px;">💬 شات: ${u.chats_count || 0}</span>
+                        <div>
+                            <span class="badge badge-blue">📸 صور: ${u.images_count || 0}</span>
+                            <span class="badge badge-green" style="margin-right:4px;">💬 شات: ${u.chats_count || 0}</span>
+                            <span class="badge badge-purple" style="margin-right:4px;">🌐 زيارات: ${u.visits_count || 0}</span>
+                            ${u.tokens_used ? `<span class="badge badge-amber mono" style="margin-right:4px;">🪙 ${fmtNum(u.tokens_used)} tok</span>` : ''}
+                        </div>
+                        ${lastQ}
+                        ${lastD}
                     </td>
                     <td style="font-size:0.76rem;">
                         <div>مرات الدخول: <strong>${u.login_count || 1}</strong></div>

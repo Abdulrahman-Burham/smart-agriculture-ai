@@ -54,3 +54,10 @@ __pycache__/
 chroma_db/
 
 data/oauth_config.json
+data/gemini_keys.json
+data/guest_policy.json
+data/uploaded_images/
+reports/
+*.zip
+agri_rag_model/
+

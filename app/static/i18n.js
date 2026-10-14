@@ -724,9 +724,383 @@
         }
     };
 
+    // ─── Smart Guest Usage Gate & Instant In-Page Login Modal ───────────
+    let currentGuestQuota = null;
+
+    function renderGuestQuotaPill(quota) {
+        currentGuestQuota = quota;
+        let pill = document.getElementById('agri-guest-quota-pill');
+        if (!quota || quota.is_authenticated || !quota.enforce_login) {
+            if (pill) pill.style.display = 'none';
+            return;
+        }
+        if (window.location.pathname.startsWith('/login') || window.location.pathname.startsWith('/dev-panel')) {
+            return;
+        }
+        if (!pill) {
+            pill = document.createElement('button');
+            pill.id = 'agri-guest-quota-pill';
+            pill.type = 'button';
+            pill.onclick = function () {
+                window.openAgriGuestGateModal();
+            };
+            pill.style.cssText = [
+                'display: inline-flex',
+                'align-items: center',
+                'gap: 6px',
+                'padding: 5px 11px',
+                'border-radius: 999px',
+                'font-family: Cairo, sans-serif',
+                'font-size: 0.76rem',
+                'font-weight: 800',
+                'cursor: pointer',
+                'transition: all 0.2s ease',
+                'border: 1px solid rgba(212, 163, 89, 0.55)',
+                'background: rgba(212, 163, 89, 0.14)',
+                'color: var(--text-main, var(--text-light, #18241D))',
+                'box-shadow: 0 2px 8px rgba(0,0,0,0.06)'
+            ].join(';');
+
+            const navContainer = document.querySelector('.nav-container'); // index.html
+            const topActions = document.querySelector('.top-actions'); // mobile.html
+            const headerLinks = document.querySelector('.header-links'); // simple.html
+            const navAuthArea = document.getElementById('navAuthArea'); // landing.html
+
+            if (navContainer) {
+                navContainer.insertBefore(pill, navContainer.firstChild);
+            } else if (topActions) {
+                pill.style.fontSize = '0.68rem';
+                pill.style.padding = '3px 8px';
+                topActions.insertBefore(pill, topActions.firstChild);
+            } else if (headerLinks) {
+                headerLinks.insertBefore(pill, headerLinks.firstChild);
+            } else if (navAuthArea) {
+                navAuthArea.insertBefore(pill, navAuthArea.firstChild);
+            }
+        }
+
+        const rem = Number(quota.remaining_free ?? 3);
+        const maxU = Number(quota.max_free_uses ?? 3);
+        pill.style.display = 'inline-flex';
+        if (rem <= 0) {
+            pill.style.borderColor = 'rgba(220, 38, 38, 0.55)';
+            pill.style.background = 'rgba(220, 38, 38, 0.12)';
+            pill.style.color = '#dc2626';
+            pill.innerHTML = `🔒 انتهت تجارب الزائر (${maxU}/${maxU}) — سجّل دخولك مجاناً`;
+        } else {
+            pill.style.borderColor = 'rgba(212, 163, 89, 0.55)';
+            pill.style.background = 'rgba(212, 163, 89, 0.14)';
+            pill.style.color = 'inherit';
+            pill.innerHTML = `🎁 متبقي ${rem} من ${maxU} تجارب كزائر — سجّل مجاناً`;
+        }
+    }
+
+    async function refreshGuestQuota() {
+        if (window.location.pathname.startsWith('/login') || window.location.pathname.startsWith('/dev-panel')) return;
+        try {
+            const headers = {};
+            const tok = localStorage.getItem('agri_token');
+            if (tok) headers['Authorization'] = 'Bearer ' + tok;
+            const res = await origFetch('/api/auth/me', { headers: headers, credentials: 'same-origin' });
+            if (res.ok) {
+                const data = await res.clone().json();
+                if (data && data.guest_quota) {
+                    renderGuestQuotaPill(data.guest_quota);
+                }
+            }
+        } catch (e) {}
+    }
+
+    function ensureGuestGateModalExists() {
+        let overlay = document.getElementById('agri-guest-gate-overlay');
+        if (overlay) return overlay;
+
+        overlay = document.createElement('div');
+        overlay.id = 'agri-guest-gate-overlay';
+        overlay.style.cssText = [
+            'position: fixed',
+            'inset: 0',
+            'z-index: 99999',
+            'background: rgba(15, 24, 18, 0.72)',
+            'backdrop-filter: blur(6px)',
+            'display: none',
+            'align-items: center',
+            'justify-content: center',
+            'padding: 16px',
+            'font-family: Cairo, sans-serif',
+            'direction: rtl'
+        ].join(';');
+
+        const savedGov = localStorage.getItem('agri_gov') || 'القاهرة';
+        const savedCrop = localStorage.getItem('agri_crop') || '';
+
+        overlay.innerHTML = `
+            <div style="background: var(--bg-card, #ffffff); color: var(--text-main, #18241D); border: 1px solid rgba(45, 106, 79, 0.28); border-radius: 22px; max-width: 460px; width: 100%; padding: 24px 22px; box-shadow: 0 24px 60px rgba(0,0,0,0.32); position: relative; max-height: 92vh; overflow-y: auto;">
+                <button type="button" id="agri-guest-gate-close" style="position: absolute; top: 14px; left: 14px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(120,120,120,0.25); background: transparent; color: inherit; cursor: pointer; font-weight: 800; font-size: 0.95rem;">✕</button>
+                <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(45, 106, 79, 0.12); color: #2D6A4F; font-size: 0.78rem; font-weight: 800; margin-bottom: 10px;">
+                    🌱 بطاقة المزارع الذكي المجانية
+                </div>
+                <h3 style="font-size: 1.2rem; font-weight: 900; margin: 0 0 8px 0; line-height: 1.4;">
+                    سجّل دخولك في ثوانٍ لمتابعة الفحص والاستشارة مجاناً
+                </h3>
+                <p id="agri-guest-gate-msg" style="font-size: 0.86rem; opacity: 0.85; line-height: 1.65; margin: 0 0 16px 0;">
+                    لقد استخدمت التجارب المجانية المتاحة للزوار. سجّل دخولك الآن مجاناً لحفظ سجل تشخيصاتك ومحادثاتك الزراعية وربطها بمزرعتك وموقعك تلقائياً!
+                </p>
+
+                <!-- Option 1: 1-Click Google Login -->
+                <button type="button" id="agri-gate-google-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(45, 106, 79, 0.3); background: #ffffff; color: #1f2937; font-family: Cairo, sans-serif; font-size: 0.92rem; font-weight: 800; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.06); margin-bottom: 14px;">
+                    <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                    <span>المتابعة بحساب Google في ثانية</span>
+                </button>
+
+                <div style="display: flex; align-items: center; gap: 10px; margin: 12px 0; font-size: 0.78rem; opacity: 0.7;">
+                    <div style="flex: 1; height: 1px; background: rgba(120,120,120,0.25);"></div>
+                    <span>أو سجّل سريعاً في 5 ثوانٍ بدون كلمة مرور</span>
+                    <div style="flex: 1; height: 1px; background: rgba(120,120,120,0.25);"></div>
+                </div>
+
+                <!-- Option 2: Instant 5-Second Farmer Sign-In -->
+                <form id="agri-gate-quick-form" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div>
+                        <label style="display: block; font-size: 0.78rem; font-weight: 800; margin-bottom: 4px;">الاسم الكامل *</label>
+                        <input type="text" id="agri-gate-name" required placeholder="مثال: م. أحمد / الحاج محمود" style="width: 100%; padding: 10px 12px; border-radius: 11px; border: 1px solid rgba(45, 106, 79, 0.3); background: var(--bg-input, rgba(0,0,0,0.03)); color: inherit; font-family: Cairo, sans-serif; font-size: 0.88rem; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.78rem; font-weight: 800; margin-bottom: 4px;">رقم الموبايل المصري أو البريد الإلكتروني *</label>
+                        <input type="text" id="agri-gate-ident" required placeholder="01012345678 أو name@gmail.com" style="width: 100%; padding: 10px 12px; border-radius: 11px; border: 1px solid rgba(45, 106, 79, 0.3); background: var(--bg-input, rgba(0,0,0,0.03)); color: inherit; font-family: Cairo, sans-serif; font-size: 0.88rem; direction: ltr; text-align: right; box-sizing: border-box;">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 3px;">المحافظة</label>
+                            <select id="agri-gate-gov" style="width: 100%; padding: 9px 10px; border-radius: 11px; border: 1px solid rgba(45, 106, 79, 0.3); background: var(--bg-card, #ffffff); color: inherit; font-family: Cairo, sans-serif; font-size: 0.82rem;">
+                                <option value="القاهرة">القاهرة</option>
+                                <option value="الجيزة">الجيزة</option>
+                                <option value="الإسكندرية">الإسكندرية</option>
+                                <option value="البحيرة">البحيرة</option>
+                                <option value="كفر الشيخ">كفر الشيخ</option>
+                                <option value="الدقهلية">الدقهلية</option>
+                                <option value="الشرقية">الشرقية</option>
+                                <option value="المنوفية">المنوفية</option>
+                                <option value="الغربية">الغربية</option>
+                                <option value="القليوبية">القليوبية</option>
+                                <option value="الفيوم">الفيوم</option>
+                                <option value="بني سويف">بني سويف</option>
+                                <option value="المنيا">المنيا</option>
+                                <option value="أسيوط">أسيوط</option>
+                                <option value="سوهاج">سوهاج</option>
+                                <option value="قنا">قنا</option>
+                                <option value="الأقصر">الأقصر</option>
+                                <option value="أسوان">أسوان</option>
+                                <option value="الإسماعيلية">الإسماعيلية</option>
+                                <option value="دمياط">دمياط</option>
+                                <option value="بورسعيد">بورسعيد</option>
+                                <option value="السويس">السويس</option>
+                                <option value="مطروح">مطروح</option>
+                                <option value="الوادي الجديد">الوادي الجديد</option>
+                                <option value="شمال سيناء">شمال سيناء</option>
+                                <option value="جنوب سيناء">جنوب سيناء</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 3px;">المحصول الأساسي</label>
+                            <select id="agri-gate-crop" style="width: 100%; padding: 9px 10px; border-radius: 11px; border: 1px solid rgba(45, 106, 79, 0.3); background: var(--bg-card, #ffffff); color: inherit; font-family: Cairo, sans-serif; font-size: 0.82rem;">
+                                <option value="">كل المحاصيل</option>
+                                <option value="طماطم">طماطم</option>
+                                <option value="بطاطس">بطاطس</option>
+                                <option value="قمح">قمح</option>
+                                <option value="ذرة">ذرة</option>
+                                <option value="مانجو">مانجو</option>
+                                <option value="أرز">أرز</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="agri-gate-error" style="display: none; font-size: 0.8rem; color: #dc2626; font-weight: 700; padding: 6px 10px; border-radius: 8px; background: rgba(220,38,38,0.08);"></div>
+                    <button type="submit" id="agri-gate-submit-btn" style="width: 100%; padding: 12px 16px; border-radius: 14px; border: none; background: linear-gradient(135deg, #2D6A4F, #1B4332); color: #ffffff; font-family: Cairo, sans-serif; font-size: 0.94rem; font-weight: 800; cursor: pointer; margin-top: 4px; box-shadow: 0 6px 18px rgba(45, 106, 79, 0.32);">
+                        🚀 دخول فوري ومتابعة الفحص مجاناً
+                    </button>
+                </form>
+
+                <div style="text-align: center; margin-top: 12px; font-size: 0.78rem; opacity: 0.8;">
+                    لديك حساب بكلمة مرور؟ <a href="/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}" style="color: #2D6A4F; font-weight: 800; text-decoration: underline;">صفحة تسجيل الدخول الكاملة</a>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const govSel = document.getElementById('agri-gate-gov');
+        const cropSel = document.getElementById('agri-gate-crop');
+        if (govSel && savedGov) govSel.value = savedGov;
+        if (cropSel && savedCrop) cropSel.value = savedCrop;
+
+        document.getElementById('agri-guest-gate-close').onclick = function () {
+            overlay.style.display = 'none';
+        };
+        overlay.addEventListener('click', function (ev) {
+            if (ev.target === overlay) overlay.style.display = 'none';
+        });
+
+        document.getElementById('agri-gate-google-btn').onclick = function () {
+            const nextUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = '/api/auth/google/login?next=' + nextUrl;
+        };
+
+        document.getElementById('agri-gate-quick-form').onsubmit = async function (ev) {
+            ev.preventDefault();
+            const nameVal = (document.getElementById('agri-gate-name').value || '').trim();
+            const identVal = (document.getElementById('agri-gate-ident').value || '').trim();
+            const govVal = document.getElementById('agri-gate-gov').value || 'القاهرة';
+            const cropVal = document.getElementById('agri-gate-crop').value || '';
+            const errBox = document.getElementById('agri-gate-error');
+            const submitBtn = document.getElementById('agri-gate-submit-btn');
+
+            if (nameVal.length < 2 || identVal.length < 5) {
+                errBox.style.display = 'block';
+                errBox.textContent = 'يرجى كتابة الاسم ورقم الموبايل أو الإيميل الصحيح.';
+                return;
+            }
+            errBox.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ جاري تفعيل الحساب وربط سجل مزرعتك...';
+
+            const isEmail = identVal.includes('@');
+            try {
+                const res = await origFetch('/api/auth/social', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        provider: isEmail ? 'google' : 'quick_phone',
+                        identifier: identVal,
+                        full_name: nameVal,
+                        governorate: govVal,
+                        primary_crop: cropVal
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || data.status !== 'ok') {
+                    const msg = (data && data.detail) ? (typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail)) : 'تعذر تسجيل الدخول، تأكد من صحة رقم الموبايل أو الإيميل.';
+                    errBox.style.display = 'block';
+                    errBox.textContent = msg;
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '🚀 دخول فوري ومتابعة الفحص مجاناً';
+                    return;
+                }
+                if (data.token) localStorage.setItem('agri_token', data.token);
+                if (data.user) localStorage.setItem('agri_user', JSON.stringify(data.user));
+                if (govVal) localStorage.setItem('agri_gov', govVal);
+                if (cropVal) localStorage.setItem('agri_crop', cropVal);
+
+                overlay.style.display = 'none';
+                renderGuestQuotaPill({ is_authenticated: true });
+
+                // Refresh header UI on whichever page is active
+                if (typeof window.checkAuthSession === 'function') window.checkAuthSession();
+                if (typeof window.initProfileAndLocation === 'function') window.initProfileAndLocation();
+                if (typeof window.initSimpleAuth === 'function') window.initSimpleAuth();
+
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 دخول فوري ومتابعة الفحص مجاناً';
+            } catch (err) {
+                errBox.style.display = 'block';
+                errBox.textContent = 'حدث خطأ في الاتصال، حاول مرة أخرى.';
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 دخول فوري ومتابعة الفحص مجاناً';
+            }
+        };
+
+        return overlay;
+    }
+
+    window.openAgriGuestGateModal = function (customMessage) {
+        const overlay = ensureGuestGateModalExists();
+        const msgEl = document.getElementById('agri-guest-gate-msg');
+        if (msgEl && customMessage) {
+            msgEl.textContent = customMessage;
+        }
+        overlay.style.display = 'flex';
+    };
+
+    // Intercept fetch calls to /api/chat, /api/diagnose, and /api/auth/me
+    const origFetch = window.fetch.bind(window);
+    window.fetch = async function (input, init) {
+        const urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+        const isAiAction = urlStr.includes('/api/chat') || urlStr.includes('/api/diagnose');
+        const isAuthMe = urlStr.includes('/api/auth/me');
+
+        // Automatically attach stored Bearer token if not already present on AI actions
+        if (isAiAction) {
+            const tok = localStorage.getItem('agri_token');
+            if (tok) {
+                init = init || {};
+                init.headers = init.headers || {};
+                if (init.headers instanceof Headers) {
+                    if (!init.headers.has('Authorization')) init.headers.set('Authorization', 'Bearer ' + tok);
+                } else if (typeof init.headers === 'object' && !init.headers['Authorization']) {
+                    init.headers['Authorization'] = 'Bearer ' + tok;
+                }
+            }
+        }
+
+        const response = await origFetch(input, init);
+
+        if (isAuthMe && response.ok) {
+            try {
+                const cloneData = await response.clone().json();
+                if (cloneData && cloneData.guest_quota) {
+                    renderGuestQuotaPill(cloneData.guest_quota);
+                }
+            } catch (e) {}
+        } else if (isAiAction) {
+            if (response.status === 401) {
+                try {
+                    const errJson = await response.clone().json();
+                    const detail = errJson && errJson.detail ? errJson.detail : {};
+                    const msg = (typeof detail === 'object' && detail.message)
+                        ? detail.message
+                        : 'لقد استنفدت التجارب المجانية للزوار. سجّل دخولك الآن في ثوانٍ لمتابعة الفحص والاستشارة مجاناً وحفظ سجل مزرعتك! 🌱';
+                    window.openAgriGuestGateModal(msg);
+                    // Return a graceful synthetic JSON response so calling UI shows the prompt cleanly without throwing an unhandled error
+                    if (urlStr.includes('/api/chat')) {
+                        return new Response(JSON.stringify({
+                            answer: '🔒 **يرجى تسجيل الدخول للمتابعة مجاناً:**\n' + msg,
+                            sources: [],
+                            confidence: 1.0,
+                            latency: 0.01,
+                            session_id: localStorage.getItem('agri_session_id') || ''
+                        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                    } else if (urlStr.includes('/api/diagnose')) {
+                        return new Response(JSON.stringify({
+                            is_plant: false,
+                            rejection_reason: '🔒 ' + msg,
+                            cv_result: {
+                                is_plant: false,
+                                rejected: true,
+                                predicted_class_ar: '🔒 يرجى تسجيل الدخول للمتابعة مجاناً',
+                                confidence: 0,
+                                top_predictions: []
+                            },
+                            advice: msg,
+                            sources: [],
+                            confidence: 0,
+                            latency: 0.01
+                        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                    }
+                } catch (e) {
+                    window.openAgriGuestGateModal();
+                }
+            } else if (response.ok) {
+                setTimeout(refreshGuestQuota, 400);
+            }
+        }
+
+        return response;
+    };
+
     function init() {
         injectLangSwitcherUI();
         applyLanguage(getCurrentLang());
+        setTimeout(refreshGuestQuota, 350);
     }
 
     if (document.readyState === 'loading') {

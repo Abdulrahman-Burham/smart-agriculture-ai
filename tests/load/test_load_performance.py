@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import io
+import sys
 import time
+from pathlib import Path
 from typing import Any, Dict, List
-from fastapi.testclient import TestClient
 
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from fastapi.testclient import TestClient
 from app.main import app
 
 client = TestClient(app)
@@ -72,6 +78,8 @@ def run_load_stress_test(num_requests: int = 50) -> Dict[str, Any]:
 
 
 if __name__ == "__main__":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     print("⚡ Running System Load & Stability Performance Test...")
     res = run_load_stress_test(num_requests=50)
     print(f"✅ Executed {res['num_requests']} requests in {res['total_duration_sec']}s ({res['requests_per_sec']} RPS)")
