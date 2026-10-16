@@ -32,6 +32,7 @@ from app.services.weather_service import (
     EGYPT_GOV_COORDS,
     calculate_agronomic_disease_risks,
     fetch_weather_forecast,
+    get_all_governorates_epidemic_status,
     get_public_platform_stats,
     nearest_governorate,
 )
@@ -55,6 +56,7 @@ __all__ = [
     "MAX_UPLOAD_BYTES",
     "fetch_weather_forecast",
     "calculate_agronomic_disease_risks",
+    "get_all_governorates_epidemic_status",
     "get_public_platform_stats",
     "nearest_governorate",
     "EGYPT_GOV_COORDS",

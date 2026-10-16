@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
       --primary: #065f46;
@@ -408,9 +409,12 @@
 
   <!-- Top Action Bar (Hidden on Print) -->
   <div class="action-bar">
-    <div style="display: flex; gap: 10px;">
-      <button onclick="window.print()" class="btn btn-primary">
-        🖨️ طباعة الروشتة / حفظ PDF
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <button onclick="downloadPrescriptionPDF()" class="btn btn-primary" id="btnDownloadPDF">
+        📥 تحميل ملف الروشتة (PDF)
+      </button>
+      <button onclick="window.print()" class="btn btn-outline">
+        🖨️ طباعة
       </button>
       <button onclick="shareWhatsApp()" class="btn btn-whatsapp">
         📲 مشاركة عبر واتساب
@@ -514,6 +518,45 @@
     const qrImg = document.getElementById('qrCodeImg');
     if (qrImg) {
       qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(currentUrl);
+    }
+
+    function downloadPrescriptionPDF() {
+      const btn = document.getElementById('btnDownloadPDF');
+      const originalText = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ جاري إنشاء ملف الـ PDF...';
+      }
+      const element = document.querySelector('.prescription-sheet');
+      const rxId = '{{ "%06d"|format(image_id) }}';
+      const opt = {
+        margin: [6, 6, 6, 6],
+        filename: `Prescription-RX-${rxId}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      if (typeof html2pdf !== 'undefined') {
+        html2pdf().set(opt).from(element).save().then(() => {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+          }
+        }).catch((err) => {
+          console.error(err);
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+          }
+          window.print();
+        });
+      } else {
+        window.print();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+        }
+      }
     }
 
     function shareWhatsApp() {

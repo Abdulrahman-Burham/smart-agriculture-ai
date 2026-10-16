@@ -116,3 +116,11 @@ async def get_weather_endpoint(
             gov_key = pinned.get("governorate") or "القاهرة"
             loc_source = pinned.get("location_source") or "pinned"
             return await fetch_weather_forecast(governorate=gov_key, location_source=loc_source)
+
+
+@router.get("/api/weather/epidemic-map", tags=["Tools"])
+async def get_epidemic_map_endpoint() -> Dict[str, Any]:
+    """Return live epidemic risk matrix across all 27 Egyptian governorates for interactive heatmap."""
+    from app.services.weather_service import get_all_governorates_epidemic_status
+    return await get_all_governorates_epidemic_status()
+

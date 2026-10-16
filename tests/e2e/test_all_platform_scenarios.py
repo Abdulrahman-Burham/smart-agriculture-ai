@@ -682,3 +682,52 @@ def test_scenario_dev_telegram_config_endpoints():
     resp = client.get(f"/api/dev/telegram-config?key={DEV_SECRET_KEY}")
     assert resp.status_code == 200
     assert "enabled" in resp.json()
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 9. EPIDEMIC HEATMAP & PDF PRESCRIPTION SCENARIOS
+# ═════════════════════════════════════════════════════════════════════════════
+
+def test_scenario_epidemic_heatmap_page_and_api():
+    """Scenario 9.1: Interactive Epidemic Heatmap page and live all-governorates risk API."""
+    # 1. HTML Page
+    page_resp = client.get("/epidemic-map")
+    assert page_resp.status_code == 200
+    assert "خريطة الرصد الوبائي" in page_resp.text
+    assert "leaflet" in page_resp.text.lower()
+
+    # 2. REST API
+    api_resp = client.get("/api/weather/epidemic-map")
+    assert api_resp.status_code == 200
+    data = api_resp.json()
+    assert data["status"] == "ok"
+    assert data["total_governorates"] == 27
+    assert len(data["governorates"]) == 27
+    assert any(g["governorate"] == "الدقهلية" for g in data["governorates"])
+    assert "danger_count" in data
+    assert "warning_count" in data
+    assert "safe_count" in data
+
+
+def test_scenario_prescription_html2pdf_direct_download():
+    """Scenario 9.2: Prescription page includes direct PDF generation and WhatsApp share."""
+    buf = _make_dummy_image()
+    img_id = save_image_record(
+        image_bytes=buf.getvalue(),
+        filename="scenario_pdf_test.jpg",
+        source_endpoint="/api/diagnose",
+        model_used="mobilenet_v3",
+        predicted_class="Tomato___Late_blight",
+        predicted_class_ar="طماطم — ندوة متأخرة",
+        confidence="96.00%",
+        top_predictions=[{"class": "Tomato___Late_blight", "confidence": 0.96}],
+        rag_advice="رش وقائي بميتالاكسيل-إم أو أوكسي كلورور النحاس.",
+        client_ip="127.0.0.1",
+        visitor_hash="scenario_pdf_visitor",
+    )
+    resp = client.get(f"/prescription/{img_id}")
+    assert resp.status_code == 200
+    assert "btnDownloadPDF" in resp.text
+    assert "downloadPrescriptionPDF" in resp.text
+    assert "html2pdf" in resp.text
+

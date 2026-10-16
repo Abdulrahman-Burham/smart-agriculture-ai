@@ -89,6 +89,11 @@ def run_live_tests():
         f"Status: {r.status_code}"
     ))
 
+    check("1.6 Epidemic Heatmap (/epidemic-map)", lambda: (
+        (r := session.get(f"{BASE_URL}/epidemic-map", verify=False)).status_code == 200 and "الرصد الوبائي" in r.text,
+        f"Status: {r.status_code}, Length: {len(r.text)} bytes"
+    ))
+
     # 2. System Health & Stats
     check("2.1 System Readiness Health Probe (/health)", lambda: (
         (r := session.get(f"{BASE_URL}/health", verify=False)).status_code == 200 and r.json().get("status") == "healthy",
@@ -109,6 +114,11 @@ def run_live_tests():
     check("3.2 Weather GPS Nearest Mapping (31.04, 31.38)", lambda: (
         (r := session.get(f"{BASE_URL}/api/weather?lat=31.04&lon=31.38", verify=False)).status_code == 200 and r.json().get("governorate") == "الدقهلية",
         f"Mapped Gov: {r.json().get('governorate')}, GPS Mode: {r.json().get('is_gps')}"
+    ))
+
+    check("3.3 All-Governorates Epidemic Risk Map (/api/weather/epidemic-map)", lambda: (
+        (r := session.get(f"{BASE_URL}/api/weather/epidemic-map", verify=False)).status_code == 200 and r.json().get("total_governorates") == 27,
+        f"Total: {r.json().get('total_governorates')}, Danger: {r.json().get('danger_count')}, Warning: {r.json().get('warning_count')}, Safe: {r.json().get('safe_count')}"
     ))
 
     # 4. Smart Calculators (Realistic Egyptian Sprayer Rates)

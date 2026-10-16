@@ -71,6 +71,14 @@ async def serve_offline_guide():
     return FileResponse(STATIC_DIR / "offline_guide.html", headers=_NO_CACHE_HEADERS)
 
 
+@router.get("/epidemic-map")
+@router.head("/epidemic-map")
+async def serve_epidemic_map():
+    """Serve the interactive Egyptian epidemic hazard & weather heatmap."""
+    return FileResponse(TEMPLATES_DIR / "epidemic_map.html", headers=_NO_CACHE_HEADERS)
+
+
+
 
 @router.get("/login")
 @router.head("/login")

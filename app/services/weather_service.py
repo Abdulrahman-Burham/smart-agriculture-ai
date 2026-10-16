@@ -256,6 +256,52 @@ async def fetch_weather_forecast(
     return resp
 
 
+async def get_all_governorates_epidemic_status() -> Dict[str, Any]:
+    """Calculate real-time epidemic hazard map and weather indices for all 27 Egyptian governorates."""
+    tasks = [fetch_weather_forecast(governorate=gov) for gov in EGYPT_GOV_COORDS.keys()]
+    weather_results = await asyncio.gather(*tasks)
+
+    governorates_data = []
+    total_danger = 0
+    total_warning = 0
+    total_safe = 0
+
+    for w in weather_results:
+        levels = [a.level for a in w.alerts]
+        if "danger" in levels:
+            highest_level = "danger"
+            total_danger += 1
+        elif "warning" in levels:
+            highest_level = "warning"
+            total_warning += 1
+        else:
+            highest_level = "safe"
+            total_safe += 1
+
+        governorates_data.append({
+            "governorate": w.governorate,
+            "lat": w.lat,
+            "lon": w.lon,
+            "temperature": w.temperature,
+            "humidity": w.humidity,
+            "wind_speed": w.wind_speed,
+            "season": w.season,
+            "risk_level": highest_level,
+            "alert_count": len(w.alerts),
+            "alerts": [a.model_dump() for a in w.alerts],
+        })
+
+    return {
+        "status": "ok",
+        "total_governorates": len(governorates_data),
+        "danger_count": total_danger,
+        "warning_count": total_warning,
+        "safe_count": total_safe,
+        "governorates": governorates_data,
+        "timestamp": datetime.datetime.now().isoformat(),
+    }
+
+
 async def get_public_platform_stats() -> Dict[str, Any]:
     """Return live public platform metrics for landing pages and marketing counters."""
     try:
