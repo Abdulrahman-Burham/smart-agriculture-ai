@@ -610,6 +610,66 @@ def test_scenario_chat_advisory_grounded_answer():
     assert len(data["answer"]) > 10
 
 
+def test_scenario_chat_memory_multi_account_strict_isolation():
+    """Scenario 6.3: Multi-account chat history strict isolation (switching accounts never leaks prior user turns or names)."""
+    from computer_vision.storage.chat_repository import save_chat_log, get_agent_memory_context
+    from computer_vision.storage.user_repository import register_user
+
+    ts = int(time.time()) + 999
+    # User A (Radwan)
+    user_a, err_a = register_user(
+        full_name="الحاج رضوان الشرقاوي",
+        identifier_raw=f"010{ts % 100000000:08d}",
+        password="ValidPassword123",
+        confirm_password="ValidPassword123",
+        governorate="الدقهلية",
+        primary_crop="مانجو",
+        farm_size_feddan=300.0,
+        irrigation_type="غمر",
+    )
+    assert user_a is not None, f"Register failed: {err_a}"
+    user_a_id = user_a["id"]
+    shared_session = f"session_leak_test_{ts}"
+
+    save_chat_log(
+        user_query="انا اسمي رضوان وعندي 300 فدان مانجو",
+        bot_answer="أهلاً بيك يا حاج رضوان، نورت المزرعة!",
+        sources=[],
+        confidence=0.95,
+        latency_ms=500.0,
+        session_id=shared_session,
+        user_id=user_a_id,
+        user_name="الحاج رضوان الشرقاوي",
+        user_identifier=user_a["identifier"],
+        location="الدقهلية",
+        crop="مانجو",
+    )
+
+    # User B (Mahmoud)
+    user_b, err_b = register_user(
+        full_name="المهندس محمود البحيري",
+        identifier_raw=f"011{ts % 100000000:08d}",
+        password="ValidPassword123",
+        confirm_password="ValidPassword123",
+        governorate="البحيرة",
+        primary_crop="فراولة",
+        farm_size_feddan=5.0,
+        irrigation_type="تنقيط",
+    )
+    assert user_b is not None, f"Register failed: {err_b}"
+    user_b_id = user_b["id"]
+
+    # Even if User B's client passed User A's session_id, User B's memory MUST NOT leak User A's turns or name
+    mem_b = get_agent_memory_context(session_id=shared_session, user_id=user_b_id)
+    assert mem_b["farmer_name"] == "المهندس محمود البحيري"
+    assert mem_b["governorate"] == "البحيرة"
+    assert mem_b["primary_crop"] == "فراولة"
+    assert "رضوان" not in str(mem_b["recent_turns"])
+    assert "رضوان" not in mem_b.get("memory_notes", "")
+    assert len(mem_b["recent_turns"]) == 0
+
+
+
 # ═════════════════════════════════════════════════════════════════════════════
 # 7. EGYPTIAN SPEECH SYNTHESIS & AUDIO SCENARIOS
 # ═════════════════════════════════════════════════════════════════════════════

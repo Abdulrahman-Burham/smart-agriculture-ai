@@ -1128,9 +1128,28 @@
       document.cookie = `${name}=${encodeURIComponent(val)}; max-age=${maxAge}; path=/; SameSite=Lax`;
     }
 
+    function getActiveMobileUserOwner() {
+      try {
+        const raw = localStorage.getItem('agri_user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          if (u && (u.id || u.identifier)) return String(u.id || u.identifier);
+        }
+      } catch (e) {}
+      return 'guest';
+    }
+
+    const currentMobileOwner = getActiveMobileUserOwner();
+    const storedMobileOwner = localStorage.getItem('agri_chat_user_owner');
+    if (storedMobileOwner !== null && storedMobileOwner !== currentMobileOwner) {
+      localStorage.removeItem('agri_session_id');
+      sessionStorage.clear();
+    }
+    localStorage.setItem('agri_chat_user_owner', currentMobileOwner);
+
     let SESSION_ID = localStorage.getItem('agri_session_id') || '';
     if (!SESSION_ID) {
-      SESSION_ID = 's_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now().toString(36);
+      SESSION_ID = 's_' + (currentMobileOwner !== 'guest' ? ('u' + currentMobileOwner + '_') : '') + Math.random().toString(36).substring(2, 11) + '_' + Date.now().toString(36);
       localStorage.setItem('agri_session_id', SESSION_ID);
     }
 
@@ -1443,6 +1462,9 @@
       localStorage.removeItem('agri_token');
       localStorage.removeItem('agri_auth_token');
       localStorage.removeItem('agri_user');
+      localStorage.removeItem('agri_session_id');
+      localStorage.removeItem('agri_chat_user_owner');
+      sessionStorage.clear();
       window.location.reload();
     }
 

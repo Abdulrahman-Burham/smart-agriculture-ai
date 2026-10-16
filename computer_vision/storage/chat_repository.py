@@ -97,48 +97,59 @@ def get_agent_memory_context(
                 diag_lines.append(f"  • صورة بتاريخ {r['created_at']}: التشخيص = {pred_ar} (ثقة {r['confidence']})")
             out["diagnoses"] = diag_list
 
-            # 3. Recent conversation turns from chat_logs
+            # 3. Recent conversation turns from chat_logs (Strictly isolated by user_id)
             chat_rows = []
-            if session_id:
-                chat_rows = conn.execute(
-                    """
-                    SELECT created_at, location, crop, user_query, bot_answer, sources_json
-                    FROM chat_logs
-                    WHERE session_id = ? AND status = 'success' AND bot_answer != ''
-                    ORDER BY id DESC
-                    LIMIT ?
-                    """,
-                    (session_id, max_turns),
-                ).fetchall()
+            if user_id:
+                # Strictly isolate: authenticated users only see their own chat logs
+                if session_id:
+                    chat_rows = conn.execute(
+                        """
+                        SELECT created_at, location, crop, user_query, bot_answer, sources_json
+                        FROM chat_logs
+                        WHERE session_id = ? AND user_id = ? AND status = 'success' AND bot_answer != ''
+                        ORDER BY id DESC
+                        LIMIT ?
+                        """,
+                        (session_id, int(user_id), max_turns),
+                    ).fetchall()
 
-            if len(chat_rows) < 4 and user_id:
-                user_chats = conn.execute(
-                    """
-                    SELECT created_at, location, crop, user_query, bot_answer, sources_json
-                    FROM chat_logs
-                    WHERE user_id = ? AND status = 'success' AND bot_answer != ''
-                    ORDER BY id DESC
-                    LIMIT ?
-                    """,
-                    (int(user_id), max_turns),
-                ).fetchall()
-                seen_q = {(r["user_query"], r["created_at"]) for r in chat_rows}
-                for r in user_chats:
-                    if (r["user_query"], r["created_at"]) not in seen_q:
-                        chat_rows.append(r)
-                chat_rows = chat_rows[:max_turns]
+                # If session has no turns or fresh session, load this user's own previous chat history
+                if not chat_rows:
+                    chat_rows = conn.execute(
+                        """
+                        SELECT created_at, location, crop, user_query, bot_answer, sources_json
+                        FROM chat_logs
+                        WHERE user_id = ? AND status = 'success' AND bot_answer != ''
+                        ORDER BY id DESC
+                        LIMIT ?
+                        """,
+                        (int(user_id), max_turns),
+                    ).fetchall()
+            else:
+                # Unauthenticated guest / visitor: strictly exclude any logged-in user chats
+                if session_id:
+                    chat_rows = conn.execute(
+                        """
+                        SELECT created_at, location, crop, user_query, bot_answer, sources_json
+                        FROM chat_logs
+                        WHERE session_id = ? AND user_id IS NULL AND status = 'success' AND bot_answer != ''
+                        ORDER BY id DESC
+                        LIMIT ?
+                        """,
+                        (session_id, max_turns),
+                    ).fetchall()
 
-            elif not chat_rows and visitor_hash:
-                chat_rows = conn.execute(
-                    """
-                    SELECT created_at, location, crop, user_query, bot_answer, sources_json
-                    FROM chat_logs
-                    WHERE visitor_hash = ? AND status = 'success' AND bot_answer != ''
-                    ORDER BY id DESC
-                    LIMIT ?
-                    """,
-                    (visitor_hash, min(6, max_turns)),
-                ).fetchall()
+                if not chat_rows and visitor_hash:
+                    chat_rows = conn.execute(
+                        """
+                        SELECT created_at, location, crop, user_query, bot_answer, sources_json
+                        FROM chat_logs
+                        WHERE visitor_hash = ? AND user_id IS NULL AND status = 'success' AND bot_answer != ''
+                        ORDER BY id DESC
+                        LIMIT ?
+                        """,
+                        (visitor_hash, min(6, max_turns)),
+                    ).fetchall()
 
             chat_rows_chrono = list(reversed(chat_rows))
             turns = []

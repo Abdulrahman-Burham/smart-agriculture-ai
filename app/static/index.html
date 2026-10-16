@@ -2029,6 +2029,33 @@
         let imageAlreadyDiagnosed = false;
         let selectedVisionModel = 'EfficientNetV2B2'; // Locked default
         let selectedRagModel = 'agri_rag'; // Default Agri-RAG engine
+
+        // Account-scoped chat isolation: prevent chat history or farmer identity leaking when switching users
+        function getActiveUserOwner() {
+            try {
+                const raw = localStorage.getItem('agri_user');
+                if (raw) {
+                    const u = JSON.parse(raw);
+                    if (u && (u.id || u.identifier)) return String(u.id || u.identifier);
+                }
+            } catch (e) {}
+            return 'guest';
+        }
+
+        const activeUserOwner = getActiveUserOwner();
+        const storedChatOwner = localStorage.getItem('agri_chat_user_owner');
+
+        // If the user switched (logged into a different account or logged out), wipe previous account's cached chat and start fresh
+        if (storedChatOwner !== null && storedChatOwner !== activeUserOwner) {
+            try {
+                localStorage.removeItem('agri_chat_messages_v2');
+                localStorage.removeItem('agri_chat_session_id');
+                sessionStorage.removeItem('agri_chat_session_id');
+                sessionStorage.removeItem('agri_chat_html');
+            } catch (e) {}
+        }
+        localStorage.setItem('agri_chat_user_owner', activeUserOwner);
+
         let chatSessionId = localStorage.getItem('agri_chat_session_id') || sessionStorage.getItem('agri_chat_session_id') || null;
         let savedChatMessages = [];
         try {
@@ -3390,8 +3417,8 @@
             localStorage.removeItem('agri_user');
             localStorage.removeItem('agri_chat_session_id');
             localStorage.removeItem('agri_chat_messages_v2');
-            sessionStorage.removeItem('agri_chat_session_id');
-            sessionStorage.removeItem('agri_chat_html');
+            localStorage.removeItem('agri_chat_user_owner');
+            sessionStorage.clear();
             window.location.reload();
         }
 

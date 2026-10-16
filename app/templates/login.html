@@ -1608,6 +1608,14 @@
                 }
                 localStorage.setItem('agri_auth_token', data.token);
                 localStorage.setItem('agri_user', JSON.stringify(data.user));
+                try {
+                    localStorage.removeItem('agri_chat_messages_v2');
+                    localStorage.removeItem('agri_chat_session_id');
+                    localStorage.removeItem('agri_session_id');
+                    sessionStorage.removeItem('agri_chat_session_id');
+                    sessionStorage.removeItem('agri_chat_html');
+                    localStorage.setItem('agri_chat_user_owner', String(data.user.id || data.user.identifier || ''));
+                } catch (e) {}
                 saveAccountLocally(data.user, 'password');
                 showAlert(`أهلاً بيك يا ${data.user.full_name}! جاري تحويلك...`, false);
 
@@ -1663,6 +1671,14 @@
                 }
                 localStorage.setItem('agri_auth_token', data.token);
                 localStorage.setItem('agri_user', JSON.stringify(data.user));
+                try {
+                    localStorage.removeItem('agri_chat_messages_v2');
+                    localStorage.removeItem('agri_chat_session_id');
+                    localStorage.removeItem('agri_session_id');
+                    sessionStorage.removeItem('agri_chat_session_id');
+                    sessionStorage.removeItem('agri_chat_html');
+                    localStorage.setItem('agri_chat_user_owner', String(data.user.id || data.user.identifier || ''));
+                } catch (e) {}
                 saveAccountLocally(data.user, 'password');
                 showAlert(`تم إنشاء حسابك بنجاح يا ${data.user.full_name}! جاري تحويلك...`, false);
 
