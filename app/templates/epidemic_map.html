@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   
-  <!-- Leaflet Map CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Leaflet Map CSS & JS via Cloudflare CDNJS (Highly Reliable in Egypt) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
   <style>
     :root {
@@ -173,29 +173,33 @@
     .main-layout {
       flex: 1;
       display: grid;
-      grid-template-columns: 1fr 380px;
-      height: calc(100vh - 140px);
+      grid-template-columns: 1fr 400px;
+      min-height: calc(100vh - 140px);
       position: relative;
     }
 
     @media (max-width: 992px) {
       .main-layout {
-        grid-template-columns: 1fr;
-        height: auto;
+        display: flex;
+        flex-direction: column;
+        min-height: auto;
       }
       #map {
-        height: 55vh !important;
+        height: 50vh !important;
+        min-height: 380px !important;
       }
       .side-panel {
         height: auto !important;
-        max-height: 45vh;
+        min-height: 480px;
       }
     }
 
     #map {
       width: 100%;
       height: 100%;
+      min-height: 520px;
       background: #1e293b;
+      position: relative;
       z-index: 10;
     }
 
@@ -489,21 +493,60 @@
       document.getElementById('themeBtn').textContent = nxt === 'dark' ? '☀️ الوضع الفاتح' : '🌙 الوضع الليلي';
     }
 
-    // Initialize Map
+    // Initialize Map with resilient error handling & automatic resize
     function initMap() {
-      map = L.map('map', {
-        center: [26.8, 30.8],
-        zoom: 6,
-        minZoom: 5,
-        maxZoom: 11
-      });
+      if (typeof L === 'undefined') {
+        console.warn('Leaflet map library could not be loaded from CDN. Fallback list view active.');
+        const mapEl = document.getElementById('map');
+        if (mapEl) {
+          mapEl.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; min-height:400px; color:#94a3b8; text-align:center; padding:20px;">' +
+            '<div style="font-size:3.5rem; margin-bottom:12px;">🗺️</div>' +
+            '<h3 style="color:#f8fafc; font-size:1.15rem; margin-bottom:8px;">خريطة الرصد الوبائي الذكي</h3>' +
+            '<p style="font-size:0.85rem; max-width:440px; line-height:1.6;">جاري عرض مؤشرات الأرصاد ومصفوفة الإنذار الوبائي لكافة المحافظات الـ 27 عبر القائمة التفاعلية بالأسفل.</p>' +
+            '</div>';
+        }
+        return;
+      }
 
-      // Dark style tile layer from CartoDB
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://carto.com/">CartoDB</a> &copy; OpenStreetMap contributors',
-        subdomains: 'abcd',
-        maxZoom: 19
-      }).addTo(map);
+      try {
+        map = L.map('map', {
+          center: [26.8, 30.8],
+          zoom: 6,
+          minZoom: 5,
+          maxZoom: 12,
+          zoomControl: true
+        });
+
+        // Fast tile layer from CartoDB with fallback to OpenStreetMap
+        const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; CartoDB &copy; OpenStreetMap',
+          subdomains: 'abcd',
+          maxZoom: 19
+        });
+
+        cartoLayer.on('tileerror', function() {
+          console.warn('Carto tile error, fallback to OpenStreetMap tiles.');
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 18
+          }).addTo(map);
+        });
+
+        cartoLayer.addTo(map);
+
+        // Force Leaflet container recalculation so map never renders gray
+        setTimeout(() => {
+          if (map) map.invalidateSize();
+        }, 300);
+        setTimeout(() => {
+          if (map) map.invalidateSize();
+        }, 800);
+        window.addEventListener('resize', () => {
+          if (map) map.invalidateSize();
+        });
+      } catch (err) {
+        console.error('Error initializing map:', err);
+      }
     }
 
     // Load Live Epidemic Data
@@ -533,8 +576,11 @@
 
     // Render Markers on Map
     function renderMapMarkers(govs) {
+      if (!map || typeof L === 'undefined') return;
       // Clear existing markers
-      Object.values(markersMap).forEach(m => map.removeLayer(m));
+      Object.values(markersMap).forEach(m => {
+        try { map.removeLayer(m); } catch (e) {}
+      });
       markersMap = {};
 
       govs.forEach(g => {
@@ -631,11 +677,17 @@
 
     // Focus & Zoom to Governorate
     function focusGovernorate(govName, lat, lon) {
-      if (map) {
-        map.flyTo([lat, lon], 9, { duration: 1.2 });
-        const marker = markersMap[govName];
-        if (marker) {
-          setTimeout(() => marker.openPopup(), 1200);
+      if (map && typeof L !== 'undefined') {
+        try {
+          map.flyTo([lat, lon], 9, { duration: 1.0 });
+          const marker = markersMap[govName];
+          if (marker) {
+            setTimeout(() => {
+              try { marker.openPopup(); } catch (e) {}
+            }, 1000);
+          }
+        } catch (e) {
+          console.error('Map navigation error:', e);
         }
       }
     }
