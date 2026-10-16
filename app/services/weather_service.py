@@ -309,7 +309,7 @@ async def get_public_platform_stats() -> Dict[str, Any]:
         summary = data.get("kpis", {})
         return {
             "status": "online",
-            "supported_diseases": 38,
+            "supported_diseases": 30,
             "supported_governorates": 27,
             "total_visits": int(summary.get("total_visits") or 0),
             "total_diagnoses": int(summary.get("total_images") or 0),
@@ -324,7 +324,7 @@ async def get_public_platform_stats() -> Dict[str, Any]:
     except Exception:
         return {
             "status": "online",
-            "supported_diseases": 38,
+            "supported_diseases": 30,
             "supported_governorates": 27,
             "total_visits": 650,
             "total_diagnoses": 35,

@@ -51,8 +51,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager: Initialize database and warm up models."""
     logger.info("Initializing Smart Agriculture AI Platform...")
     init_db()
-    # Warm up CV classifier in background thread so the first prediction is instant
+    # Warm up CV classifier and RAG pipeline in background threads so first queries are instant
     asyncio.create_task(asyncio.to_thread(get_cv_classifier))
+    asyncio.create_task(asyncio.to_thread(get_rag_pipeline))
     yield
     logger.info("Smart Agriculture AI Platform shutting down cleanly.")
 
