@@ -614,3 +614,65 @@ async def download_database_backup_endpoint(
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
+
+@router.get("/api/dev/telegram-config", tags=["Developer Admin"])
+async def get_telegram_config_endpoint(request: Request, key: str = Query("")) -> Dict[str, Any]:
+    """Retrieve current Telegram webhook alert status and masked configuration."""
+    verify_dev_key(key, request)
+    from app.services.telegram_service import load_telegram_config
+
+    cfg = load_telegram_config()
+    token = cfg.get("bot_token", "")
+    masked_token = f"{token[:6]}...{token[-4:]}" if len(token) > 10 else ("مضبوط" if token else "")
+    return {
+        "status": "success",
+        "enabled": cfg.get("enabled", False),
+        "bot_token_masked": masked_token,
+        "chat_id": cfg.get("chat_id", ""),
+        "has_token": bool(token),
+    }
+
+
+@router.post("/api/dev/telegram-config", tags=["Developer Admin"])
+async def save_telegram_config_endpoint(
+    payload: Dict[str, Any], request: Request, key: str = Query("")
+) -> Dict[str, Any]:
+    """Update and persist Telegram Bot Token and Chat ID for live alerts."""
+    verify_dev_key(key, request)
+    from app.services.telegram_service import save_telegram_config
+
+    bot_token = payload.get("bot_token", "")
+    chat_id = payload.get("chat_id", "")
+    enabled = payload.get("enabled", True)
+
+    cfg = save_telegram_config(bot_token=bot_token, chat_id=chat_id, enabled=enabled)
+    return {
+        "status": "success",
+        "message": "تم حفظ إعدادات إشعارات التليجرام بنجاح",
+        "enabled": cfg.get("enabled", False),
+    }
+
+
+@router.post("/api/dev/telegram-test", tags=["Developer Admin"])
+async def test_telegram_alert_endpoint(request: Request, key: str = Query("")) -> Dict[str, Any]:
+    """Dispatch an immediate test alert to verify Telegram credentials."""
+    verify_dev_key(key, request)
+    from app.services.telegram_service import send_telegram_alert
+
+    success = await send_telegram_alert(
+        title="اختبار إشعارات المنصة 🌾",
+        message="أهلاً بك! تم بنجاح ربط منصة <b>الخبير الزراعي الذكي</b> مع قناتك على تليجرام. ستصلك هنا تنبيهات الطوارئ وتنبيهات البؤر الوبائية فور حدوثها.",
+        level="info",
+        details={"السيرفر": "Azure VM (Ubuntu)", "الإصدار": "3.0.0-clean-architecture"},
+    )
+    if not success:
+        raise HTTPException(
+            status_code=400,
+            detail="فشل إرسال رسالة الاختبار. تأكد من صحة Bot Token و Chat ID وأنك قمت ببدء المحادثة مع البوت (/start).",
+        )
+    return {
+        "status": "success",
+        "message": "تم إرسال رسالة الاختبار بنجاح إلى التليجرام! تفقد المحادثة الآن.",
+    }
+
+

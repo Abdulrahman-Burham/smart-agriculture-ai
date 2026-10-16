@@ -6,6 +6,12 @@ from app.schemas.auth import (
     SocialQuickAuthPayload,
     UserPreferencesPayload,
 )
+from app.schemas.calculator import (
+    SalinityRequest,
+    SalinityResponse,
+    TankMixRequest,
+    TankMixResponse,
+)
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -17,6 +23,7 @@ from app.schemas.dev import (
     GeminiKeyPayload,
     GuestPolicyPayload,
     OAuthConfigPayload,
+    TelegramConfigPayload,
     VerifyImagePayload,
 )
 from app.schemas.diagnose import (
@@ -25,6 +32,7 @@ from app.schemas.diagnose import (
     DiagnoseAndAdviseResponse,
     DiagnoseRequest,
     DiagnoseResponse,
+    FollowupEvaluationResponse,
     VisionPredictionResult,
 )
 from app.schemas.system import (
@@ -44,6 +52,7 @@ __all__ = [
     "TTSPayload",
     "DiagnoseRequest",
     "DiagnoseResponse",
+    "FollowupEvaluationResponse",
     "CVPrediction",
     "VisionPredictionResult",
     "DiagnoseAndAdviseRequest",
@@ -57,4 +66,9 @@ __all__ = [
     "GeminiConfigPayload",
     "OAuthConfigPayload",
     "VerifyImagePayload",
+    "TelegramConfigPayload",
+    "TankMixRequest",
+    "TankMixResponse",
+    "SalinityRequest",
+    "SalinityResponse",
 ]

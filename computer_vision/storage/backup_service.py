@@ -75,6 +75,17 @@ def perform_sqlite_backup(retention_count: int = 10) -> Dict[str, Any]:
         _rotate_old_backups(retention_count=retention_count)
 
         logger.info(f"SQLite backup successful: {final_gz_name} ({size_kb} KB)")
+
+        try:
+            from app.services.telegram_service import dispatch_telegram_alert_fire_and_forget
+            dispatch_telegram_alert_fire_and_forget(
+                title="نسخة احتياطية لقاعدة البيانات 💾",
+                message=f"تم بنجاح إنشاء وأرشفة نسخة احتياطية مضغوطة لقاعدة البيانات:\n• الملف: <code>{final_gz_name}</code>\n• الحجم: <b>{size_kb} KB</b>",
+                level="backup",
+            )
+        except Exception:
+            pass
+
         return {
             "success": True,
             "filename": final_gz_name,

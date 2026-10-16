@@ -234,3 +234,61 @@ def build_retraining_zip() -> bytes:
         zf.writestr("dataset/manifest_metadata.csv", csv_buf.getvalue().encode("utf-8"))
 
     return buf.getvalue()
+
+
+def save_followup_record(
+    original_image_id: int,
+    followup_image_id: int,
+    days_since_treatment: int,
+    applied_treatment: str,
+    original_disease: str,
+    current_disease: str,
+    recovery_status: str,
+    recovery_score_percent: float,
+    clinical_comparison_ar: str,
+    recommended_action_ar: str,
+) -> int:
+    """Save an AI follow-up / leaf recovery evaluation comparing two scan records."""
+    init_db()
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with sqlite3.connect(str(DB_PATH)) as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO followup_evaluations (
+                created_at, original_image_id, followup_image_id, days_since_treatment,
+                applied_treatment, original_disease, current_disease, recovery_status,
+                recovery_score_percent, clinical_comparison_ar, recommended_action_ar
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                now_str,
+                int(original_image_id),
+                int(followup_image_id),
+                int(days_since_treatment),
+                applied_treatment,
+                original_disease,
+                current_disease,
+                recovery_status,
+                float(recovery_score_percent),
+                clinical_comparison_ar,
+                recommended_action_ar,
+            ),
+        )
+        return int(cur.lastrowid)
+
+
+def get_followups_for_image(original_image_id: int) -> List[Dict[str, Any]]:
+    """Retrieve all follow-up comparisons associated with a base diagnosis scan."""
+    init_db()
+    with sqlite3.connect(str(DB_PATH)) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.execute(
+            """
+            SELECT * FROM followup_evaluations
+            WHERE original_image_id = ?
+            ORDER BY id ASC
+            """,
+            (int(original_image_id),),
+        )
+        return [dict(r) for r in cur.fetchall()]
+

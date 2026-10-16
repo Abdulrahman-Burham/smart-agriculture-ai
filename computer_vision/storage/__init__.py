@@ -21,8 +21,10 @@ from computer_vision.storage.backup_service import (
 )
 from computer_vision.storage.image_repository import (
     build_retraining_zip,
+    get_followups_for_image,
     get_image_blob_by_id,
     get_image_record_by_id,
+    save_followup_record,
     save_image_record,
     update_image_ground_truth,
 )
@@ -118,4 +120,6 @@ __all__ = [
     "perform_sqlite_backup",
     "list_backups",
     "get_backup_file_path",
+    "save_followup_record",
+    "get_followups_for_image",
 ]

@@ -2,6 +2,7 @@
 
 from app.routers.audio import router as audio_router
 from app.routers.auth import router as auth_router
+from app.routers.calculator import router as calculator_router
 from app.routers.chat import router as chat_router
 from app.routers.dev import router as dev_router
 from app.routers.diagnose import router as diagnose_router
@@ -16,4 +17,5 @@ __all__ = [
     "diagnose_router",
     "audio_router",
     "dev_router",
+    "calculator_router",
 ]

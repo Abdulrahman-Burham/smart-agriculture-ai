@@ -1,5 +1,7 @@
-"""Application Services Package."""
-
+from app.services.agri_calculator_service import (
+    calculate_tank_mix,
+    evaluate_water_salinity,
+)
 from app.services.audio_service import (
     normalize_to_egyptian_dialect,
     synthesize_speech,
@@ -58,4 +60,6 @@ __all__ = [
     "EGYPT_GOV_COORDS",
     "collect_server_system_metrics",
     "format_uptime_ar",
+    "calculate_tank_mix",
+    "evaluate_water_salinity",
 ]

@@ -1436,6 +1436,15 @@
         <button class="nav-btn" id="btn-powerbi" onclick="switchView('powerbi')">
             إحصائيات المحاصيل
         </button>
+        <button type="button" class="nav-btn" onclick="openTankMixModal()">
+            🧮 حاسبة خلط المبيدات
+        </button>
+        <button type="button" class="nav-btn" onclick="openSalinityModal()">
+            💧 فاحص الملوحة
+        </button>
+        <a class="nav-btn" href="/offline-guide">
+            📚 دليل الإسعافات (أوفلاين)
+        </a>
         <a class="nav-btn" href="/m">
             نسخة الموبايل
         </a>
@@ -1611,6 +1620,9 @@
                             📲 مشاركة عبر واتساب
                         </button>
                     </div>
+                    <button type="button" id="btn-followup-trigger" onclick="openFollowupModal(window._currentBaselineImageId)" style="display:none; width: 100%; margin-top: 0.55rem; padding: 0.65rem; border-radius: 12px; background: rgba(3,105,161,0.12); color: var(--accent-blue); border: 1px solid rgba(3,105,161,0.3); font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+                        🔄 فحص المتابعة والتعافي بعد الرش (قبل / بعد)
+                    </button>
                     <button type="button" onclick="switchMobileTab('chat')" style="width: 100%; margin-top: 0.75rem; padding: 0.75rem; border-radius: 12px; background: linear-gradient(135deg, #2D6A4F, #1B4332); color: #fff; border: none; font-weight: 700; font-size: 0.9rem; cursor: pointer;">
                         متابعة النقاش والسؤال عن هذه الحالة في المحادثة
                     </button>
@@ -2938,6 +2950,16 @@
                     rxActions.style.display = 'none';
                 }
             }
+
+            const fuBtn = document.getElementById('btn-followup-trigger');
+            if (fuBtn) {
+                if (imageId) {
+                    window._currentBaselineImageId = imageId;
+                    fuBtn.style.display = 'block';
+                } else {
+                    fuBtn.style.display = 'none';
+                }
+            }
             
             cvResults.style.display = 'block';
             updateVisionStepper(3);
@@ -3522,5 +3544,6 @@
         }
     </script>
     <script src="/static/i18n.js"></script>
+    <script src="/static/features_modals.js"></script>
 </body>
 </html>

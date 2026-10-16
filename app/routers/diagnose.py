@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 
 from app.core.guest_policy import enforce_guest_gate_or_401
 from app.core.rate_limiter import ai_diagnose_limiter
-from app.schemas.diagnose import DiagnoseResponse
+from app.schemas.diagnose import DiagnoseResponse, FollowupEvaluationResponse
 from app.services.llm_service import (
     KNOWN_AGRI_RAG_CROPS,
     format_agri_rag_sources,
@@ -30,7 +30,11 @@ from app.services.vision_service import (
     verify_plant_image_gemini_sync,
 )
 from computer_vision.storage.chat_repository import get_agent_memory_context
-from computer_vision.storage.image_repository import save_image_record
+from computer_vision.storage.image_repository import (
+    get_image_record_by_id,
+    save_followup_record,
+    save_image_record,
+)
 from computer_vision.storage.telemetry_repository import save_error_log, save_token_usage_log
 from computer_vision.storage.utils import extract_client_info, extract_user_from_request
 
@@ -298,6 +302,25 @@ async def diagnose_endpoint(
         except Exception as db_err:
             logger.warning(f"Database save warning: {db_err}")
 
+        # Dispatch Telegram epidemic notification if disease detected with high confidence
+        try:
+            conf_val = float(cv_result.get("confidence", 0.0) or 0.0)
+            if conf_val >= 0.88 and not any(k in predicted_en.lower() for k in ("healthy", "not_a_plant")):
+                from app.services.telegram_service import dispatch_telegram_alert_fire_and_forget
+                dispatch_telegram_alert_fire_and_forget(
+                    title="رصد إصابة مرضية مؤكدة 🌾",
+                    message=(
+                        f"تم فحص وتشخيص إصابة مؤكدة بـ <b>{predicted_ar}</b> ({predicted_en})\n"
+                        f"• نسبة التأكيد: <b>{cv_result.get('confidence_str', f'{conf_val*100:.1f}%')}</b>\n"
+                        f"• المنطقة: <b>{location or 'القاهرة'}</b>\n"
+                        f"• كود الروشتة: <code>RX-{saved_img_id}</code>"
+                    ),
+                    level="epidemic",
+                    details={"المزارع": u_name or "زائر", "الموديل": cv_result.get("model_used", model_choice)},
+                )
+        except Exception:
+            pass
+
         prescription_url = f"/prescription/{saved_img_id}" if saved_img_id else None
 
         return DiagnoseResponse(
@@ -327,6 +350,161 @@ async def diagnose_endpoint(
             request_summary=f"filename={getattr(image, 'filename', '')}, model={model_choice}",
         )
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/diagnose/followup", response_model=FollowupEvaluationResponse, tags=["Vision + RAG"])
+async def evaluate_leaf_recovery_followup_endpoint(
+    http_request: Request,
+    previous_image_id: Optional[int] = Form(None),
+    baseline_image_id: Optional[int] = Form(None),
+    image: Optional[UploadFile] = File(None),
+    followup_image: Optional[UploadFile] = File(None),
+    days_since_treatment: int = Form(7),
+    days_elapsed: Optional[int] = Form(None),
+    applied_treatment: str = Form(""),
+    _rate_limit: bool = Depends(ai_diagnose_limiter),
+) -> FollowupEvaluationResponse:
+    """Evaluate leaf recovery progress and compare current status against baseline diagnosis."""
+    client_info = extract_client_info(http_request)
+    auth_user = extract_user_from_request(http_request)
+    u_id = auth_user.get("uid") if auth_user else None
+    u_name = auth_user.get("name", "") if auth_user else ""
+    u_ident = auth_user.get("identifier", "") if auth_user else ""
+
+    target_id = previous_image_id or baseline_image_id
+    if not target_id:
+        raise HTTPException(status_code=400, detail="يرجى تحديد رقم الفحص السابق (previous_image_id)")
+
+    target_file = image or followup_image
+    if not target_file:
+        raise HTTPException(status_code=400, detail="يرجى إرفاق صورة المتابعة")
+
+    target_days = days_elapsed if days_elapsed is not None else days_since_treatment
+
+    # Load baseline record
+    baseline = await asyncio.to_thread(get_image_record_by_id, target_id)
+    if not baseline:
+        raise HTTPException(status_code=404, detail="السجل المرجعي للفحص السابق غير موجود أو تم حذفه.")
+
+    image_bytes = await target_file.read()
+
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="ملف صورة المتابعة فارغ.")
+
+    # Computer Vision prediction on new image
+    cv = get_cv_classifier()
+    cv_result: Dict[str, Any] = {}
+    if cv:
+        image_stream = io.BytesIO(image_bytes)
+        cv_result = await asyncio.to_thread(cv.predict, image_stream, 3, "EfficientNetV2B2")
+    current_class = cv_result.get("predicted_class", "Healthy")
+    current_class_ar = cv_result.get("predicted_class_ar", "أوراق سليمة")
+    current_conf = float(cv_result.get("confidence", 0.0) or 0.0)
+
+    orig_class = baseline.get("predicted_class", "")
+    orig_class_ar = baseline.get("predicted_class_ar", "") or orig_class
+
+    # Clinical progression logic
+    if current_class == orig_class:
+        if current_conf < 0.50:
+            rec_status = "controlled"
+            rec_status_ar = "انحسار واضح للعدوى وجفاف حواف البقع الفطرية (تحت السيطرة) ✅"
+            rec_score = 78.0
+            clinical_ar = (
+                f"مقارنة بالفحص السابق قبل {days_since_treatment} أيام، يُظهر الفحص انخفاضاً حاداً في نشاط "
+                f"فطر {orig_class_ar} (تراجع نسبة التأكيد إلى {current_conf * 100:.1f}%)، "
+                f"مما يؤكد استجابة النبات للمعاملة وتكون طبقة فلينية جافة منعت استمرار تمدد الميسيليوم الفطري."
+            )
+            action_ar = (
+                "لا تقم بإعادة رش المبيد العلاجي؛ اكتفِ الآن برشة سماد ورقي غني بالأحماض الأمينية والزنك "
+                "والماغنسيوم لتحفيز تجدد الكلوروفيل والقمم النامية."
+            )
+        else:
+            rec_status = "active"
+            rec_status_ar = "ما زالت الجراثيم أو الأعراض نشطة في الأنسجة ⚠️"
+            rec_score = 30.0
+            clinical_ar = (
+                f"أظهر الفحص بعد {days_since_treatment} يوماً استمرار نشاط {orig_class_ar} "
+                f"بنسبة تأكيد مرتفعة ({current_conf * 100:.1f}%)، مما يشير إلى عدم كفاية التغطية بمحلول الرش "
+                f"أو حدوث مقاومة فطرية للمادة السابقة ({applied_treatment or 'المبيد المستخدم'})."
+            )
+            action_ar = (
+                f"يُوصى بتغيير المادة الفعالة فوراً لمجموعة كيميائية مختلفة (Different FRAC Code)، "
+                f"والحرص على الرش في الصباح الباكر مع إضافة مادة ناشرة لضمان وصول الرذاذ للسطح السفلي."
+            )
+    else:
+        rec_status = "healed"
+        rec_status_ar = "تعافي ممتاز وتجدد الأنسجة الخضراء السليمة 🌿"
+        rec_score = 92.0
+        clinical_ar = (
+            f"تُظهر الأنسجة الورقية في فحص المتابعة تعافياً ممتازاً، والنتيجة الحالية ({current_class_ar}) "
+            f"تشير إلى اندمال الإصابة السابقة بـ {orig_class_ar} وتوقف تام لتطور المرض."
+        )
+        action_ar = "استمر في برنامج الري والتسميد المتوازن دون رش أي مبيدات، وافحص الحقل دورياً."
+
+    # Save follow-up image
+    followup_img_id = await asyncio.to_thread(
+        save_image_record,
+        image_bytes=image_bytes,
+        filename=target_file.filename or "followup.jpg",
+        content_type=target_file.content_type or "image/jpeg",
+        source_endpoint="/api/diagnose/followup",
+        model_used=cv_result.get("model_used", "EfficientNetV2B2"),
+        predicted_class=current_class,
+        predicted_class_ar=current_class_ar,
+        confidence=cv_result.get("confidence_str", f"{current_conf * 100:.1f}%"),
+        top_predictions=cv_result.get("top_predictions", []),
+        user_query=f"فحص متابعة بعد {target_days} أيام من علاج {applied_treatment}",
+        rag_advice=clinical_ar,
+        client_ip=client_info["client_ip"],
+        user_agent=client_info["user_agent"],
+        device_type=client_info["device_type"],
+        visitor_hash=client_info["visitor_hash"],
+        latency_ms=0.0,
+        weather_snapshot=baseline.get("weather_snapshot", "القاهرة"),
+        user_id=u_id,
+        user_name=u_name,
+        user_identifier=u_ident,
+    )
+
+    # Save link in followup_evaluations table
+    await asyncio.to_thread(
+        save_followup_record,
+        original_image_id=target_id,
+        followup_image_id=followup_img_id,
+        days_since_treatment=target_days,
+        applied_treatment=applied_treatment,
+        original_disease=orig_class_ar,
+        current_disease=current_class_ar,
+        recovery_status=rec_status,
+        recovery_score_percent=rec_score,
+        clinical_comparison_ar=clinical_ar,
+        recommended_action_ar=action_ar,
+    )
+
+    return FollowupEvaluationResponse(
+        status="success",
+        original_image_id=target_id,
+        baseline_image_id=target_id,
+        followup_image_id=followup_img_id,
+        days_since_treatment=target_days,
+        days_elapsed=target_days,
+        applied_treatment=applied_treatment,
+        original_disease=orig_class_ar,
+        baseline_disease=orig_class_ar,
+        current_disease=current_class_ar,
+        followup_disease=current_class_ar,
+        recovery_status=rec_status,
+        recovery_status_ar=rec_status_ar,
+        recovery_score_percent=rec_score,
+        recovery_score=rec_score,
+        clinical_comparison_ar=clinical_ar,
+        advice=clinical_ar,
+        recommended_action_ar=action_ar,
+        should_repeat_spray=(rec_status == "active"),
+        latency_seconds=0.0,
+    )
+
 
 
 @router.post("/api/v1/diagnose-and-advise", tags=["Vision + RAG"])

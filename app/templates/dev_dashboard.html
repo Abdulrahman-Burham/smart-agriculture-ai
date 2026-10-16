@@ -807,6 +807,32 @@
                 <div id="devGuestPolicyStatus" style="font-size:0.74rem; color:#34d399; margin-top:4px;">✅ قفل الزوار مفعّل حالياً بعد 3 تجارب مجانية</div>
             </div>
         </div>
+
+        <!-- 📢 Telegram Admin Alerts Panel -->
+        <div class="panel" style="border:1px solid rgba(56, 189, 248, 0.35);">
+            <div class="panel-title">
+                <span>📢 تنبيهات تليجرام الفورية (Telegram Alerts Webhook)</span>
+                <span class="badge" id="devTelegramStatusBadge" style="background:rgba(56, 189, 248, 0.15); color:#38bdf8;">غير مضبوط</span>
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
+                إرسال إشعارات فورية لهاتفك عبر بوت تليجرام عند الأخطاء 500 الحرجة، تفشي الوبائيات عالي الثقة، والنسخ الاحتياطي.
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <div>
+                    <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">توكن بوت تليجرام (Telegram Bot Token):</label>
+                    <input type="password" id="devTelegramBotTokenInput" class="verify-input" style="width:100%; direction:ltr;" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ...">
+                </div>
+                <div>
+                    <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">معرّف المحادثة أو القناة (Telegram Chat ID):</label>
+                    <input type="text" id="devTelegramChatIdInput" class="verify-input" style="width:100%; direction:ltr;" placeholder="123456789 أو -100xxxxxxxx">
+                </div>
+                <div style="display:flex; gap:6px; margin-top:4px;">
+                    <button type="button" class="btn btn-blue" style="flex:1;" onclick="saveDevTelegramConfig()">💾 حفظ إعدادات تليجرام</button>
+                    <button type="button" class="btn" style="border-color:#38bdf8; color:#38bdf8;" onclick="testDevTelegramAlert()">🚀 إرسال تجربة</button>
+                </div>
+                <div id="devTelegramStatusMsg" style="font-size:0.75rem; margin-top:4px;"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Tabs & Search -->
@@ -1378,6 +1404,81 @@
         if (st) st.innerHTML = `<span style="color:#34d399;">✅ تم الحفظ والتفعيل الفوري بنجاح!</span>`;
         loadDevOAuthConfig();
     }
+
+    async function loadDevTelegramConfig() {
+        try {
+            const res = await fetch(`/api/dev/telegram-config?key=${encodeURIComponent(DEV_KEY)}`);
+            if (!res.ok) return;
+            const cfg = await res.json();
+            const badge = document.getElementById('devTelegramStatusBadge');
+            const chatInp = document.getElementById('devTelegramChatIdInput');
+            const tokenInp = document.getElementById('devTelegramBotTokenInput');
+            if (chatInp && cfg.chat_id) chatInp.value = cfg.chat_id;
+            if (tokenInp && cfg.has_token && !tokenInp.value) tokenInp.placeholder = '•••••••••••••••••••••••• (مضبوط بالفعل)';
+            if (badge) {
+                if (cfg.is_configured) {
+                    badge.textContent = 'نشط ومربوط';
+                    badge.style.background = 'rgba(16, 185, 129, 0.2)';
+                    badge.style.color = '#34d399';
+                } else {
+                    badge.textContent = 'غير مضبوط';
+                    badge.style.background = 'rgba(245, 158, 11, 0.2)';
+                    badge.style.color = '#fbbf24';
+                }
+            }
+        } catch (e) {}
+    }
+
+    async function saveDevTelegramConfig() {
+        const tokenInp = document.getElementById('devTelegramBotTokenInput');
+        const chatInp = document.getElementById('devTelegramChatIdInput');
+        const msg = document.getElementById('devTelegramStatusMsg');
+        if (!chatInp || !chatInp.value.trim()) {
+            alert('يرجى إدخال Telegram Chat ID');
+            return;
+        }
+        if (msg) msg.innerHTML = '<span style="color:#60a5fa;">⏳ جاري الحفظ...</span>';
+        try {
+            const res = await fetch(`/api/dev/telegram-config?key=${encodeURIComponent(DEV_KEY)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bot_token: tokenInp ? tokenInp.value.trim() : '',
+                    chat_id: chatInp.value.trim()
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                if (msg) msg.innerHTML = `<span style="color:#34d399;">✅ ${esc(data.message || 'تم حفظ إعدادات تليجرام بنجاح!')}</span>`;
+                loadDevTelegramConfig();
+            } else {
+                if (msg) msg.innerHTML = `<span style="color:#f87171;">❌ ${esc(data.detail || 'تعذر الحفظ')}</span>`;
+            }
+        } catch (err) {
+            if (msg) msg.innerHTML = `<span style="color:#f87171;">❌ خطأ في الاتصال بالخادم</span>`;
+        }
+    }
+
+    async function testDevTelegramAlert() {
+        const msg = document.getElementById('devTelegramStatusMsg');
+        if (msg) msg.innerHTML = '<span style="color:#38bdf8;">🚀 جاري إرسال رسالة تجريبية إلى تليجرام...</span>';
+        try {
+            const res = await fetch(`/api/dev/telegram-test?key=${encodeURIComponent(DEV_KEY)}&message=${encodeURIComponent('اختبار يدوي من لوحة تحكم المطور')}`, {
+                method: 'POST'
+            });
+            const data = await res.json();
+            if (res.ok && data.status === 'sent') {
+                if (msg) msg.innerHTML = `<span style="color:#34d399;">✅ وصلت الرسالة بنجاح! تفقد تطبيق تليجرام الآن.</span>`;
+            } else if (res.ok && data.status === 'skipped') {
+                if (msg) msg.innerHTML = `<span style="color:#fbbf24;">⚠️ لم يتم الإرسال: ${esc(data.reason || 'التنبيهات غير مضبوطة بعد')}</span>`;
+            } else {
+                if (msg) msg.innerHTML = `<span style="color:#f87171;">❌ فشل الإرسال: ${esc(data.error || data.detail || 'تأكد من التوكن و Chat ID')}</span>`;
+            }
+        } catch (err) {
+            if (msg) msg.innerHTML = `<span style="color:#f87171;">❌ خطأ في الاتصال</span>`;
+        }
+    }
+
 
     function renderBars(items, labelKey, countKey) {
         if (!items || !items.length) return '<div style="color:var(--text-muted); font-size:0.82rem;">لا توجد بيانات مسجلة بعد</div>';
@@ -2014,6 +2115,7 @@
     loadAnalytics();
     loadGeminiKeys();
     loadDevOAuthConfig();
+    loadDevTelegramConfig();
     setInterval(loadAnalytics, 15000);
 </script>
 

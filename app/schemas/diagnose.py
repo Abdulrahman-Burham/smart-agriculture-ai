@@ -63,4 +63,27 @@ class DiagnoseAndAdviseResponse(BaseModel):
     citations: List[CitationItem] = Field(default_factory=list)
     retrieval_confidence: float = Field(..., examples=[0.92])
     needs_agronomist_review: bool = Field(..., description="Flag set if confidence < threshold.")
-    latency_seconds: float = Field(..., examples=[0.045])
+
+
+class FollowupEvaluationResponse(BaseModel):
+    status: str = "success"
+    original_image_id: int = Field(..., description="ID of baseline image diagnosis")
+    baseline_image_id: Optional[int] = Field(None, description="Alias for original_image_id")
+    followup_image_id: int = Field(..., description="ID of new follow-up image scan")
+    days_since_treatment: int = Field(7, description="Number of days elapsed since treatment")
+    days_elapsed: Optional[int] = Field(None, description="Alias for days_since_treatment")
+    applied_treatment: str = Field("", description="Treatment applied by farmer")
+    original_disease: str = Field(..., description="Original disease diagnosed")
+    baseline_disease: Optional[str] = Field(None, description="Alias for original_disease")
+    current_disease: str = Field(..., description="Current disease detected in follow-up")
+    followup_disease: Optional[str] = Field(None, description="Alias for current_disease")
+    recovery_status: str = Field(..., description="controlled | active | healed | changed | recovering | degraded")
+    recovery_status_ar: str = Field(..., description="Human-readable Arabic recovery status")
+    recovery_score_percent: float = Field(..., description="Estimated recovery percentage (0 to 100)")
+    recovery_score: Optional[float] = Field(None, description="Alias for recovery_score_percent")
+    clinical_comparison_ar: str = Field(..., description="Visual clinical evolution analysis")
+    advice: Optional[str] = Field(None, description="Alias for clinical comparison and action")
+    recommended_action_ar: str = Field(..., description="Next agronomic step")
+    should_repeat_spray: bool = Field(False, description="Whether another spray application is required")
+    latency_seconds: float = Field(0.0, description="Latency in seconds")
+

@@ -498,6 +498,18 @@ def save_error_log(
                 ),
             )
             conn.commit()
+
+        try:
+            if int(status_code) >= 500:
+                from app.services.telegram_service import dispatch_telegram_alert_fire_and_forget
+                dispatch_telegram_alert_fire_and_forget(
+                    title=f"خطأ في السيرفر ({status_code})",
+                    message=f"حدث خطأ في المسار <code>{endpoint}</code>:\n• النوع: <b>{error_type}</b>\n• الرسالة: {error_message[:200]}",
+                    level="danger",
+                    details={"Endpoint": endpoint, "IP": client_ip, "Device": device_type},
+                )
+        except Exception:
+            pass
     except Exception:
         pass
 

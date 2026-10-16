@@ -830,8 +830,24 @@
             📲 مشاركة واتساب
           </button>
         </div>
+        <button type="button" id="mobFollowupBtn" onclick="openFollowupModal(window._currentBaselineImageId)" style="display:none; width:100%; margin-top:8px; padding:7px 10px; border-radius:9px; border:1px solid rgba(3,105,161,0.3); background:rgba(3,105,161,0.1); color:#0369a1; font-family:inherit; font-size:0.75rem; font-weight:800; cursor:pointer;">
+          🔄 فحص المتابعة والتعافي بعد الرش (قبل / بعد)
+        </button>
       </div>
     </section>
+
+    <!-- Quick Agri Tools Strip (Calculators & Offline Guide) -->
+    <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px;">
+      <button type="button" onclick="openTankMixModal()" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; border-radius:10px; border:1px solid rgba(5,150,105,0.3); background:var(--bg-surface); color:var(--brand-forest); font-family:inherit; font-size:0.76rem; font-weight:800; white-space:nowrap; cursor:pointer;">
+        🧮 حاسبة خلط المبيدات
+      </button>
+      <button type="button" onclick="openSalinityModal()" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; border-radius:10px; border:1px solid rgba(3,105,161,0.3); background:var(--bg-surface); color:#0369a1; font-family:inherit; font-size:0.76rem; font-weight:800; white-space:nowrap; cursor:pointer;">
+        💧 فاحص الملوحة
+      </button>
+      <a href="/offline-guide" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; border-radius:10px; border:1px solid rgba(217,119,6,0.3); background:var(--bg-surface); color:#b45309; text-decoration:none; font-family:inherit; font-size:0.76rem; font-weight:800; white-space:nowrap;">
+        📚 دليل الإسعافات (أوفلاين)
+      </a>
+    </div>
 
     <!-- Egyptian Voice Settings Strip -->
     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:10px; background:var(--bg-surface); border:1px solid var(--border-soft); border-radius:12px; padding:7px 11px;">
@@ -1622,6 +1638,16 @@
           rxActions.style.display = 'none';
         }
 
+        const mobFuBtn = document.getElementById('mobFollowupBtn');
+        if (mobFuBtn) {
+          if (data.image_id) {
+            window._currentBaselineImageId = data.image_id;
+            mobFuBtn.style.display = 'block';
+          } else {
+            mobFuBtn.style.display = 'none';
+          }
+        }
+
         lastDiagnosisSummary = `${predAr} (${confStr})`;
         localStorage.setItem('agri_last_diag', lastDiagnosisSummary);
         const msgText = `**نتيجة فحص الورقة:** ${predAr} (${confStr})\n\n${adviceText}`;
@@ -2062,5 +2088,6 @@
     }
   </script>
   <script src="/static/i18n.js"></script>
+  <script src="/static/features_modals.js"></script>
 </body>
 </html>

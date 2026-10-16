@@ -64,6 +64,14 @@ async def serve_simple_ui():
     return FileResponse(STATIC_DIR / "simple.html", headers=_NO_CACHE_HEADERS)
 
 
+@router.get("/offline-guide")
+@router.head("/offline-guide")
+async def serve_offline_guide():
+    """Serve the offline field first-aid and agricultural safety guide."""
+    return FileResponse(STATIC_DIR / "offline_guide.html", headers=_NO_CACHE_HEADERS)
+
+
+
 @router.get("/login")
 @router.head("/login")
 async def serve_login_page():

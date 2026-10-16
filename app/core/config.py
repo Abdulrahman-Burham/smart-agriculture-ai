@@ -22,6 +22,8 @@ TEMPLATES_DIR: Path = APP_DIR / "templates"
 AGRI_RAG_URL: str = os.environ.get("AGRI_RAG_URL", "http://127.0.0.1:8070")
 DEV_SECRET_KEY: str = os.environ.get("DEV_SECRET_KEY", "abdo-dev-2026")
 DEV_PANEL_KEY: str = os.environ.get("DEV_PANEL_KEY", "abdo-dev-2026")
+TELEGRAM_BOT_TOKEN: str = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID: str = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 APP_VERSION: str = "3.0.0-clean-architecture"
 

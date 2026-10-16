@@ -3,15 +3,18 @@
  * Provides offline caching, network-first API routing, and app installation.
  */
 
-const CACHE_NAME = 'smart-agri-cache-v1';
+const CACHE_NAME = 'smart-agri-cache-v2';
 const PRECACHE_ASSETS = [
   '/',
   '/dashboard',
   '/m',
+  '/offline-guide',
+  '/static/offline_guide.html',
   '/static/logo.png',
   '/static/logo-512.png',
   '/static/favicon.ico',
   '/static/i18n.js',
+  '/static/features_modals.js',
   '/manifest.json'
 ];
 

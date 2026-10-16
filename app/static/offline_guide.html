@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>كتيب الإسعافات الزراعية وفترات الأمان (أوفلاين) | الخبير الزراعي</title>
+  <meta name="description" content="كتيب الطوارئ الزراعية الميداني: فترات الأمان للمبيدات PHI، إسعافات التسمم الفورية، وتشخيص نقص العناصر الغذائية بدون إنترنت.">
+  <link rel="icon" href="/favicon.ico">
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-dark: #047857;
+      --accent: #2563eb;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 70px;
+    }
+
+    header {
+      background: linear-gradient(135deg, #064e3b 0%, #059669 100%);
+      color: white;
+      padding: 24px 16px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    }
+
+    .badge-offline {
+      display: inline-block;
+      background: rgba(255,255,255,0.22);
+      border: 1px solid rgba(255,255,255,0.4);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    header p {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .nav-tabs {
+      display: flex;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 110px;
+      z-index: 90;
+      overflow-x: auto;
+      padding: 8px 12px;
+      gap: 8px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 110px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      background: #f1f5f9;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.88rem;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary-dark);
+      box-shadow: 0 2px 6px rgba(5,150,105,0.3);
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 16px auto;
+      padding: 0 14px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary-dark);
+    }
+
+    .emergency-banner {
+      background: #fef2f2;
+      border: 2px solid #fecaca;
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .emergency-banner h2 {
+      color: var(--danger);
+      font-size: 1.25rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hotlines-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .hotline-item {
+      background: white;
+      border: 1px solid #fca5a5;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .hotline-item .num {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--danger);
+      direction: ltr;
+      display: block;
+      text-decoration: none;
+    }
+
+    .protocol-step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .protocol-step:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #fee2e2;
+      color: var(--danger);
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 0.95rem;
+      margin-bottom: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-box:focus {
+      border-color: var(--primary);
+    }
+
+    .phi-table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: right;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: #f1f5f9;
+      color: var(--text);
+      font-weight: 800;
+      padding: 12px 14px;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:nth-child(even) td {
+      background: #fafafa;
+    }
+
+    .phi-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 0.82rem;
+      text-align: center;
+    }
+
+    .phi-safe { background: #dcfce7; color: #166534; }
+    .phi-medium { background: #fef3c7; color: #92400e; }
+    .phi-long { background: #fee2e2; color: #991b1b; }
+
+    .deficiency-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+
+    .def-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      background: white;
+      transition: transform 0.15s ease;
+    }
+
+    .def-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .def-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .def-symbol {
+      font-weight: 900;
+      font-size: 1.1rem;
+      background: #ecfdf5;
+      color: var(--primary-dark);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .leaf-location {
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    .back-nav {
+      margin-bottom: 14px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge-offline">⚡ يعمل بدون إنترنت (PWA Cached)</div>
+    <h1>دليل الإسعافات وفترات الأمان الزراعية</h1>
+    <p>مرجع ميداني فوري للمزارعين والمهندسين الزراعيين في الحقل</p>
+  </header>
+
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('first-aid')">🚨 إسعاف التسمم</button>
+    <button class="tab-btn" onclick="switchTab('phi-table')">⏳ فترات الأمان (PHI)</button>
+    <button class="tab-btn" onclick="switchTab('nutrients')">🌱 نقص العناصر</button>
+  </div>
+
+  <div class="container">
+    <div class="back-nav">
+      <a href="/dashboard" class="back-btn">← العودة لمنصة الفحص الذكية</a>
+    </div>
+
+    <!-- TAB 1: FIRST AID -->
+    <div id="tab-first-aid" class="tab-content active">
+      <div class="emergency-banner">
+        <h2>⚠️ أرقام طوارئ التسمم في مصر (اتصال فوري)</h2>
+        <p>في حالة الاشتباه في تسمم حاد بمبيد حشري أو فطري، اتصل فوراً بأقرب مركز سموم واصطحب عبوة المبيد:</p>
+        <div class="hotlines-grid">
+          <div class="hotline-item">
+            <strong>طوارئ الصحة والإسعاف</strong>
+            <a href="tel:137" class="num">137 / 123</a>
+          </div>
+          <div class="hotline-item">
+            <strong>مركز سموم القصر العيني</strong>
+            <a href="tel:0223643144" class="num">02-23643144</a>
+          </div>
+          <div class="hotline-item">
+            <strong>مركز سموم عين شمس (الدمرداش)</strong>
+            <a href="tel:0226840808" class="num">02-26840808</a>
+          </div>
+          <div class="hotline-item">
+            <strong>مركز سموم جامعة الإسكندرية</strong>
+            <a href="tel:034862244" class="num">03-4862244</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">🚿 أولاً: بروتوكول تلوث الجلد والملابس بالمبيد</h3>
+        <div class="protocol-step">
+          <div class="step-num">1</div>
+          <div>
+            <strong>خلع الملابس فوراً:</strong> انزع جميع الملابس والأحذية الملوثة بحذر دون ملامسة الوجه، وضعها في كيس مغلق.
+          </div>
+        </div>
+        <div class="protocol-step">
+          <div class="step-num">2</div>
+          <div>
+            <strong>الغسيل بالماء الجاري والصابون:</strong> اغسل الجلد والشعر جيداً بالماء الجاري والصابون لمدة 15 دقيقة على الأقل دون حك عنيف للجلد.
+          </div>
+        </div>
+        <div class="protocol-step">
+          <div class="step-num">3</div>
+          <div>
+            <strong>التدفئة:</strong> لف المصاب بغطاء نظيف وتجنب استخدام المراهم والزيوت والدهانات لأنها تزيد امتصاص المبيد.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">👁️ ثانياً: بروتوكول تلوث ودخول المبيد في العين</h3>
+        <div class="protocol-step">
+          <div class="step-num">1</div>
+          <div>
+            <strong>فتح الجفون:</strong> ابقِ العين مفتوحة باعتدال واغسلها فوراً بتيار ماء خفيف وبارد أو محلول ملحي معقم.
+          </div>
+        </div>
+        <div class="protocol-step">
+          <div class="step-num">2</div>
+          <div>
+            <strong>الاستمرار 15 دقيقة متواصلة:</strong> لا تتوقف قبل مرور ربع ساعة كاملة مع تحريك العين في كافة الاتجاهات.
+          </div>
+        </div>
+        <div class="protocol-step">
+          <div class="step-num">3</div>
+          <div>
+            <strong>تجنب القطرات العشوائية:</strong> لا تضع أي قطرات أو أدوية كيميائية قبل الكشف الطبي المتخصص.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">🫁 ثالثاً: بروتوكول استنشاق الرذاذ أو الغازات</h3>
+        <div class="protocol-step">
+          <div class="step-num">1</div>
+          <div>
+            <strong>النقل للهواء الطلق:</strong> انقل المصاب فوراً خارج الحقل المعالج إلى مكان جيد التهوية وظليل عكس اتجاه الرياح.
+          </div>
+        </div>
+        <div class="protocol-step">
+          <div class="step-num">2</div>
+          <div>
+            <strong>فك الملابس الضيقة:</strong> فك أزرار القميص وحزام البنطلون لتسهيل التنفس.
+          </div>
+        </div>
+        <div class="protocol-step">
+          <div class="step-num">3</div>
+          <div>
+            <strong>التنفس الاصطناعي:</strong> إذا توقف التنفس، ابدأ فوراً الإنعاش القلبي الرئوي وتجنب ملامسة فم المصاب إذا كان ملوثاً (استخدم قناع حاجز).
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">🛑 رابعاً: بروتوكول ابتلاع المبيد عن طريق الفم</h3>
+        <div class="protocol-step">
+          <div class="step-num" style="background:#fee2e2; color:#b91c1c;">⚠️</div>
+          <div>
+            <strong style="color:var(--danger)">قاعدة ذهبية: لا تحث المصاب على القيء أبداً</strong> خصوصاً إذا كان المبيد يحتوي على مذيبات نفطية (EC) أو مواد كاوية أو كان المصاب فاقداً للوعي حتى لا يتسرب المبيد للرئتين مسبباً التهاباً رئوياً مميتاً.
+          </div>
+        </div>
+        <div class="protocol-step">
+          <div class="step-num">1</div>
+          <div>
+            <strong>مضمضة الفم:</strong> اشطف فم المصاب بالماء النظيف عدة مرات وبصق الماء فوراً.
+          </div>
+        </div>
+        <div class="protocol-step">
+          <div class="step-num">2</div>
+          <div>
+            <strong>الفحم المنشط (Activated Charcoal):</strong> إذا كان المصاب واعياً تماماً، يُعطى 50 غراماً من الفحم المنشط معلقاً في الماء لامتصاص السموم داخل المعدة.
+          </div>
+        </div>
+        <div class="protocol-step">
+          <div class="step-num">3</div>
+          <div>
+            <strong>التوجه للمستشفى:</strong> نقل المصاب فوراً مع عبوة المبيد الملصق عليها المادة الفعالة ومضاد السم (Antidote) الموصى به مثل الأتروبين والتيدوت.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: PHI TABLE -->
+    <div id="tab-phi-table" class="tab-content">
+      <div class="card">
+        <h3 class="card-title">⏳ جدول فترات ما قبل الحصاد المعتمدة في مصر (PHI)</h3>
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px;">
+          فترة الأمان (Pre-Harvest Interval) هي المدة الإلزامية بالـأيام بين آخر رشة للمبيد وتاريخ جمع المحصول لضمان خلو الثمار من المتبقيات السامة وحماية صحة المستهلك والتصدير.
+        </p>
+
+        <input type="text" id="phiSearchInput" class="search-box" placeholder="🔍 ابحث باسم المادة الفعالة أو المحصول أو الاسم التجاري..." onkeyup="filterPhiTable()">
+
+        <div class="phi-table-container">
+          <table id="phiTable">
+            <thead>
+              <tr>
+                <th>المادة الفعالة</th>
+                <th>أمثلة تجارية شائعة</th>
+                <th>المجموعة والنوع</th>
+                <th>المحاصيل الشائعة</th>
+                <th>فترة الأمان (أيام)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Abamectin (أبامكتين)</strong></td>
+                <td>فيرتيميك، فارمكتين، رومكتين</td>
+                <td>حشري/أكاروسي</td>
+                <td>طماطم، خيار، فراولة، موالح</td>
+                <td><span class="phi-badge phi-safe">3 - 7 أيام</span></td>
+              </tr>
+              <tr>
+                <td><strong>Acetamiprid (أسيتامبريد)</strong></td>
+                <td>موسبيلان، أفيس، كراون</td>
+                <td>حشري جهازي (نيونيكوتينويد)</td>
+                <td>طماطم، بطاطس، موالح، قطن</td>
+                <td><span class="phi-badge phi-safe">3 - 7 أيام</span></td>
+              </tr>
+              <tr>
+                <td><strong>Imidacloprid (إميداكلوريد)</strong></td>
+                <td>كونفيدور، أدمير، كوهينور</td>
+                <td>حشري جهازي</td>
+                <td>طماطم، خيار، بطاطس، أشجار فاكهة</td>
+                <td><span class="phi-badge phi-medium">7 - 14 يوماً</span></td>
+              </tr>
+              <tr>
+                <td><strong>Emamectin Benzoate (إيمامكتين بنزوات)</strong></td>
+                <td>بروكليم، أورجينال، كليم</td>
+                <td>حشري حرشفيات ولديدان</td>
+                <td>طماطم، فلفل، ذرة، بطاطس</td>
+                <td><span class="phi-badge phi-safe">3 - 7 أيام</span></td>
+              </tr>
+              <tr>
+                <td><strong>Lambda-cyhalothrin (لامبدا-سيهالوثرين)</strong></td>
+                <td>كاراتيه، كونغ فو، أيكون</td>
+                <td>حشري بيروثرويدي بالملامسة</td>
+                <td>طماطم، بطاطس، حبوب، خضار</td>
+                <td><span class="phi-badge phi-medium">7 - 14 يوماً</span></td>
+              </tr>
+              <tr>
+                <td><strong>Chlorpyrifos (كلوربيريفوس)</strong></td>
+                <td>دورسبان، بستبان، بيريفوس</td>
+                <td>حشري فسفوري عضوي</td>
+                <td>أشجار فاكهة، قطن، ذرة (محظور قرب حصاد الخضر)</td>
+                <td><span class="phi-badge phi-long">21 - 30 يوماً</span></td>
+              </tr>
+              <tr>
+                <td><strong>Mancozeb (مانكوزيب)</strong></td>
+                <td>دايثين م45، تريدكس، رادوميل مانكوزيب</td>
+                <td>فطري وقائي بالملامسة</td>
+                <td>طماطم، بطاطس، بصل، عنب</td>
+                <td><span class="phi-badge phi-medium">7 - 14 يوماً</span></td>
+              </tr>
+              <tr>
+                <td><strong>Copper Hydroxide (هيدروكسيد النحاس)</strong></td>
+                <td>كوسايد 2000، شامبيون، كوبروكوين</td>
+                <td>فطري/بكتيري وقائي</td>
+                <td>موالح، طماطم، بطاطس، عنب</td>
+                <td><span class="phi-badge phi-safe">3 - 7 أيام</span></td>
+              </tr>
+              <tr>
+                <td><strong>Azoxystrobin (أزوكسي ستروبين)</strong></td>
+                <td>أميستار، أورتيفا، زوكسي</td>
+                <td>فطري جهازي وعلاجي</td>
+                <td>خيار، طماطم، فراولة، عنب</td>
+                <td><span class="phi-badge phi-safe">3 - 7 أيام</span></td>
+              </tr>
+              <tr>
+                <td><strong>Difenoconazole (ديفينوكونازول)</strong></td>
+                <td>سكور، كوادريس توب، فوليور</td>
+                <td>فطري جهازي تريازول</td>
+                <td>طماطم، تفاح، بطاطس، قرعيات</td>
+                <td><span class="phi-badge phi-medium">7 - 14 يوماً</span></td>
+              </tr>
+              <tr>
+                <td><strong>Metalaxyl-M (ميتالاكسيل-إم)</strong></td>
+                <td>ريدوميل جولد، أكروبات نحاس</td>
+                <td>فطري جهازي للندوات والبياض الزغبي</td>
+                <td>طماطم، خيار، بطاطس، عنب</td>
+                <td><span class="phi-badge phi-medium">7 - 14 يوماً</span></td>
+              </tr>
+              <tr>
+                <td><strong>Boscalid + Pyraclostrobin</strong></td>
+                <td>سينيجراتور، سجنت، كانتوس</td>
+                <td>فطري لأعفان الثمار والرمادي</td>
+                <td>فراولة، عنب، طماطم، فاصوليا</td>
+                <td><span class="phi-badge phi-safe">3 - 7 أيام</span></td>
+              </tr>
+              <tr>
+                <td><strong>Spirotetramat (سبيروتترامات)</strong></td>
+                <td>موفنتو، التوكس</td>
+                <td>حشري ثنائي الاتجاه جهازي عصاري</td>
+                <td>موالح، عنب، خضروات محمية</td>
+                <td><span class="phi-badge phi-safe">3 - 7 أيام</span></td>
+              </tr>
+              <tr>
+                <td><strong>Thiamethoxam (ثياميثوكسام)</strong></td>
+                <td>أكتارا، كروزر</td>
+                <td>حشري جهازي واسع المدى</td>
+                <td>بطاطس، طماطم، موالح، قرعيات</td>
+                <td><span class="phi-badge phi-medium">7 - 14 يوماً</span></td>
+              </tr>
+              <tr>
+                <td><strong>Chlorantraniliprole (كلورانترانيليبرول)</strong></td>
+                <td>كوراجين، فوليام تارجو</td>
+                <td>حشري للديدان وصانعات الأنفاق</td>
+                <td>طماطم، ذرة، بطاطس، فواكه</td>
+                <td><span class="phi-badge phi-safe">1 - 3 أيام</span></td>
+              </tr>
+              <tr>
+                <td><strong>Sulfur Micronized (كبريت ميكروني)</strong></td>
+                <td>كبريت سولفار، كبريت كفر الزيات</td>
+                <td>فطري/أكاروسي وقائي طبيعي</td>
+                <td>عنب، مانجو، قرعيات، طماطم</td>
+                <td><span class="phi-badge phi-safe">1 - 3 أيام</span></td>
+              </tr>
+              <tr>
+                <td><strong>Cypermethrin (سوبر سيبرمثرين)</strong></td>
+                <td>ريلكورد، أرين، شيربا</td>
+                <td>حشري ملامسة ومعوي</td>
+                <td>قطن، قمح، ذرة، أشجار</td>
+                <td><span class="phi-badge phi-medium">10 - 14 يوماً</span></td>
+              </tr>
+              <tr>
+                <td><strong>Propiconazole (بروبيكونازول)</strong></td>
+                <td>تيلت، بومبر</td>
+                <td>فطري للصدأ وتبقعات الأوراق</td>
+                <td>قمح، شعير، ذرة، نخيل</td>
+                <td><span class="phi-badge phi-long">21 - 30 يوماً</span></td>
+              </tr>
+              <tr>
+                <td><strong>Indoxacarb (إندوكساكارب)</strong></td>
+                <td>أفانت، ستيوارد</td>
+                <td>حشري للديدان وديدان الثمار</td>
+                <td>طماطم، فلفل، تفاح، عنب</td>
+                <td><span class="phi-badge phi-safe">3 - 7 أيام</span></td>
+              </tr>
+              <tr>
+                <td><strong>Fludioxonil (فلوديوكسونيل)</strong></td>
+                <td>ماكسيم، سويتش</td>
+                <td>فطري لأعفان الجذور والثمار</td>
+                <td>معاملة بذور، فراولة، طماطم</td>
+                <td><span class="phi-badge phi-safe">3 - 7 أيام</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: NUTRIENT DEFICIENCIES -->
+    <div id="tab-nutrients" class="tab-content">
+      <div class="card">
+        <h3 class="card-title">🌱 مفتاح تشخيص نقص العناصر الغذائية</h3>
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:14px;">
+          دليل التشخيص الحقلي حسب موقع ظهور الأعراض (الأوراق القديمة المسنة vs الأوراق الحديثة والقمم النامية) مع حلول فورية للإسعاف التسميدي.
+        </p>
+
+        <h4 style="margin:16px 0 10px 0; color:#b45309;">🍂 أ) أعراض تظهر أولاً على الأوراق القديمة (السفلية) - عناصر متحركة</h4>
+        <div class="deficiency-grid">
+          
+          <div class="def-card">
+            <div class="def-header">
+              <span class="def-symbol">N - النيتروجين</span>
+              <span class="leaf-location">أوراق سفلية مسنة</span>
+            </div>
+            <p><strong>العَرَض:</strong> اصفرار عام وشامل يبدأ من قمة الورقة المسنة ويتجه نحو القاعدة بطول العرق الوسطي (V-shape)، مع صغر حجم الأوراق وضعف نمو المجموع الخضري.</p>
+            <p style="margin-top:6px; font-size:0.85rem; color:var(--primary-dark);">
+              <strong>💡 الإسعاف الفوري:</strong> رش ورقي بيوريا 1% منخفضة البيورايت أو سلفات نشادر مع مياه الري، أو نترات نشادر (33.5%).
+            </p>
+          </div>
+
+          <div class="def-card">
+            <div class="def-header">
+              <span class="def-symbol">P - الفوسفور</span>
+              <span class="leaf-location">أوراق سفلية مسنة</span>
+            </div>
+            <p><strong>العَرَض:</strong> تلوّن الأوراق القديمة والعروق باللون الأرجواني أو البنفسجي، قصر وتقزم النباتات وتأخر تطور ونمو الجذور وضعف التزهير والعقد.</p>
+            <p style="margin-top:6px; font-size:0.85rem; color:var(--primary-dark);">
+              <strong>💡 الإسعاف الفوري:</strong> حقن حامض فوسفوريك نقي 85% مع الري أو تسميد ماب (MAP 12-61-0) سريع الذوبان.
+            </p>
+          </div>
+
+          <div class="def-card">
+            <div class="def-header">
+              <span class="def-symbol">K - البوتاسيوم</span>
+              <span class="leaf-location">حواف الأوراق القديمة</span>
+            </div>
+            <p><strong>العَرَض:</strong> احتراق وجفاف حواف الأوراق السفلية (Marginal Scorch) مع التفافها لأسفل، ضعف امتلاء وحجم ولمعان الثمار وانخفاض نسبة السكريات.</p>
+            <p style="margin-top:6px; font-size:0.85rem; color:var(--primary-dark);">
+              <strong>💡 الإسعاف الفوري:</strong> رش ورقي بسترات بوتاسيوم أو سيليكات بوتاسيوم، وحقن سلفات بوتاسيوم ذوابة (0-0-50).
+            </p>
+          </div>
+
+          <div class="def-card">
+            <div class="def-header">
+              <span class="def-symbol">Mg - المغنيسيوم</span>
+              <span class="leaf-location">بين عروق الأوراق السفلية</span>
+            </div>
+            <p><strong>العَرَض:</strong> اصفرار شاحب بين العروق (Interveinal Chlorosis) بينما تظل العروق الرئيسية خضراء داكنة تماماً على الأوراق القديمة والوسطى.</p>
+            <p style="margin-top:6px; font-size:0.85rem; color:var(--primary-dark);">
+              <strong>💡 الإسعاف الفوري:</strong> رش سلفات مغنيسيوم (ملح إبسوم) بمعدل 5 جرام / لتر ماء أو حقنها بمعدل 5-10 كجم/فدان.
+            </p>
+          </div>
+
+        </div>
+
+        <h4 style="margin:24px 0 10px 0; color:#1d4ed8;">🌿 ب) أعراض تظهر أولاً على الأوراق الحديثة والقمم النامية - عناصر غير متحركة</h4>
+        <div class="deficiency-grid">
+          
+          <div class="def-card">
+            <div class="def-header">
+              <span class="def-symbol">Ca - الكالسيوم</span>
+              <span class="leaf-location">القمم والثمار الحديثة</span>
+            </div>
+            <p><strong>العَرَض:</strong> عفن الطرف الزهري في الطماطم والفلفل، تشوه وجفاف القمم النامية واحتراق حواف الأوراق الحديثة وتشقق الثمار.</p>
+            <p style="margin-top:6px; font-size:0.85rem; color:var(--primary-dark);">
+              <strong>💡 الإسعاف الفوري:</strong> رش ورقي بكالسيوم بورون مخلبي سائل، وتسميد نترات كالسيوم ذائبة في شبكة التنقيط (منفردة بدون أحماض).
+            </p>
+          </div>
+
+          <div class="def-card">
+            <div class="def-header">
+              <span class="def-symbol">Fe - الحديد</span>
+              <span class="leaf-location">الأوراق الغضة الحديثة</span>
+            </div>
+            <p><strong>العَرَض:</strong> اصفرار شديد للأوراق الفتية العلوية وشبكة دقيقة من العروق الخضراء (شبكة حريرية)، يتحول إلى بياض ناصع في الحالات الشديدة.</p>
+            <p style="margin-top:6px; font-size:0.85rem; color:var(--primary-dark);">
+              <strong>💡 الإسعاف الفوري:</strong> حقن حديد مخلبي إيدها (Fe-EDDHA 6%) أرضياً لمقاومة قلوية التربة المصرية (pH > 7.5)، أو رش إيدتا.
+            </p>
+          </div>
+
+          <div class="def-card">
+            <div class="def-header">
+              <span class="def-symbol">Zn - الزنك</span>
+              <span class="leaf-location">القمم والأوراق النامية</span>
+            </div>
+            <p><strong>العَرَض:</strong> صغر حجم الأوراق وتقارب العقد وتشوه القمم وتجمع الأوراق في مظهر وردي (Rosetting)، مع تبقعات صفراء بين العروق.</p>
+            <p style="margin-top:6px; font-size:0.85rem; color:var(--primary-dark);">
+              <strong>💡 الإسعاف الفوري:</strong> رش ورقي بسلفات زنك أو زنك مخلبي (Zn-EDTA 14%) بمعدل 1.5 جرام / لتر ماء.
+            </p>
+          </div>
+
+          <div class="def-card">
+            <div class="def-header">
+              <span class="def-symbol">B - البورون</span>
+              <span class="leaf-location">القمم والأزهار والعقد</span>
+            </div>
+            <p><strong>العَرَض:</strong> موت القمة النامية (Terminal Bud)، هشاشة وسهولة كسر الأفرع والأعناق، تساقط الأزهار والعقد وفشل التلقيح وتجويف وسواد القلب في الجذور.</p>
+            <p style="margin-top:6px; font-size:0.85rem; color:var(--primary-dark);">
+              <strong>💡 الإسعاف الفوري:</strong> رش حمض البوريك أو بورات الصوديوم (Solubor) بمعدل 1-1.5 جم/لتر قبل مرحلة الإزهار.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      event.currentTarget.classList.add('active');
+      const target = document.getElementById('tab-' + tabId);
+      if (target) target.classList.add('active');
+    }
+
+    function filterPhiTable() {
+      const q = document.getElementById('phiSearchInput').value.toLowerCase();
+      const rows = document.querySelectorAll('#phiTable tbody tr');
+      rows.forEach(r => {
+        const text = r.innerText.toLowerCase();
+        r.style.display = text.includes(q) ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

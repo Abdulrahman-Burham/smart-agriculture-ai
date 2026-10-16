@@ -26,6 +26,7 @@ from app.core.telemetry import SilentTelemetryMiddleware
 from app.routers import (
     audio_router,
     auth_router,
+    calculator_router,
     chat_router,
     dev_router,
     diagnose_router,
@@ -85,6 +86,7 @@ app.include_router(weather_router)
 app.include_router(chat_router)
 app.include_router(diagnose_router)
 app.include_router(audio_router)
+app.include_router(calculator_router)
 app.include_router(dev_router)
 
 __all__ = [

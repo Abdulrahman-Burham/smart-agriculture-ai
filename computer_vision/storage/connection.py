@@ -328,6 +328,26 @@ def init_db(force: bool = False) -> None:
             """
         )
 
+        # 8. Leaf Recovery & Before/After Comparison Table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS followup_evaluations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TEXT NOT NULL,
+                original_image_id INTEGER NOT NULL,
+                followup_image_id INTEGER NOT NULL,
+                days_since_treatment INTEGER DEFAULT 7,
+                applied_treatment TEXT DEFAULT '',
+                original_disease TEXT NOT NULL,
+                current_disease TEXT NOT NULL,
+                recovery_status TEXT NOT NULL,
+                recovery_score_percent REAL DEFAULT 0.0,
+                clinical_comparison_ar TEXT DEFAULT '',
+                recommended_action_ar TEXT DEFAULT ''
+            )
+            """
+        )
+
         # Seed default Admin Developer account if none exists
         admin_exists = conn.execute("SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
         if not admin_exists:

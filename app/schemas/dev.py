@@ -30,3 +30,10 @@ class VerifyImagePayload(BaseModel):
     image_id: int = Field(..., description="ID of the uploaded image to verify")
     verified_label: str = Field(..., description="Correct disease ground truth label")
     developer_notes: str = Field("", description="Optional developer comments or retraining notes")
+
+
+class TelegramConfigPayload(BaseModel):
+    bot_token: str = Field("", description="Telegram Bot API Token from @BotFather")
+    chat_id: str = Field("", description="Telegram chat or group ID")
+    enabled: bool = Field(True, description="Enable or disable real-time alerts")
+
