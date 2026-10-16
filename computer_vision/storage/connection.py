@@ -348,6 +348,22 @@ def init_db(force: bool = False) -> None:
             """
         )
 
+        # 9. Performance B-Tree Indexes
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_user_id ON chat_logs(user_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_session_id ON chat_logs(session_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_visitor_hash ON chat_logs(visitor_hash);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_created_at ON chat_logs(created_at);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_uploaded_images_user_id ON uploaded_images(user_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_uploaded_images_visitor_hash ON uploaded_images(visitor_hash);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_uploaded_images_created_at ON uploaded_images(created_at);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_visitor_logs_visitor_hash ON visitor_logs(visitor_hash);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_visitor_logs_created_at ON visitor_logs(created_at);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_token_logs_user_id ON llm_token_logs(user_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_token_logs_created_at ON llm_token_logs(created_at);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
+
         # Seed default Admin Developer account if none exists
         admin_exists = conn.execute("SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
         if not admin_exists:
