@@ -116,28 +116,32 @@ def get_local_agri_rag() -> Any:
 
 
 def get_rag_pipeline() -> Any:
-    """Lazily initialize and return the legacy RAG pipeline."""
+    """Lazily initialize and return the legacy RAG pipeline safely."""
     global _rag_pipeline
     if _rag_pipeline is None:
-        from rag.respond import RAGPipeline
+        try:
+            from rag.respond import RAGPipeline
 
-        logger.info("Initializing Agricultural RAG Pipeline...")
-        _rag_pipeline = RAGPipeline()
+            logger.info("Initializing Agricultural RAG Pipeline...")
+            _rag_pipeline = RAGPipeline()
 
-        data_dir = Path("data/sample_knowledge_base")
-        if data_dir.exists():
-            docs = []
-            for p in data_dir.glob("*.txt"):
-                docs.append({
-                    "source_doc": p.name,
-                    "doc_type": "guide",
-                    "crop_type": "general",
-                    "disease_name": "general",
-                    "region": "egypt_general",
-                    "content": p.read_text(encoding="utf-8"),
-                })
-            if docs:
-                _rag_pipeline.ingest_documents(docs)
+            data_dir = Path("data/sample_knowledge_base")
+            if data_dir.exists():
+                docs = []
+                for p in data_dir.glob("*.txt"):
+                    docs.append({
+                        "source_doc": p.name,
+                        "doc_type": "guide",
+                        "crop_type": "general",
+                        "disease_name": "general",
+                        "region": "egypt_general",
+                        "content": p.read_text(encoding="utf-8"),
+                    })
+                if docs:
+                    _rag_pipeline.ingest_documents(docs)
+        except Exception as e:
+            logger.warning(f"⚠️ RAG Pipeline initialization notice: {e}")
+            _rag_pipeline = None
 
     return _rag_pipeline
 
