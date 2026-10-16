@@ -2,26 +2,43 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
 # ─── Tank-Mix Dosage Schemas ───────────────────────────────────────────────
 
 class TankMixRequest(BaseModel):
-    area_value: float = Field(..., gt=0, description="Area quantity, e.g. 1.5, 2, 10")
+    mode: str = Field(
+        "area",
+        description="area (حساب لمساحة معينة) or tank (حساب لملء تانك/رشاشة مباشرة)",
+    )
+    area_value: float = Field(
+        1.0,
+        gt=0,
+        description="Area quantity, e.g. 1.0, 2, 10 (used when mode == 'area')",
+    )
     area_unit: str = Field(
         "feddan",
         description="feddan (فدان), qirat (قيراط), sahm (سهم), or sqm (متر مربع)",
     )
     tank_type: str = Field(
         "knapsack_20l",
-        description="knapsack_20l, knapsack_16l, motor_600l, motor_300l, motor_100l, or drip_1000l",
+        description="knapsack_20l, knapsack_16l, motor_600l, motor_300l, motor_200l, motor_100l, or drip_1000l",
     )
-    dosage_rate: float = Field(..., gt=0, description="Recommended dosage rate (e.g. 250 g/feddan or 200 ml/100L)")
+    tanks_count: int = Field(
+        1,
+        ge=1,
+        description="Number of tanks to fill (used when mode == 'tank')",
+    )
+    dosage_rate: float = Field(
+        ...,
+        gt=0,
+        description="Recommended dosage rate (e.g. 250 g/feddan, 200 ml/100L, 250 g/barrel)",
+    )
     dosage_unit: str = Field(
         "per_feddan",
-        description="per_feddan (لكل فدان) or per_100l (لكل 100 لتر ماء)",
+        description="per_feddan (لكل فدان), per_100l (لكل 100 لتر ماء), per_200l (لكل برميل 200 لتر), or per_tank (لكل تانك/رشاشة مباشرة)",
     )
     chemical_type: str = Field(
         "powder",
@@ -29,13 +46,14 @@ class TankMixRequest(BaseModel):
     )
     crop_category: str = Field(
         "vegetable",
-        description="vegetable (خضر ومحاصيل حقلية: 250 لتر/فدان) or orchard (أشجار وبساتين: 500 لتر/فدان)",
+        description="vegetable (خضر ومحاصيل حقلية) or orchard (أشجار وبساتين)",
     )
     product_name: Optional[str] = Field("", description="Commercial or active ingredient name")
     mix_partners: Optional[List[str]] = Field(
         default_factory=list,
         description="Other chemicals planned in same tank to check compatibility",
     )
+
 
 
 class TankMixResponse(BaseModel):

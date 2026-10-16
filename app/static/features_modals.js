@@ -191,6 +191,29 @@
           color: white;
           margin-bottom: 10px;
         }
+        .agri-tab-btn {
+          flex: 1;
+          padding: 8px 10px;
+          border-radius: 9px;
+          border: none;
+          font-weight: 700;
+          font-size: 0.86rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-family: inherit;
+        }
+        .agri-tab-btn.active {
+          background: #059669;
+          color: #ffffff;
+          box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+        }
+        .agri-tab-btn:not(.active) {
+          background: transparent;
+          color: #64748b;
+        }
+        [data-theme="dark"] .agri-tab-btn:not(.active) {
+          color: #94a3b8;
+        }
       </style>
 
       <!-- 1. TANK-MIX MODAL -->
@@ -201,10 +224,40 @@
             <button class="agri-modal-close" onclick="closeTankMixModal()">&times;</button>
           </div>
           <form onsubmit="submitTankMixForm(event)">
-            <div style="display:grid; grid-template-columns: 2fr 1.5fr; gap:10px; margin-bottom:12px;">
+            <!-- نمط الحساب: تانك أو رشاشة واحدة مباشرة vs حساب مساحة أرض بالكامل -->
+            <div style="display:flex; gap:8px; margin-bottom:14px; background:#f1f5f9; padding:4px; border-radius:11px;" id="tmModeSwitcher">
+              <button type="button" id="tmModeTankBtn" class="agri-tab-btn active" onclick="switchTankMixMode('tank')">
+                🪣 رشاشة أو برميل واحد (مباشر)
+              </button>
+              <button type="button" id="tmModeAreaBtn" class="agri-tab-btn" onclick="switchTankMixMode('area')">
+                🌾 حساب مساحة أرض بالكامل
+              </button>
+            </div>
+
+            <div class="agri-form-group">
+              <label class="agri-form-label">نوع موتور / أداة الرش:</label>
+              <select id="tmTankType" class="agri-select">
+                <option value="knapsack_20l" selected>رشاشة ظهرية عادية (20 لتر)</option>
+                <option value="knapsack_16l">رشاشة ظهرية (16 لتر)</option>
+                <option value="motor_200l">برميل أزرق قياسي (200 لتر)</option>
+                <option value="motor_100l">برميل رش صغير (100 لتر)</option>
+                <option value="motor_300l">موتور رش أرضي متوسط (300 لتر)</option>
+                <option value="motor_600l">موتور رش حقلي كبير (600 لتر)</option>
+                <option value="drip_1000l">سمادة شبكة ري بالتنقيط (1000 لتر)</option>
+              </select>
+            </div>
+
+            <!-- خيار الرشاشة المباشرة (عدد الماليات) -->
+            <div id="tmTankModeRow" class="agri-form-group">
+              <label class="agri-form-label">عدد الماليات أو التانكات المطلوب تجهيزها:</label>
+              <input type="number" min="1" step="1" id="tmTanksCount" class="agri-input" value="1" required>
+            </div>
+
+            <!-- خيار المساحة الكاملة (مخفي في وضع التانك) -->
+            <div id="tmAreaModeRow" style="display:none; grid-template-columns: 2fr 1.5fr; gap:10px; margin-bottom:12px;">
               <div>
                 <label class="agri-form-label">مساحة الأرض المراد رشها:</label>
-                <input type="number" step="0.01" id="tmAreaValue" class="agri-input" value="1" required>
+                <input type="number" step="0.01" id="tmAreaValue" class="agri-input" value="1">
               </div>
               <div>
                 <label class="agri-form-label">الوحدة:</label>
@@ -217,22 +270,10 @@
               </div>
             </div>
 
-            <div class="agri-form-group">
-              <label class="agri-form-label">نوع موتور / أداة الرش:</label>
-              <select id="tmTankType" class="agri-select">
-                <option value="knapsack_20l" selected>رشاشة ظهرية عادية (20 لتر)</option>
-                <option value="knapsack_16l">رشاشة ظهرية (16 لتر)</option>
-                <option value="motor_100l">برميل رش صغير (100 لتر)</option>
-                <option value="motor_300l">موتور رش أرضي متوسط (300 لتر)</option>
-                <option value="motor_600l">موتور رش حقلي كبير (600 لتر)</option>
-                <option value="drip_1000l">سمادة شبكة ري بالتنقيط (1000 لتر)</option>
-              </select>
-            </div>
-
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
               <div>
                 <label class="agri-form-label">اسم المبيد أو المركب:</label>
-                <input type="text" id="tmProductName" class="agri-input" placeholder="مثلاً: كبريت ميكروني، نحاس، أميستار..." required>
+                <input type="text" id="tmProductName" class="agri-input" placeholder="مثلاً: دايثين م45، أميستار، كوراجين..." required>
               </div>
               <div>
                 <label class="agri-form-label">طبيعة المركب:</label>
@@ -243,16 +284,18 @@
               </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 2fr 1.5fr; gap:10px; margin-bottom:12px;">
+            <div style="display:grid; grid-template-columns: 1.5fr 1.5fr; gap:10px; margin-bottom:12px;">
               <div>
                 <label class="agri-form-label">الجرعة الموصى بها على العبوة:</label>
                 <input type="number" step="0.1" id="tmDosageRate" class="agri-input" placeholder="مثلاً: 250" required>
               </div>
               <div>
-                <label class="agri-form-label">معدل الجرعة:</label>
+                <label class="agri-form-label">معدل التوصية:</label>
                 <select id="tmDosageUnit" class="agri-select">
-                  <option value="per_feddan" selected>لكل فدان</option>
-                  <option value="per_100l">لكل 100 لتر ماء</option>
+                  <option value="per_100l" selected>لكل 100 لتر ماء</option>
+                  <option value="per_200l">لكل برميل 200 لتر</option>
+                  <option value="per_feddan">لكل فدان</option>
+                  <option value="per_tank">لكل تانك / مالية</option>
                 </select>
               </div>
             </div>
@@ -261,17 +304,17 @@
               <div>
                 <label class="agri-form-label">طبيعة المحصول الحقلية:</label>
                 <select id="tmCropCategory" class="agri-select">
-                  <option value="vegetable" selected>خضر ومحاصيل حقلية (250 لتر/فدان)</option>
-                  <option value="orchard">أشجار وبساتين وفاكهة (500 لتر/فدان)</option>
+                  <option value="vegetable" selected>خضر ومحاصيل حقلية (بطاطس، طماطم...)</option>
+                  <option value="orchard">أشجار وبساتين وفاكهة (مانجو، برتقال...)</option>
                 </select>
               </div>
               <div>
                 <label class="agri-form-label">مركب شريك في التانك (لفحص التوافق):</label>
-                <input type="text" id="tmMixPartner" class="agri-input" placeholder="مثلاً: زيت معدني، أحماض أمينية، كالسيوم">
+                <input type="text" id="tmMixPartner" class="agri-input" placeholder="مثلاً: زيت معدني، أحماض، كالسيوم">
               </div>
             </div>
 
-            <button type="submit" id="tmSubmitBtn" class="agri-btn-submit">⚡ احسب عدد التانكات والمكيال الحقلي الآن</button>
+            <button type="submit" id="tmSubmitBtn" class="agri-btn-submit">⚡ احسب مكيال الرشاشة والتانك الآن</button>
           </form>
 
           <div id="tmResultBox" class="agri-result-box"></div>
@@ -372,7 +415,55 @@
     document.body.appendChild(root);
   }
 
-  // --- Modal Open/Close ---
+  // --- Modal Open/Close & Mode Switchers ---
+  let currentTankMixMode = 'tank';
+
+  window.switchTankMixMode = function (mode) {
+    currentTankMixMode = mode;
+    const btnTank = document.getElementById('tmModeTankBtn');
+    const btnArea = document.getElementById('tmModeAreaBtn');
+    const tankRow = document.getElementById('tmTankModeRow');
+    const areaRow = document.getElementById('tmAreaModeRow');
+    const submitBtn = document.getElementById('tmSubmitBtn');
+    const doseUnit = document.getElementById('tmDosageUnit');
+
+    if (mode === 'tank') {
+      if (btnTank) {
+        btnTank.classList.add('active');
+        btnTank.style.background = '#059669';
+        btnTank.style.color = '#ffffff';
+      }
+      if (btnArea) {
+        btnArea.classList.remove('active');
+        btnArea.style.background = 'transparent';
+        btnArea.style.color = '#64748b';
+      }
+      if (tankRow) tankRow.style.display = 'block';
+      if (areaRow) areaRow.style.display = 'none';
+      if (submitBtn) submitBtn.innerText = '⚡ احسب مكيال الرشاشة والتانك الآن';
+      if (doseUnit && doseUnit.value === 'per_feddan') {
+        doseUnit.value = 'per_100l';
+      }
+    } else {
+      if (btnArea) {
+        btnArea.classList.add('active');
+        btnArea.style.background = '#059669';
+        btnArea.style.color = '#ffffff';
+      }
+      if (btnTank) {
+        btnTank.classList.remove('active');
+        btnTank.style.background = 'transparent';
+        btnTank.style.color = '#64748b';
+      }
+      if (tankRow) tankRow.style.display = 'none';
+      if (areaRow) areaRow.style.display = 'grid';
+      if (submitBtn) submitBtn.innerText = '⚡ احسب عدد التانكات والمكيال الحقلي للمساحة';
+      if (doseUnit && (doseUnit.value === 'per_tank' || doseUnit.value === 'per_100l')) {
+        doseUnit.value = 'per_feddan';
+      }
+    }
+  };
+
   window.openTankMixModal = function () {
     initModalsDOM();
     document.getElementById('tankMixModalOverlay').classList.add('active');
@@ -427,9 +518,15 @@
 
     try {
       const partner = document.getElementById('tmMixPartner').value.trim();
+      const tanksCountVal = parseInt(document.getElementById('tmTanksCount')?.value || '1', 10);
+      const areaVal = parseFloat(document.getElementById('tmAreaValue')?.value || '1');
+      const areaUnitVal = document.getElementById('tmAreaUnit')?.value || 'feddan';
+
       const payload = {
-        area_value: parseFloat(document.getElementById('tmAreaValue').value),
-        area_unit: document.getElementById('tmAreaUnit').value,
+        mode: currentTankMixMode,
+        tanks_count: isNaN(tanksCountVal) || tanksCountVal < 1 ? 1 : tanksCountVal,
+        area_value: isNaN(areaVal) ? 1.0 : areaVal,
+        area_unit: areaUnitVal,
         tank_type: document.getElementById('tmTankType').value,
         product_name: document.getElementById('tmProductName').value.trim(),
         chemical_type: document.getElementById('tmChemicalType').value,
@@ -446,7 +543,7 @@
       });
       const data = await res.json();
       btn.disabled = false;
-      btn.innerText = '⚡ احسب عدد التانكات والمكيال الحقلي الآن';
+      btn.innerText = currentTankMixMode === 'tank' ? '⚡ احسب مكيال الرشاشة والتانك الآن' : '⚡ احسب عدد التانكات والمكيال الحقلي للمساحة';
 
       if (!res.ok) {
         alert(data.detail || 'حدث خطأ أثناء الحساب');
@@ -468,17 +565,20 @@
         `;
       }
 
+      const isTankMode = currentTankMixMode === 'tank';
+      const fillsLabel = data.tanks_count_practical === 1 ? 'مالية تانك واحدة' : `${data.tanks_count_practical} ماليات تانك`;
+
       resBox.innerHTML = `
         <h4 style="color:#059669; font-size:1.05rem; margin-bottom:10px;">📋 نتيجة حساب جرعة الرش (${data.area_display}):</h4>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
           <div style="background:white; padding:10px; border-radius:10px; border:1px solid #e2e8f0; text-align:center;">
-            <div style="font-size:0.75rem; color:#64748b;">إجمالي ماء الرش اللازم</div>
+            <div style="font-size:0.75rem; color:#64748b;">إجمالي ماء الرش</div>
             <div style="font-size:1.15rem; font-weight:900; color:#059669;">${data.total_water_liters} لتر</div>
-            <div style="font-size:0.75rem; color:#64748b;">(${data.tanks_count_practical} ماليات تانك)</div>
+            <div style="font-size:0.75rem; color:#64748b;">(${fillsLabel})</div>
           </div>
           <div style="background:white; padding:10px; border-radius:10px; border:1px solid #e2e8f0; text-align:center;">
-            <div style="font-size:0.75rem; color:#64748b;">إجمالي المبيد المطلوب للمساحة</div>
+            <div style="font-size:0.75rem; color:#64748b;">${isTankMode ? 'إجمالي المبيد المطلوب للمالية' : 'إجمالي المبيد المطلوب للمساحة'}</div>
             <div style="font-size:1.15rem; font-weight:900; color:#2563eb;">${data.total_chemical_amount.toFixed(1)} ${data.chemical_unit}</div>
             <div style="font-size:0.75rem; color:#64748b;">سعة التانك: ${data.tank_capacity_liters} لتر</div>
           </div>
@@ -486,11 +586,11 @@
 
         <div style="background:white; border-radius:10px; padding:12px; margin-bottom:10px; border:2px solid #10b981;">
           <div style="font-weight:800; color:#064e3b; font-size:0.95rem;">🥄 المقدار المضبوط لكل تانك / مالية:</div>
-          <div style="font-size:1.2rem; font-weight:900; color:#059669; margin:4px 0;">
+          <div style="font-size:1.25rem; font-weight:900; color:#059669; margin:4px 0;">
             ${data.amount_per_tank.toFixed(1)} ${data.chemical_unit}
           </div>
-          <div style="font-weight:700; color:#047857; font-size:0.86rem; background:#ecfdf5; padding:6px 10px; border-radius:8px;">
-            المكيال الحقلي العملي: ${data.amount_per_tank_practical}
+          <div style="font-weight:700; color:#047857; font-size:0.88rem; background:#ecfdf5; padding:8px 12px; border-radius:8px; margin-top:6px; border:1px solid #a7f3d0;">
+            المكيال الحقلي العملي: <strong>${data.amount_per_tank_practical}</strong>
           </div>
         </div>
 
@@ -505,7 +605,7 @@
 
     } catch (err) {
       btn.disabled = false;
-      btn.innerText = '⚡ احسب عدد التانكات والمكيال الحقلي الآن';
+      btn.innerText = currentTankMixMode === 'tank' ? '⚡ احسب مكيال الرشاشة والتانك الآن' : '⚡ احسب عدد التانكات والمكيال الحقلي للمساحة';
       alert('تعذر الاتصال بالخادم.');
     }
   };

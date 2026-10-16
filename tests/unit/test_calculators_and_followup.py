@@ -11,18 +11,14 @@ from app.main import app
 from app.core.config import DEV_SECRET_KEY
 from app.schemas.calculator import TankMixRequest, SalinityRequest
 from app.services.agri_calculator_service import calculate_tank_mix, evaluate_water_salinity
-from app.services.telegram_service import (
-    load_telegram_config,
-    save_telegram_config,
-    send_telegram_alert,
-)
+
 from computer_vision.storage.image_repository import save_image_record
 
 client = TestClient(app)
 
 
 def test_calculate_tank_mix_single_pesticide():
-    """Verify single pesticide dosage calculation and scoop representation."""
+    """Verify single pesticide dosage calculation with realistic Egyptian knapsack rates."""
     req = TankMixRequest(
         area_value=1.0,
         area_unit="feddan",
@@ -32,14 +28,56 @@ def test_calculate_tank_mix_single_pesticide():
         chemical_type="powder",
         crop_category="vegetable",
         product_name="أميستار",
+        mode="area",
     )
     res = calculate_tank_mix(req)
     assert res.area_feddan == 1.0
     assert res.tank_capacity_liters == 20.0
-    assert res.total_water_liters == 250.0
+    assert res.total_water_liters == 140.0
     assert res.total_chemical_amount == 200.0
-    assert res.amount_per_tank == 16.0
-    assert "ملعقة" in res.amount_per_tank_practical or "كوب" in res.amount_per_tank_practical or "جرام" in res.amount_per_tank_practical
+    assert res.amount_per_tank == 28.57
+    assert res.tanks_count_practical == 7
+    assert any(w in res.amount_per_tank_practical for w in ("ملعقة", "ملعقتين", "ملاعق", "كوب", "جم", "جرام"))
+
+
+def test_calculate_tank_mix_direct_single_tank():
+    """Verify direct single knapsack tank filling mode (mode='tank')."""
+    req = TankMixRequest(
+        mode="tank",
+        tanks_count=1,
+        tank_type="knapsack_20l",
+        dosage_rate=50.0,
+        dosage_unit="per_100l",
+        chemical_type="liquid",
+        crop_category="vegetable",
+        product_name="مبيد حشري سائل",
+    )
+    res = calculate_tank_mix(req)
+    assert res.tank_capacity_liters == 20.0
+    assert res.total_water_liters == 20.0
+    assert res.amount_per_tank == 10.0
+    assert res.total_chemical_amount == 10.0
+    assert "سرنجة" in res.amount_per_tank_practical or "سم³" in res.amount_per_tank_practical
+
+
+def test_calculate_tank_mix_barrel_200l():
+    """Verify 200L standard barrel container calculation."""
+    req = TankMixRequest(
+        mode="tank",
+        tanks_count=1,
+        tank_type="motor_200l",
+        dosage_rate=250.0,
+        dosage_unit="per_100l",
+        chemical_type="powder",
+        crop_category="orchard",
+        product_name="كبريت ميكروني",
+    )
+    res = calculate_tank_mix(req)
+    assert res.tank_capacity_liters == 200.0
+    assert res.total_water_liters == 200.0
+    assert res.amount_per_tank == 500.0
+    assert res.total_chemical_amount == 500.0
+    assert "500" in res.amount_per_tank_practical or "كوب" in res.amount_per_tank_practical or "كيس" in res.amount_per_tank_practical
 
 
 def test_calculate_tank_mix_incompatible_copper_amino():

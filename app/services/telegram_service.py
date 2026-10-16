@@ -149,7 +149,6 @@ def dispatch_telegram_alert_fire_and_forget(
             asyncio.run(send_telegram_alert(title, message, level, details))
     except Exception:
         # If no loop active, trigger in a background thread
-        threading_pool = getattr(asyncio, "to_thread", None)
         cfg = load_telegram_config()
         if cfg.get("enabled") and cfg.get("bot_token") and cfg.get("chat_id"):
             import threading

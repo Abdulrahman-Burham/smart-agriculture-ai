@@ -22,17 +22,117 @@ from app.schemas.calculator import (
 TANK_CAPACITIES: Dict[str, Tuple[float, str]] = {
     "knapsack_20l": (20.0, "رشاشة ظهرية (20 لتر)"),
     "knapsack_16l": (16.0, "رشاشة ظهرية (16 لتر)"),
-    "motor_600l": (600.0, "موتور رش أرضي كبير (600 لتر)"),
+    "motor_100l": (100.0, "برميل رش صغير (100 لتر)"),
+    "motor_200l": (200.0, "برميل رش قياسي (200 لتر)"),
+    "barrel_200l": (200.0, "برميل رش قياسي (200 لتر)"),
     "motor_300l": (300.0, "موتور رش متوسط (300 لتر)"),
-    "motor_100l": (100.0, "برميل رش / تانك صغير (100 لتر)"),
+    "motor_600l": (600.0, "موتور رش أرضي كبير (600 لتر)"),
     "drip_1000l": (1000.0, "سمادة شبكة ري بالتنقيط (1000 لتر)"),
 }
 
-# Standard foliar spray volumes per feddan (Egypt)
-WATER_PER_FEDDAN: Dict[str, float] = {
-    "vegetable": 250.0,  # خضر ومحاصيل حقلية: متوسط 250 لتر/فدان
-    "orchard": 500.0,    # بساتين وفاكهة وأشجار: متوسط 500 لتر/فدان
+# Realistic spray volume per feddan by tool & canopy in Egyptian agriculture:
+# - Knapsack sprayers deliver fine low-volume mist (140 L/feddan in vegetables = 7 sprayers)
+# - Tractor motors deliver standard high-volume spray (200-300 L/feddan in vegetables)
+# - Orchards/trees require heavy foliage washing (240 L knapsack = 12 sprayers, or 600 L tractor)
+SPRAY_WATER_PER_FEDDAN: Dict[str, Dict[str, float]] = {
+    "vegetable": {
+        "knapsack_20l": 140.0,
+        "knapsack_16l": 144.0,
+        "motor_100l": 200.0,
+        "motor_200l": 200.0,
+        "barrel_200l": 200.0,
+        "motor_300l": 300.0,
+        "motor_600l": 300.0,
+        "drip_1000l": 1000.0,
+    },
+    "orchard": {
+        "knapsack_20l": 240.0,
+        "knapsack_16l": 240.0,
+        "motor_100l": 500.0,
+        "motor_200l": 600.0,
+        "barrel_200l": 600.0,
+        "motor_300l": 600.0,
+        "motor_600l": 600.0,
+        "drip_1000l": 1000.0,
+    },
 }
+
+
+def format_practical_scoop(amount: float, chem_type: str) -> str:
+    """Format practical farmer kitchen/field scoops in Egyptian agricultural terminology."""
+    if chem_type == "liquid":
+        ml = amount
+        if ml < 2.0:
+            return f"حوالي {ml:.1f} سم³ (سرنجة طبية مدرجة — نقط بسيطة)"
+        elif ml < 4.0:
+            return f"حوالي {ml:.1f} سم³ (سرنجة أطفال مدرجة أو نصف غطاء عبوة صغير)"
+        elif ml < 7.5:
+            return f"حوالي {ml:.1f} سم³ (ملعقة شاي صغيرة أو سرنجة 5 سم)"
+        elif ml < 12.5:
+            return f"حوالي {ml:.1f} سم³ (سرنجة 10 سم أو غطاء عبوة ممتلئ)"
+        elif ml < 18.0:
+            return f"حوالي {ml:.1f} سم³ (ملعقة طعام كبيرة ممسوحة أو غطاء ونصف)"
+        elif ml < 25.0:
+            return f"حوالي {ml:.1f} سم³ (ملعقة طعام كبيرة ممتلئة أو غطائين)"
+        elif ml < 35.0:
+            return f"حوالي {ml:.1f} سم³ (ملعقتين طعام كبيرتين أو 3 أغطية)"
+        elif ml < 60.0:
+            return f"حوالي {ml:.1f} سم³ (ثلث كوب شاي عادي أو ربع كوباية)"
+        elif ml < 85.0:
+            return f"حوالي {ml:.1f} سم³ (نصف كوب شاي عادي)"
+        elif ml < 130.0:
+            return f"حوالي {ml:.1f} سم³ (كوب شاي عادي إلا ربع)"
+        elif ml < 180.0:
+            return f"حوالي {ml:.1f} سم³ (كوب شاي عادي خمسينة ممتلئ)"
+        elif ml < 270.0:
+            return f"حوالي {ml:.1f} سم³ (مج شاي كبير أو ربع لتر)"
+        elif ml < 400.0:
+            return f"حوالي {ml:.0f} سم³ (مج ونصف شاي كبير)"
+        elif ml < 600.0:
+            return f"حوالي {ml:.0f} سم³ (نصف لتر / زجاجة مياه صغيرة)"
+        elif ml < 850.0:
+            return f"حوالي {ml:.0f} سم³ (ثلاثة أرباع لتر)"
+        else:
+            liters = ml / 1000.0
+            return f"حوالي {liters:.2f} لتر (عبوة لتر كاملة)"
+    else:
+        g = amount
+        if g < 2.0:
+            return f"حوالي {g:.1f} جم (طرف ملعقة الشاي الصغيرة — ميزان حساس)"
+        elif g < 4.0:
+            return f"حوالي {g:.1f} جم (نصف ملعقة شاي صغيرة ممسوحة)"
+        elif g < 7.5:
+            return f"حوالي {g:.1f} جم (ملعقة شاي صغيرة ممسوحة)"
+        elif g < 12.5:
+            return f"حوالي {g:.1f} جم (ملعقتين شاي صغيرتين ممسوحتين)"
+        elif g < 18.0:
+            return f"حوالي {g:.1f} جم (ملعقة طعام كبيرة ممسوحة)"
+        elif g < 25.0:
+            return f"حوالي {g:.1f} جم (ملعقة طعام كبيرة ممتلئة هرماً)"
+        elif g < 35.0:
+            return f"حوالي {g:.1f} جم (ملعقتين طعام كبيرتين ممسوحتين)"
+        elif g < 45.0:
+            return f"حوالي {g:.1f} جم (ملعقتين ونصف طعام أو نصف كيس 100 جم)"
+        elif g < 65.0:
+            return f"حوالي {g:.1f} جم (3 ملاعق طعام ممتلئة أو ثلث كوب شاي)"
+        elif g < 85.0:
+            return f"حوالي {g:.1f} جم (نصف كوب شاي عادي)"
+        elif g < 120.0:
+            return f"حوالي {g:.1f} جم (كيس 100 جم كامل أو كوب شاي إلا ربع)"
+        elif g < 170.0:
+            return f"حوالي {g:.1f} جم (كوب شاي عادي خمسينة ممتلئ)"
+        elif g < 270.0:
+            return f"حوالي {g:.1f} جم (كيس 250 جم كامل أو مج شاي كبير ممتلئ)"
+        elif g < 400.0:
+            return f"حوالي {g:.0f} جم (مج ونصف شاي كبير أو ثلث كيلو)"
+        elif g < 600.0:
+            return f"حوالي {g:.0f} جم (نصف كيلو / 500 جم)"
+        elif g < 850.0:
+            return f"حوالي {g:.0f} جم (ثلاثة أرباع كيلو)"
+        else:
+            kg = g / 1000.0
+            return f"حوالي {kg:.2f} كجم (كيلو كامل)"
+
 
 # Incompatibility checks (pairs of keywords in chemical names or selected partners)
 INCOMPATIBILITY_RULES = [
@@ -61,67 +161,79 @@ INCOMPATIBILITY_RULES = [
 
 def calculate_tank_mix(req: TankMixRequest) -> TankMixResponse:
     """Calculate exact tank fills, chemical dosage per tank, and compatibility."""
-    # 1. Normalize area to feddans
-    unit = req.area_unit.lower().strip()
-    val = req.area_value
-    if unit in ("feddan", "فدان"):
-        area_fed = val
-        area_ar = f"{val:.2f} فدان"
-    elif unit in ("qirat", "قيراط"):
-        area_fed = val / 24.0
-        area_ar = f"{val:.1f} قيراط ({area_fed:.3f} فدان)"
-    elif unit in ("sahm", "سهم"):
-        area_fed = val / 576.0
-        area_ar = f"{val:.0f} سهم ({area_fed:.4f} فدان)"
-    elif unit in ("sqm", "متر", "متر مربع"):
-        area_fed = val / 4200.0
-        area_ar = f"{val:.0f} م² ({area_fed:.3f} فدان)"
-    else:
-        area_fed = val
-        area_ar = f"{val} {unit}"
-
-    # 2. Total water needed based on crop canopy
     canopy = req.crop_category.lower().strip()
-    water_rate_fed = WATER_PER_FEDDAN.get(canopy, 250.0)
-    total_water = max(1.0, area_fed * water_rate_fed)
-
-    # 3. Tank capacity
     tank_key = req.tank_type.lower().strip()
     tank_cap, tank_label = TANK_CAPACITIES.get(tank_key, (20.0, "رشاشة ظهرية 20 لتر"))
-
-    # 4. Calculate total chemical required
-    dose_rate = req.dosage_rate
-    dose_unit = req.dosage_unit.lower().strip()
     chem_type = req.chemical_type.lower().strip()
     chem_unit = "مل/سم³" if chem_type == "liquid" else "جرام"
+    dose_rate = req.dosage_rate
+    dose_unit = req.dosage_unit.lower().strip()
+    calc_mode = getattr(req, "mode", "area").lower().strip()
 
-    if dose_unit in ("per_feddan", "لكل فدان"):
-        total_chemical = area_fed * dose_rate
-    else:  # per 100 liters of water
-        total_chemical = (total_water / 100.0) * dose_rate
+    # Determine water rate per feddan for this tool
+    crop_rates = SPRAY_WATER_PER_FEDDAN.get(canopy, SPRAY_WATER_PER_FEDDAN["vegetable"])
+    water_rate_fed = crop_rates.get(tank_key, 200.0)
 
-    # 5. Number of tanks and dosage per tank
-    tanks_count_exact = total_water / tank_cap
-    tanks_count_practical = max(1, math.ceil(tanks_count_exact))
+    if calc_mode == "tank":
+        # Mode A: Direct Single/Multiple Tanks Filling
+        tanks_cnt = max(1, getattr(req, "tanks_count", 1))
+        total_water = float(tank_cap * tanks_cnt)
+        tanks_count_exact = float(tanks_cnt)
+        tanks_count_practical = tanks_cnt
+        area_fed = total_water / water_rate_fed
+        area_ar = f"ملء {tanks_cnt} {tank_label}"
 
-    # Dose per single full tank
-    dose_per_tank = (total_chemical / total_water) * tank_cap
+        if dose_unit in ("per_100l", "لكل 100 لتر", "لكل 100 لتر ماء"):
+            dose_per_tank = (dose_rate / 100.0) * tank_cap
+        elif dose_unit in ("per_200l", "لكل 200 لتر", "لكل برميل 200 لتر"):
+            dose_per_tank = (dose_rate / 200.0) * tank_cap
+        elif dose_unit in ("per_tank", "لكل تانك", "لكل رشاشة"):
+            dose_per_tank = dose_rate
+        else:  # per_feddan: divide feddan dose by how many tanks cover a feddan
+            tanks_per_feddan = max(1.0, water_rate_fed / tank_cap)
+            dose_per_tank = dose_rate / tanks_per_feddan
 
-    # Practical spoon/cup scoops (1 tablespoon ~ 15g powder or 15ml liquid)
-    if chem_type == "liquid":
-        if dose_per_tank < 50:
-            spoons = dose_per_tank / 10.0
-            practical_scoop = f"حوالي {dose_per_tank:.1f} مل (سرنجة مدرجة أو {spoons:.1f} غطاء عبوة)"
-        else:
-            practical_scoop = f"حوالي {dose_per_tank:.1f} مل ({dose_per_tank / 100.0:.2f} من كوب الشاي العادي)"
+        total_chemical = dose_per_tank * tanks_cnt
+
     else:
-        spoons = dose_per_tank / 12.0
-        if spoons <= 6:
-            practical_scoop = f"حوالي {dose_per_tank:.1f} جم (ما يعادل {spoons:.1f} ملعقة طعام ممسوحة)"
+        # Mode B: Whole Field Area Spraying
+        unit = req.area_unit.lower().strip()
+        val = req.area_value if req.area_value is not None else 1.0
+        if unit in ("feddan", "فدان"):
+            area_fed = val
+            area_ar = f"{val:.2f} فدان"
+        elif unit in ("qirat", "قيراط"):
+            area_fed = val / 24.0
+            area_ar = f"{val:.1f} قيراط ({area_fed:.3f} فدان)"
+        elif unit in ("sahm", "سهم"):
+            area_fed = val / 576.0
+            area_ar = f"{val:.0f} سهم ({area_fed:.4f} فدان)"
+        elif unit in ("sqm", "متر", "متر مربع"):
+            area_fed = val / 4200.0
+            area_ar = f"{val:.0f} م² ({area_fed:.3f} فدان)"
         else:
-            practical_scoop = f"حوالي {dose_per_tank:.1f} جم (استخدم ميزان حساس أو {dose_per_tank / 100.0:.1f} كيس 100 جم)"
+            area_fed = val
+            area_ar = f"{val} {unit}"
 
-    # 6. Check Incompatibility rules
+        total_water = max(1.0, area_fed * water_rate_fed)
+        tanks_count_exact = total_water / tank_cap
+        tanks_count_practical = max(1, math.ceil(tanks_count_exact))
+
+        if dose_unit in ("per_feddan", "لكل فدان"):
+            total_chemical = area_fed * dose_rate
+        elif dose_unit in ("per_200l", "لكل 200 لتر", "لكل برميل 200 لتر"):
+            total_chemical = (total_water / 200.0) * dose_rate
+        elif dose_unit in ("per_tank", "لكل تانك", "لكل رشاشة"):
+            total_chemical = dose_rate * tanks_count_exact
+        else:  # per 100 liters of water
+            total_chemical = (total_water / 100.0) * dose_rate
+
+        dose_per_tank = (total_chemical / total_water) * tank_cap
+
+    # Practical spoon/cup scoop representation
+    practical_scoop = format_practical_scoop(dose_per_tank, chem_type)
+
+    # Incompatibility rules
     warnings: List[str] = []
     text_to_check = (req.product_name or "").lower() + " " + " ".join(req.mix_partners or []).lower()
     for kw1_set, kw2_set, warning_msg in INCOMPATIBILITY_RULES:
@@ -130,7 +242,7 @@ def calculate_tank_mix(req: TankMixRequest) -> TankMixResponse:
         if has_kw1 and has_kw2:
             warnings.append(warning_msg)
 
-    # 7. Actionable agricultural steps
+    # Actionable agricultural steps
     instructions: List[str] = [
         f"املأ ثلث تانك {tank_label} بماء نظيف خالي من الطين أولاً.",
         f"أذب أو خفف المقدار المخصص للرشاشة الواحدة ({dose_per_tank:.1f} {chem_unit} — {practical_scoop}) في جردل ماء خارجي صغير أولاً (التحضير المسبق).",
@@ -154,6 +266,7 @@ def calculate_tank_mix(req: TankMixRequest) -> TankMixResponse:
         compatibility_warnings=warnings,
         instructions_ar=instructions,
     )
+
 
 
 # ─── Salinity & Water Quality Constants (FAO 29 Standards) ────────────────
