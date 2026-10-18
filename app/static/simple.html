@@ -501,6 +501,30 @@
             </div>
         </div>
 
+        <!-- Supported Crops Banner for Simple Scan -->
+        <div style="background: rgba(45, 106, 79, 0.08); border: 1px solid rgba(45, 106, 79, 0.22); border-radius: 12px; padding: 0.65rem 0.85rem; margin-bottom: 0.75rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.4rem;">
+                <span style="font-size: 0.84rem; font-weight: 800; color: var(--primary-green); display: flex; align-items: center; gap: 0.35rem;">
+                    <span>📸</span>
+                    <span>المحاصيل المتاحة لفحص الأوراق بالصورة (8 محاصيل):</span>
+                </span>
+                <span style="font-size: 0.72rem; font-weight: 700; background: rgba(45, 106, 79, 0.16); color: var(--primary-green); padding: 0.15rem 0.5rem; border-radius: 6px;">30 مرضاً وحالة</span>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.35rem;">
+                <span style="font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 8px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(45, 106, 79, 0.25);">🍅 طماطم</span>
+                <span style="font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 8px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(45, 106, 79, 0.25);">🥔 بطاطس</span>
+                <span style="font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 8px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(45, 106, 79, 0.25);">🌽 ذرة</span>
+                <span style="font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 8px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(45, 106, 79, 0.25);">🍇 عنب</span>
+                <span style="font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 8px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(45, 106, 79, 0.25);">🍎 تفاح</span>
+                <span style="font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 8px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(45, 106, 79, 0.25);">🍓 فراولة</span>
+                <span style="font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 8px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(45, 106, 79, 0.25);">🫑 فلفل</span>
+                <span style="font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 8px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(45, 106, 79, 0.25);">🍊 موالح</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.4;">
+                💡 <em>موديل الذكاء الاصطناعي مدرب بدقة على أوراق هذه المحاصيل الـ 8 للحصول على أدق نتيجة.</em>
+            </div>
+        </div>
+
         <div class="upload-zone" id="upload-zone">
             <input type="file" id="file-input" accept="image/*">
             <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;">
@@ -508,6 +532,7 @@
             <div id="upload-placeholder">
                 <div class="upload-icon">🌿</div>
                 <div class="upload-text">اضغط هنا لاختيار صورة ورقة النبات أو تصويرها بالكاميرا</div>
+                <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.35rem; font-weight: 600;">(طماطم • بطاطس • ذرة • عنب • تفاح • فراولة • فلفل • موالح)</div>
             </div>
         </div>
 

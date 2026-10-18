@@ -356,6 +356,47 @@
             animation: pulseGlow 1.8s infinite ease-in-out;
         }
 
+        /* Supported Crops Banner in Vision Panel */
+        .supported-crops-box {
+            background: rgba(45, 106, 79, 0.08);
+            border: 1px solid rgba(45, 106, 79, 0.22);
+            border-radius: 12px;
+            padding: 0.65rem 0.85rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.65rem;
+        }
+        [data-theme="light"] .supported-crops-box {
+            background: rgba(45, 106, 79, 0.05);
+            border-color: rgba(45, 106, 79, 0.2);
+        }
+        .crop-pill-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            font-size: 0.76rem;
+            font-weight: 700;
+            padding: 0.2rem 0.55rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #80ed99;
+            border: 1px solid rgba(128, 237, 153, 0.25);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+        .crop-pill-tag:hover {
+            transform: translateY(-1px);
+            background: rgba(128, 237, 153, 0.18);
+        }
+        [data-theme="light"] .crop-pill-tag {
+            background: #ffffff;
+            color: #1b4332;
+            border-color: rgba(45, 106, 79, 0.25);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        [data-theme="light"] .crop-pill-tag:hover {
+            background: rgba(45, 106, 79, 0.08);
+        }
+
         /* HCI Floating Toast Notification */
         .hci-toast {
             position: fixed;
@@ -1539,6 +1580,30 @@
                 <div class="hci-step" id="hci-step-3">3. التشخيص والعلاج</div>
             </div>
 
+            <!-- Supported Crops Banner for Vision Model -->
+            <div class="supported-crops-box" id="supported-crops-guide">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.45rem;">
+                    <span style="font-size: 0.82rem; font-weight: 800; color: var(--primary-green); display: flex; align-items: center; gap: 0.35rem;">
+                        <span>📸</span>
+                        <span>المحاصيل المتاحة لفحص الأوراق بالذكاء الاصطناعي (8 محاصيل):</span>
+                    </span>
+                    <span style="font-size: 0.72rem; font-weight: 700; background: rgba(45, 106, 79, 0.16); color: var(--primary-green); padding: 0.15rem 0.5rem; border-radius: 6px; border: 1px solid rgba(45, 106, 79, 0.25);">30 مرضاً وحالة</span>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.4rem;">
+                    <span class="crop-pill-tag">🍅 طماطم</span>
+                    <span class="crop-pill-tag">🥔 بطاطس</span>
+                    <span class="crop-pill-tag">🌽 ذرة</span>
+                    <span class="crop-pill-tag">🍇 عنب</span>
+                    <span class="crop-pill-tag">🍎 تفاح</span>
+                    <span class="crop-pill-tag">🍓 فراولة</span>
+                    <span class="crop-pill-tag">🫑 فلفل</span>
+                    <span class="crop-pill-tag">🍊 موالح وبرتقال</span>
+                </div>
+                <div style="font-size: 0.73rem; color: var(--text-muted); line-height: 1.45;">
+                    💡 <em>موديل الرؤية مدرب بدقة على فحص أوراق هذه المحاصيل الثمانية. لباقي المحاصيل (قمح، أرز، مانجو، نخيل، زيتون...) يمكنك استشارة الخبير الزراعي فوراً في الشات لكتابة الأعراض وتشخيصها.</em>
+                </div>
+            </div>
+
             <!-- Optional Model Selector Buttons (hidden from end-user to keep UI clean) -->
             <div class="model-selector-bar" style="display:none;">
                 <span class="model-selector-label">موديل الصور:</span>
@@ -1564,6 +1629,7 @@
                 <div id="upload-placeholder">
                     <div class="upload-icon">🌿</div>
                     <div class="upload-text">اضغط لرفع صورة ورقة النبات أو تصويرها بالكاميرا</div>
+                    <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.35rem; font-weight: 600;">(طماطم • بطاطس • ذرة • عنب • تفاح • فراولة • فلفل • موالح)</div>
                 </div>
             </div>
 
