@@ -104,13 +104,37 @@ jobs:
 
       - name: 🚀 Deploy to Azure Production Server
         if: steps.check-secrets.outputs.has_secrets == 'true'
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.AZURE_VM_HOST || '20.46.50.255' }}
-          username: ${{ secrets.AZURE_VM_USER || 'azureuser' }}
-          key: ${{ secrets.AZURE_SSH_KEY }}
-          timeout: 120s
-          script: |
+        env:
+          AZURE_VM_HOST: ${{ secrets.AZURE_VM_HOST || '20.46.50.255' }}
+          AZURE_VM_USER: ${{ secrets.AZURE_VM_USER || 'azureuser' }}
+          AZURE_SSH_KEY: ${{ secrets.AZURE_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$AZURE_SSH_KEY" | tr -d '\r' > ~/.ssh/azure_key
+          chmod 600 ~/.ssh/azure_key
+
+          SSH_OPTS="-i /home/runner/.ssh/azure_key -o StrictHostKeyChecking=no -o ConnectTimeout=25 -o ServerAliveInterval=15 -o ServerAliveCountMax=4"
+
+          echo "📡 Connecting to Azure VM ($AZURE_VM_HOST) with resilient retry loop..."
+          CONNECTED=false
+          for attempt in 1 2 3 4; do
+            echo "Attempt $attempt/4: testing SSH handshake..."
+            if ssh $SSH_OPTS -o BatchMode=yes "$AZURE_VM_USER@$AZURE_VM_HOST" "echo '✅ SSH connection established to host: ' \$(hostname)" ; then
+              CONNECTED=true
+              break
+            fi
+            echo "⚠️ Handshake attempt $attempt failed or timed out. Waiting 8s before retry..."
+            sleep 8
+          done
+
+          if [ "$CONNECTED" != "true" ]; then
+            echo "❌ Failed to establish SSH connection to Azure VM after 4 attempts!"
+            rm -f ~/.ssh/azure_key
+            exit 1
+          fi
+
+          echo "🚀 Executing deployment script on production VM..."
+          ssh $SSH_OPTS "$AZURE_VM_USER@$AZURE_VM_HOST" "bash -s" << 'EOF'
             set -e
             echo "📡 Connected to Azure VM: $(hostname)"
             cd /home/azureuser/smart-agriculture-ai
@@ -142,6 +166,9 @@ jobs:
               sudo journalctl -u smart-agri -n 40 --no-pager
               exit 1
             fi
+          EOF
+
+          rm -f ~/.ssh/azure_key
 
       - name: 🌐 External Production Health Probe
         if: steps.check-secrets.outputs.has_secrets == 'true'
