@@ -418,6 +418,28 @@ def analyze_image_forensics(image_bytes: bytes) -> Dict[str, Any]:
                 elif green_pct < 25.0:
                     issues.append("⚠️ نسبة نبات ضعيفة (يُفضل تصوير الورقة عن قرب)")
                 metrics["quality_flag"] = " ، ".join(issues) if issues else "✅ جودة ممتازة"
+        else:
+            pil_fallback = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            w, h = pil_fallback.size
+            metrics["width"] = int(w)
+            metrics["height"] = int(h)
+            arr = np.array(pil_fallback, dtype=np.float32)
+            r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
+            bright = float(np.mean((r + g + b) / 3.0))
+            metrics["brightness_score"] = round(bright, 1)
+            plant_px = (g > (r + 4.0)) & (g >= (b + 2.0)) & (g > 35.0)
+            green_pct = float(np.count_nonzero(plant_px)) / float(max(1, h * w)) * 100.0
+            metrics["green_ratio"] = round(green_pct, 1)
+            issues = []
+            if bright < 40.0:
+                issues.append("إضاءة مظلمة")
+            elif bright > 225.0:
+                issues.append("إضاءة ساطعة جداً")
+            if green_pct < 18.0:
+                issues.append("❌ نسبة نبات منخفضة جداً (غير صالحة للتشخيص)")
+            elif green_pct < 25.0:
+                issues.append("⚠️ نسبة نبات ضعيفة (يُفضل تصوير الورقة عن قرب)")
+            metrics["quality_flag"] = " ، ".join(issues) if issues else "✅ جودة ممتازة"
     except Exception:
         pass
 
