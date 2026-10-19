@@ -106,14 +106,18 @@ async def diagnose_endpoint(
             cv_result = prediction
 
             # Check if EITHER OpenCV Multi-Signal Filter OR Gemini Vision Gatekeeper rejected the non-plant image
-            opencv_is_plant = cv_result.get("is_plant", True)
+            opencv_is_plant = (
+                cv_result.get("is_plant", True)
+                and not cv_result.get("rejected", False)
+                and cv_result.get("predicted_class") != "Not_A_Plant"
+            )
             gemini_is_plant = gemini_gate.get("is_plant", True)
 
             if not opencv_is_plant or not gemini_is_plant:
                 detected_obj = (
                     gemini_gate.get("detected_ar")
                     if not gemini_is_plant and gemini_gate.get("detected_ar")
-                    else (cv_result.get("detected_object_ar") or "صورة غير نباتية")
+                    else (cv_result.get("detected_object_ar") or cv_result.get("rejection_reason_ar") or "صورة غير نباتية")
                 )
                 reject_reason = (
                     f"⚠️ تنبيه: هذه الصورة ليست لنبات! (تم رصد: {detected_obj}) — "

@@ -400,7 +400,9 @@ def analyze_image_forensics(image_bytes: bytes) -> Dict[str, Any]:
                 metrics["brightness_score"] = round(brightness_val, 1)
 
                 hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-                mask_plant = cv2.inRange(hsv, np.array([15, 25, 25]), np.array([95, 255, 255]))
+                b_ch = bgr[:, :, 0].astype(np.float32)
+                g_ch = bgr[:, :, 1].astype(np.float32)
+                mask_plant = (cv2.inRange(hsv, np.array([22, 28, 25]), np.array([92, 255, 255])) > 0) & (g_ch >= (b_ch - 4.0))
                 green_pct = float(np.count_nonzero(mask_plant)) / float(max(1, h * w)) * 100.0
                 metrics["green_ratio"] = round(green_pct, 1)
 
@@ -411,8 +413,10 @@ def analyze_image_forensics(image_bytes: bytes) -> Dict[str, Any]:
                     issues.append("إضاءة مظلمة")
                 elif brightness_val > 225.0:
                     issues.append("إضاءة ساطعة جداً")
-                if green_pct < 8.0:
-                    issues.append("نسبة نبات منخفضة (احتمال صورة غير زراعية)")
+                if green_pct < 18.0:
+                    issues.append("❌ نسبة نبات منخفضة جداً (غير صالحة للتشخيص)")
+                elif green_pct < 25.0:
+                    issues.append("⚠️ نسبة نبات ضعيفة (يُفضل تصوير الورقة عن قرب)")
                 metrics["quality_flag"] = " ، ".join(issues) if issues else "✅ جودة ممتازة"
     except Exception:
         pass

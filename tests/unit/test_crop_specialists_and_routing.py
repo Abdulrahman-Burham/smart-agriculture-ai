@@ -162,3 +162,41 @@ def test_api_diagnose_with_crop_parameter():
     assert cv.get("crop_type_ar") == "قمح"
     assert "advice" in res
     assert len(res["advice"]) > 0
+
+
+def test_rejection_of_low_plant_ratio_image_record_50():
+    """Regression test for Record #50: 11.9% plant ratio must be strictly rejected as Not_A_Plant."""
+    import numpy as np
+    from computer_vision.storage.utils import analyze_image_forensics
+
+    # Build image with ~11.7% green foliage and 88.3% non-plant background (wood/room)
+    arr = np.full((256, 256, 3), (60, 120, 180), dtype=np.uint8)  # Wood floor BGR
+    arr[:30, :, :] = (34, 139, 34)  # 11.7% green foliage BGR
+    img = Image.fromarray(arr[:, :, ::-1])  # Convert to RGB for PIL
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    bad_bytes = buf.getvalue()
+
+    # 1. Verify Image Forensics flag
+    forensics = analyze_image_forensics(bad_bytes)
+    assert forensics["green_ratio"] < 18.0
+    assert "✅ جودة ممتازة" not in forensics["quality_flag"]
+    assert "نسبة نبات منخفضة جداً" in forensics["quality_flag"]
+
+    # 2. Verify Classifier Predict rejection
+    clf = PlantDiseaseClassifier()
+    pred = clf.predict(bad_bytes, crop_hint="قمح")
+    assert pred["is_plant"] is False
+    assert pred["predicted_class"] == "Not_A_Plant"
+    assert "مرفوضة" in pred["confidence_str"]
+
+    # 3. Verify End-to-End API /api/diagnose rejection
+    files = {"image": ("non_plant.jpg", bad_bytes, "image/jpeg")}
+    data = {"query": "ما هو المرض في القمح؟", "crop": "قمح"}
+    response = client.post("/api/diagnose", files=files, data=data)
+    assert response.status_code == 200
+    res = response.json()
+    assert res["is_plant"] is False
+    assert "⚠️ تنبيه: هذه الصورة ليست لنبات!" in res["rejection_reason"]
+    assert "مش صورة نبات" in res["advice"]
+

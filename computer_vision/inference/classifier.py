@@ -4,11 +4,20 @@ import os
 import numpy as np
 
 try:
-    import tensorflow as tf
     import cv2
-    HAS_TF_CV2 = True
+    HAS_CV2 = True
 except Exception:
-    HAS_TF_CV2 = False
+    cv2 = None
+    HAS_CV2 = False
+
+try:
+    import tensorflow as tf
+    HAS_TF = True
+except Exception:
+    tf = None
+    HAS_TF = False
+
+HAS_TF_CV2 = HAS_TF and HAS_CV2
 
 # Exact 30 MVP classes from Zawolf-Corpus-Classifiction.ipynb / HuggingFace Space
 DEFAULT_CLASS_NAMES = [
@@ -103,7 +112,7 @@ class PlantDiseaseClassifier:
         json_path = os.path.join(base_dir, "..", "models", "class_names.json")
         model_path = os.path.join(base_dir, "..", "models", "EfficientNetV2B2_best.keras")
 
-        if HAS_TF_CV2:
+        if HAS_CV2:
             try:
                 cascade_path = os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml")
                 if os.path.exists(cascade_path):
@@ -163,6 +172,7 @@ class PlantDiseaseClassifier:
             "green_foliage_pct": 25.0,
             "exg_pct": 25.0,
             "yellow_leaf_pct": 0.0,
+            "total_plant_pct": 25.0,
             "face_area_pct": 0.0,
             "flat_ui_pct": 0.0,
             "detected_ar": "نبات / ورقة محصول",
@@ -170,7 +180,7 @@ class PlantDiseaseClassifier:
             "needs_gemini_check": False,
         }
         try:
-            if not HAS_TF_CV2:
+            if not HAS_CV2:
                 return res
             nparr = np.frombuffer(contents, np.uint8)
             bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -202,8 +212,9 @@ class PlantDiseaseClassifier:
             exg_mask = (exg > 16.0) & (g_ch > 32.0)
             exg_pct = round(float(np.count_nonzero(exg_mask)) / total_px * 100.0, 2)
 
-            # 3. Chlorotic / Yellow / Brown necrotic leaf tissue (Hue 10..25, Sat >= 35, Val >= 28)
-            yellow_mask = cv2.inRange(hsv, np.array([10, 35, 28]), np.array([25, 255, 240])) > 0
+            # 3. Chlorotic / Yellow / Rust leaf tissue (Hue 24..38, Sat >= 40, Val >= 40, G > B + 15)
+            # Rejects wood, brown furniture, soil, and skin (Hue 10..22) while capturing authentic foliar chlorosis/rust
+            yellow_mask = (cv2.inRange(hsv, np.array([24, 40, 40]), np.array([38, 255, 255])) > 0) & (g_ch > (b_ch + 15.0))
             yellow_leaf_pct = round(float(np.count_nonzero(yellow_mask)) / total_px * 100.0, 2)
 
             # 4. Flat UI / Screenshot / Document check (identical adjacent pixels + desaturated background)
@@ -219,47 +230,58 @@ class PlantDiseaseClassifier:
                 if len(faces) > 0:
                     face_area_pct = round(sum(int(fw) * int(fh) for (_, _, fw, fh) in faces) / total_px * 100.0, 2)
 
+            total_plant_pct = round(green_foliage_pct + yellow_leaf_pct, 2)
+
             res.update({
                 "green_foliage_pct": green_foliage_pct,
                 "exg_pct": exg_pct,
                 "yellow_leaf_pct": yellow_leaf_pct,
+                "total_plant_pct": total_plant_pct,
                 "face_area_pct": face_area_pct,
                 "flat_ui_pct": flat_ui_pct,
             })
 
             # Decision Rule A: Human Face / Selfie
-            if face_area_pct >= 3.0 and green_foliage_pct < 22.0:
+            if face_area_pct >= 2.5 and green_foliage_pct < 25.0:
                 res["is_plant"] = False
                 res["detected_ar"] = "صورة شخصية / وجه إنسان"
                 res["reason_ar"] = "الصورة المرفوعة تحتوي على شخص وليست ورقة نبات! هذا النظام مخصص فقط لفحص النباتات والمحاصيل الزراعية."
                 return res
 
-            # Decision Rule B: Screenshot / Text Document / Blank Screen / Digital Logo or Graphic
-            if flat_ui_pct > 48.0 or ((flat_ui_pct > 35.0 or desat_pct > 76.0) and green_foliage_pct < 4.0 and exg_pct < 4.0):
+            # Decision Rule B: Screenshot / Text Document / Blank Screen / Digital Graphic
+            # Flat UI or graphic with low plant foliage or high desaturation
+            if (flat_ui_pct > 55.0 and green_foliage_pct < 15.0) or ((flat_ui_pct > 30.0 or desat_pct > 72.0) and green_foliage_pct < 8.0 and exg_pct < 6.0):
                 res["is_plant"] = False
-                res["detected_ar"] = "لقطة شاشة (Screenshot) أو شعار رقمي أو مستند"
+                res["detected_ar"] = "لقطة شاشة (Screenshot) أو تصميم رقمي أو مستند"
                 res["reason_ar"] = "الصورة المرفوعة تبدو لقطة شاشة أو تصميماً رقمياً وليست صورة حقيقية لنبات! يرجى تصوير ورقة النبات الحقيقية بالكاميرا."
                 return res
 
-            # Decision Rule C: Zero or Near-Zero Plant Tissue (Cars, Animals, Buildings, Furniture, Electronics, etc.)
-            if green_foliage_pct < 1.8 and exg_pct < 2.2:
-                # Allow an exception only if it is a predominantly yellow/brown diseased leaf that still has traces of green and very high CV confidence
+            # Decision Rule C: Insufficient Plant Foliage (< 18.0% of frame is plant tissue)
+            # Diagnosing leaf diseases requires close-up framing; scenes with < 18% plant tissue are non-plant scenes or background noise.
+            if total_plant_pct < 18.0:
+                # Exception only for heavily chlorotic/yellow diseased leaf that still has recognizable leaf structure and high CV confidence
                 is_yellow_diseased_leaf = (yellow_leaf_pct >= 24.0 and (green_foliage_pct >= 0.55 or exg_pct >= 0.75) and top_conf >= 0.78)
                 if not is_yellow_diseased_leaf:
                     res["is_plant"] = False
-                    res["detected_ar"] = "صورة غير نباتية (لا توجد أوراق أو أنسجة نباتية)"
-                    res["reason_ar"] = "لم يتم رصد أي نبات أو أوراق خضراء في الصورة! النظام يقبل فقط صور أوراق النباتات والمحاصيل الزراعية."
+                    res["detected_ar"] = f"صورة غير نباتية (نسبة النبات {green_foliage_pct}% فقط)"
+                    res["reason_ar"] = (
+                        f"الصورة لا تظهر ورقة محصول واضحة أو كافية للتشخيص (نسبة النبات {green_foliage_pct}% فقط، والحد الأدنى للتشخيص هو 18%). "
+                        "يرجى تصوير ورقة النبات المصابة عن قرب وبوضوح بحيث تملأ معظم الكادر."
+                    )
                     return res
 
-            # Decision Rule D: Weak Green + Low Classifier Confidence / High Uncertainty
-            if green_foliage_pct < 6.0 and exg_pct < 6.0 and (top_conf < 0.52 or norm_entropy > 0.58):
+            # Decision Rule D: Weak Foliage (< 25.0%) + Low Confidence / High Uncertainty / Borderline non-leaf
+            if total_plant_pct < 25.0 and (top_conf < 0.65 or norm_entropy > 0.50 or exg_pct < 6.0 or flat_ui_pct > 15.0):
                 res["is_plant"] = False
-                res["detected_ar"] = "جسم غير نباتي أو صورة غير واضحة"
-                res["reason_ar"] = "الصورة لا تحتوي على ورقة نبات واضحة قابلة للتشخيص. يرجى تصوير ورقة النبات عن قرب."
+                res["detected_ar"] = f"كادر غير واضح أو جسم غير زراعي ({green_foliage_pct}% نبات)"
+                res["reason_ar"] = (
+                    f"نسبة النبات في الصورة ({green_foliage_pct}%) غير كافية لتقديم تشخيص موثوق. "
+                    "يرجى تصوير ورقة المحصول المصابة عن قرب وبإضاءة واضحة."
+                )
                 return res
 
-            # Flag images that should be double-checked by Gemini Vision if available (e.g., green object or moderate foliage)
-            if green_foliage_pct < 25.0 or top_conf < 0.85 or flat_ui_pct > 18.0 or face_area_pct > 0.0:
+            # Flag images that should be double-checked by Gemini Vision if available
+            if total_plant_pct < 35.0 or top_conf < 0.85 or flat_ui_pct > 15.0 or face_area_pct > 0.0:
                 res["needs_gemini_check"] = True
 
         except Exception:

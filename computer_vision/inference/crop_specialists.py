@@ -225,30 +225,55 @@ def diagnose_expanded_crop(
     green_pct = float(visual_signals.get("green_foliage_pct", 25.0))
     yellow_pct = float(visual_signals.get("yellow_leaf_pct", 0.0))
     exg_pct = float(visual_signals.get("exg_pct", 25.0))
+    total_plant = green_pct + yellow_pct
+
+    # Strict Gatekeeper: Reject images with insufficient plant foliage (< 18%)
+    if total_plant < 18.0:
+        crop_info = EXPANDED_CROP_CATALOGUES.get(crop_canonical, {})
+        return {
+            "is_plant": False,
+            "rejected": True,
+            "detected_object_ar": f"صورة غير نباتية (نسبة النبات {round(green_pct, 1)}% فقط)",
+            "rejection_reason_ar": (
+                f"نسبة النبات في الصورة ({round(green_pct, 1)}%) ضئيلة جداً ولا تكفي لتشخيص محصول {crop_canonical}. "
+                "يرجى تصوير ورقة المحصول المصابة عن قرب وبوضوح بحيث تشغل معظم كادر الصورة."
+            ),
+            "top_predictions": [],
+            "predicted_class": "Not_A_Plant",
+            "predicted_class_ar": f"⚠️ ليست صورة نبات ({round(green_pct, 1)}% نبات فقط)",
+            "confidence": 0.0,
+            "confidence_str": "مرفوضة",
+            "predictions": [],
+            "crop_type": crop_info.get("crop_en", "Non-Plant"),
+            "crop_type_ar": crop_canonical,
+            "disease_name": f"Not_A_Plant ({round(green_pct, 1)}% foliage)",
+            "top_confidence": 0.0,
+            "model_used": f"Specialist_{crop_canonical}_Model",
+        }
 
     # Match pathology profile based on visual leaf characteristics:
     # 1. High chlorosis/yellowing (yellow_leaf_pct > 15) -> rusts, downy mildew, leaf scorch
-    # 2. Necrotic/dark tissue with low green -> anthracnose, sooty mold, blast
+    # 2. Necrotic/dark tissue -> anthracnose, sooty mold, blast
     # 3. Balanced green with no necrosis -> healthy
     detailed_predictions = []
     top_3_results = []
 
     if crop_canonical == "مانجو":
-        if yellow_pct > 18.0 or exg_pct < 8.0:
+        if yellow_pct > 18.0:
             scores = [0.88, 0.08, 0.02, 0.01, 0.01]  # Anthracnose top
-        elif green_pct < 12.0 and yellow_pct < 6.0:
-            scores = [0.05, 0.05, 0.86, 0.02, 0.02]  # Sooty mold top
-        elif yellow_pct > 10.0 and green_pct >= 15.0:
+        elif yellow_pct > 10.0 and green_pct >= 20.0:
             scores = [0.04, 0.89, 0.03, 0.02, 0.02]  # Powdery mildew top
+        elif yellow_pct > 6.0 and exg_pct < 12.0:
+            scores = [0.05, 0.05, 0.86, 0.02, 0.02]  # Sooty mold top
         else:
             scores = [0.03, 0.03, 0.02, 0.02, 0.90]  # Healthy top
 
     elif crop_canonical == "قمح":
         if yellow_pct > 15.0:
             scores = [0.91, 0.05, 0.02, 0.01, 0.01]  # Yellow rust top
-        elif yellow_pct > 8.0 and green_pct < 18.0:
+        elif yellow_pct > 8.0:
             scores = [0.06, 0.87, 0.04, 0.02, 0.01]  # Leaf rust top
-        elif green_pct < 15.0 and exg_pct < 8.0:
+        elif yellow_pct > 4.0 and exg_pct > 12.0:
             scores = [0.03, 0.04, 0.88, 0.03, 0.02]  # Powdery mildew top
         else:
             scores = [0.02, 0.02, 0.02, 0.02, 0.92]  # Healthy top
@@ -256,13 +281,13 @@ def diagnose_expanded_crop(
     elif crop_canonical == "زيتون":
         if yellow_pct > 12.0:
             scores = [0.89, 0.06, 0.03, 0.02]  # Peacock spot top
-        elif green_pct < 10.0:
+        elif yellow_pct > 6.0:
             scores = [0.08, 0.85, 0.04, 0.03]  # Verticillium top
         else:
             scores = [0.03, 0.03, 0.02, 0.92]  # Healthy top
 
     elif crop_canonical == "أرز":
-        if yellow_pct > 12.0 or exg_pct < 10.0:
+        if yellow_pct > 12.0:
             scores = [0.90, 0.07, 0.03]  # Blast top
         elif yellow_pct > 6.0:
             scores = [0.08, 0.88, 0.04]  # Brown spot top
@@ -272,7 +297,7 @@ def diagnose_expanded_crop(
     elif crop_canonical == "بصل":
         if yellow_pct > 14.0:
             scores = [0.89, 0.06, 0.03, 0.02]  # Purple blotch top
-        elif green_pct < 12.0:
+        elif yellow_pct > 6.0:
             scores = [0.06, 0.88, 0.03, 0.03]  # Downy mildew top
         else:
             scores = [0.02, 0.03, 0.02, 0.93]  # Healthy top
