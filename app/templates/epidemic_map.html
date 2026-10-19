@@ -355,6 +355,30 @@
     .leaflet-popup-tip {
       background: #1e293b !important;
     }
+
+    /* Leaflet layer control styling */
+    .leaflet-control-layers {
+      background: var(--card-bg) !important;
+      color: var(--text) !important;
+      border: 1px solid var(--card-border) !important;
+      border-radius: 10px !important;
+      padding: 8px 12px !important;
+      font-size: 0.8rem !important;
+      font-weight: 700 !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+      direction: rtl !important;
+      text-align: right !important;
+    }
+    .leaflet-control-layers-base label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+    .leaflet-control-layers-base label:last-child {
+      margin-bottom: 0;
+    }
     .popup-box {
       font-size: 0.85rem;
       line-height: 1.5;
@@ -517,22 +541,33 @@
           zoomControl: true
         });
 
-        // Fast tile layer from CartoDB with fallback to OpenStreetMap
-        const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; CartoDB &copy; OpenStreetMap',
-          subdomains: 'abcd',
+        // Base tile layers (100% Free, High Reliability, No API Key Required)
+        const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+          subdomains: ['a', 'b', 'c'],
           maxZoom: 19
         });
 
-        cartoLayer.on('tileerror', function() {
-          console.warn('Carto tile error, fallback to OpenStreetMap tiles.');
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
-            maxZoom: 18
-          }).addTo(map);
+        const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '&copy; <a href="https://www.esri.com" target="_blank">Esri</a> Satellite',
+          maxZoom: 18
         });
 
-        cartoLayer.addTo(map);
+        const esriTopo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '&copy; <a href="https://www.esri.com" target="_blank">Esri</a> Topo',
+          maxZoom: 18
+        });
+
+        // Add default base layer (OpenStreetMap)
+        osmStandard.addTo(map);
+
+        // Add layer switcher control (Map, Satellite, Topo)
+        const baseMaps = {
+          "🗺️ خريطة جغرافية (OSM)": osmStandard,
+          "🛰️ صور الأقمار الصناعية (Satellite)": esriSatellite,
+          "⛰️ خريطة تضاريس (Topo)": esriTopo
+        };
+        L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
         // Force Leaflet container recalculation so map never renders gray
         setTimeout(() => {
