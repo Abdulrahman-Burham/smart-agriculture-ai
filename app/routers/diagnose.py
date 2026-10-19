@@ -54,6 +54,7 @@ async def diagnose_endpoint(
     session_id: Optional[str] = Form(None),
     area_feddan: Optional[float] = Form(None),
     irrigation_type: Optional[str] = Form(None),
+    crop: Optional[str] = Form(None),
     _rate_limit: bool = Depends(ai_diagnose_limiter),
 ) -> DiagnoseResponse:
     """Upload a leaf image → Plant-Only Filter → CV diagnosis + Agri-RAG grounded treatment advice + Private DB Save."""
@@ -74,13 +75,28 @@ async def diagnose_endpoint(
         if len(image_bytes) > MAX_UPLOAD_BYTES:
             raise HTTPException(status_code=413, detail="حجم الصورة يتجاوز الحد المسموح به (15 ميجابايت).")
 
-        # Step 2: Run Computer Vision prediction + Gemini Plant Gatekeeper in parallel
+        # Step 2: Fetch memory context to resolve crop hint if not explicitly passed
+        memory_ctx: Dict[str, Any] = {}
+        try:
+            memory_ctx = await asyncio.to_thread(
+                get_agent_memory_context,
+                session_id=session_id or "",
+                user_id=u_id,
+                visitor_hash=client_info["visitor_hash"],
+                max_turns=10,
+            )
+        except Exception as mem_err:
+            logger.warning(f"Memory fetch notice in diagnose: {mem_err}")
+
+        resolved_crop_hint = crop or memory_ctx.get("primary_crop") or memory_ctx.get("crop")
+
+        # Step 3: Run Computer Vision prediction (with crop hint) + Gemini Plant Gatekeeper in parallel
         cv = get_cv_classifier()
         cv_result: Dict[str, Any] = {}
 
         if cv:
             image_stream = io.BytesIO(image_bytes)
-            cv_task = asyncio.to_thread(cv.predict, image_stream, 3, model_choice)
+            cv_task = asyncio.to_thread(cv.predict, image_stream, 3, model_choice, crop_hint=resolved_crop_hint)
             gemini_gate_task = asyncio.to_thread(
                 verify_plant_image_gemini_sync,
                 image_bytes,
@@ -167,24 +183,12 @@ async def diagnose_endpoint(
                     session_id=session_id or "",
                 )
 
-        # Step 3: Build FarmContext with VisionDiagnosis + Memory and query Agri-RAG
-        crop_ar = cv_result.get("crop_type_ar", "")
+        # Step 4: Build FarmContext with VisionDiagnosis + Memory and query Agri-RAG
+        crop_ar = cv_result.get("crop_type_ar", "") or (resolved_crop_hint or "")
         predicted_ar = cv_result.get("predicted_class_ar", "")
         predicted_en = cv_result.get("predicted_class", "")
         conf_score = float(cv_result.get("top_confidence", 0.9))
         returned_session_id = session_id or ""
-
-        memory_ctx: Dict[str, Any] = {}
-        try:
-            memory_ctx = await asyncio.to_thread(
-                get_agent_memory_context,
-                session_id=session_id or "",
-                user_id=u_id,
-                visitor_hash=client_info["visitor_hash"],
-                max_turns=10,
-            )
-        except Exception as mem_err:
-            logger.warning(f"Memory fetch notice in diagnose: {mem_err}")
 
         farmer_display_name = u_name or memory_ctx.get("farmer_name", "")
         memory_notes = memory_ctx.get("memory_notes", "")
@@ -222,14 +226,14 @@ async def diagnose_endpoint(
                 "farm_id": f"user-{u_id}" if u_id else f"visitor-{client_info['visitor_hash'][:8]}",
                 "farmer_name": farmer_display_name or None,
                 "governorate": location or memory_ctx.get("governorate") or "القاهرة",
-                "crop": crop_ar if crop_ar else (memory_ctx.get("crop") or None),
+                "crop": crop_ar if crop_ar else (resolved_crop_hint or memory_ctx.get("crop") or None),
                 "area_feddan": float(resolved_area) if resolved_area else None,
                 "irrigation_method": resolved_irrig,
                 "diagnoses": [
                     {
                         "label": f"{predicted_ar} ({predicted_en})" if predicted_ar else predicted_en,
                         "confidence": round(min(1.0, max(0.0, conf_score)), 4),
-                        "crop": crop_ar if crop_ar else None,
+                        "crop": crop_ar if crop_ar else (resolved_crop_hint or None),
                     }
                 ],
                 "memory_notes": memory_notes or None,
@@ -238,7 +242,7 @@ async def diagnose_endpoint(
                 f"تم فحص صورة ورقة نبات {crop_ar} وكانت نتيجة التشخيص: {predicted_ar} ({predicted_en}). "
                 f"ما هي الأعراض وخطوات الوقاية والمكافحة المعتمدة لهذا التشخيص في {crop_ar}؟ ({query})"
             )
-            filter_crop = crop_ar if crop_ar in KNOWN_AGRI_RAG_CROPS else None
+            filter_crop = crop_ar if crop_ar in KNOWN_AGRI_RAG_CROPS else (resolved_crop_hint if resolved_crop_hint in KNOWN_AGRI_RAG_CROPS else None)
 
             agri_data = await query_agri_rag(
                 question=rag_question,

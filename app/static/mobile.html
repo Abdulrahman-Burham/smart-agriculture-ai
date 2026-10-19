@@ -810,21 +810,26 @@
       <!-- Supported Crops Indicator for Mobile -->
       <div class="mobile-supported-crops" style="margin-top: 0.5rem; padding: 0.45rem 0.65rem; background: rgba(45, 106, 79, 0.08); border: 1px solid rgba(45, 106, 79, 0.2); border-radius: 10px;">
         <div style="font-size: 0.72rem; font-weight: 800; color: #2D6A4F; display:flex; align-items:center; justify-content:space-between; margin-bottom: 0.35rem;">
-          <span>📸 المحاصيل المتاحة لفحص الكاميرا (8 محاصيل):</span>
-          <span style="font-size:0.68rem; background:rgba(45,106,79,0.15); color:#2D6A4F; font-weight:700; padding:1px 5px; border-radius:4px;">30 مرضاً</span>
+          <span>📸 المحاصيل المتاحة لفحص الكاميرا (13 محصولاً):</span>
+          <span style="font-size:0.68rem; background:rgba(45,106,79,0.15); color:#2D6A4F; font-weight:700; padding:1px 5px; border-radius:4px;">50+ مرضاً</span>
         </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
-          <span style="font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.85); color:#1B4332; padding:2px 6px; border-radius:6px; border:1px solid rgba(45,106,79,0.2);">🍅 طماطم</span>
-          <span style="font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.85); color:#1B4332; padding:2px 6px; border-radius:6px; border:1px solid rgba(45,106,79,0.2);">🥔 بطاطس</span>
-          <span style="font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.85); color:#1B4332; padding:2px 6px; border-radius:6px; border:1px solid rgba(45,106,79,0.2);">🌽 ذرة</span>
-          <span style="font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.85); color:#1B4332; padding:2px 6px; border-radius:6px; border:1px solid rgba(45,106,79,0.2);">🍇 عنب</span>
-          <span style="font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.85); color:#1B4332; padding:2px 6px; border-radius:6px; border:1px solid rgba(45,106,79,0.2);">🍎 تفاح</span>
-          <span style="font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.85); color:#1B4332; padding:2px 6px; border-radius:6px; border:1px solid rgba(45,106,79,0.2);">🍓 فراولة</span>
-          <span style="font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.85); color:#1B4332; padding:2px 6px; border-radius:6px; border:1px solid rgba(45,106,79,0.2);">🫑 فلفل</span>
-          <span style="font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.85); color:#1B4332; padding:2px 6px; border-radius:6px; border:1px solid rgba(45,106,79,0.2);">🍊 موالح</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;" id="mobileCropPills">
+          <span class="m-crop-chip" onclick="setMobileCrop('طماطم', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🍅 طماطم</span>
+          <span class="m-crop-chip" onclick="setMobileCrop('بطاطس', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🥔 بطاطس</span>
+          <span class="m-crop-chip" onclick="setMobileCrop('مانجو', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🥭 مانجو</span>
+          <span class="m-crop-chip" onclick="setMobileCrop('قمح', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🌾 قمح</span>
+          <span class="m-crop-chip" onclick="setMobileCrop('ذرة', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🌽 ذرة</span>
+          <span class="m-crop-chip" onclick="setMobileCrop('عنب', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🍇 عنب</span>
+          <span class="m-crop-chip" onclick="setMobileCrop('زيتون', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🫒 زيتون</span>
+          <span class="m-crop-chip" onclick="setMobileCrop('أرز', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🍚 أرز</span>
+          <span class="m-crop-chip" onclick="setMobileCrop('بصل', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🧅 بصل</span>
+          <span class="m-crop-chip" onclick="setMobileCrop('تفاح', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🍎 تفاح</span>
+          <span class="m-crop-chip" onclick="setMobileCrop('فراولة', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🍓 فراولة</span>
+          <span class="m-crop-chip" onclick="setMobileCrop('فلفل', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🫑 فلفل</span>
+          <span class="m-crop-chip" onclick="setMobileCrop('موالح', this)" style="cursor:pointer; font-size:0.72rem; font-weight:700; background:rgba(255,255,255,0.9); color:#1B4332; padding:3px 7px; border-radius:6px; border:1px solid rgba(45,106,79,0.25);">🍊 موالح</span>
         </div>
         <div style="font-size: 0.68rem; color: #555; margin-top: 0.3rem; line-height: 1.35;">
-          💡 <em>لباقي المحاصيل (قمح، مانجو، نخيل...) اسأل الخبير الزراعي فوراً في الشات بالأسفل.</em>
+          💡 <em>اضغط لتحديد المحصول وعزل النتائج بدقة، أو اتركها عاماً للفحص التلقائي.</em>
         </div>
       </div>
 
@@ -1234,6 +1239,49 @@
       } else {
         sub.textContent = `ذاكرة متصلة • فحص وتشخيص`;
       }
+      syncMobileCropChips();
+    }
+
+    function setMobileCrop(cropVal, el) {
+      const cropSelect = document.getElementById('cropSelect');
+      const wasActive = el && el.classList.contains('active');
+      document.querySelectorAll('.m-crop-chip').forEach(c => {
+        c.classList.remove('active');
+        c.style.background = 'rgba(255,255,255,0.9)';
+        c.style.color = '#1B4332';
+        c.style.borderColor = 'rgba(45,106,79,0.25)';
+      });
+      if (wasActive) {
+        if (cropSelect) cropSelect.value = '';
+      } else {
+        if (el) {
+          el.classList.add('active');
+          el.style.background = '#2D6A4F';
+          el.style.color = '#ffffff';
+          el.style.borderColor = '#1B4332';
+        }
+        if (cropSelect) cropSelect.value = cropVal;
+      }
+      updateSubHeaderLabel();
+      if (typeof savePreferences === 'function') savePreferences();
+    }
+
+    function syncMobileCropChips() {
+      const crop = document.getElementById('cropSelect') ? document.getElementById('cropSelect').value : '';
+      document.querySelectorAll('.m-crop-chip').forEach(c => {
+        const text = c.textContent || '';
+        if (crop && text.includes(crop)) {
+          c.classList.add('active');
+          c.style.background = '#2D6A4F';
+          c.style.color = '#ffffff';
+          c.style.borderColor = '#1B4332';
+        } else {
+          c.classList.remove('active');
+          c.style.background = 'rgba(255,255,255,0.9)';
+          c.style.color = '#1B4332';
+          c.style.borderColor = 'rgba(45,106,79,0.25)';
+        }
+      });
     }
 
     // ── Restore Pinned Profile from Server & Cookies ──
@@ -1625,6 +1673,8 @@
       fd.append('location', document.getElementById('govSelect').value || 'القاهرة');
       fd.append('area_feddan', document.getElementById('areaInput').value || '1');
       fd.append('irrigation_type', document.getElementById('irrigSelect').value || 'تنقيط');
+      const cropVal = (document.getElementById('cropSelect') && document.getElementById('cropSelect').value) || '';
+      if (cropVal) fd.append('crop', cropVal);
 
       try {
         const res = await fetch('/api/diagnose', {

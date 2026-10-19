@@ -288,7 +288,7 @@ class PlantDiseaseClassifier:
             "model_used": model_name,
         }
 
-    def predict(self, image_path_or_bytes, top_k=3, model_choice="EfficientNetV2B2"):
+    def predict(self, image_path_or_bytes, top_k=3, model_choice="EfficientNetV2B2", crop_hint=None):
         if isinstance(image_path_or_bytes, str):
             with open(image_path_or_bytes, "rb") as f:
                 contents = f.read()
@@ -301,6 +301,24 @@ class PlantDiseaseClassifier:
 
         norm_entropy = 0.0
 
+        from computer_vision.inference.crop_specialists import (
+            normalize_crop_hint,
+            is_expanded_crop,
+            diagnose_expanded_crop,
+            filter_predictions_by_crop,
+        )
+
+        crop_canonical = normalize_crop_hint(crop_hint)
+
+        # Specialist Routing for Expanded Strategic Crops (Mango, Wheat, Olive, Rice, Onion)
+        if crop_canonical and is_expanded_crop(crop_canonical):
+            plant_check = self.validate_plant_image_opencv(contents)
+            if not plant_check.get("is_plant", True):
+                return self._build_rejected_result(f"Specialist_{crop_canonical}", plant_check)
+            result = diagnose_expanded_crop(crop_canonical, plant_check)
+            result["plant_check"] = plant_check
+            return result
+
         if model_choice == "ResNet18" and self.resnet_model is not None:
             import torch
             from PIL import Image
@@ -310,27 +328,34 @@ class PlantDiseaseClassifier:
             probs_np = probs.cpu().numpy()
             eps = 1e-9
             norm_entropy = float(-np.sum(probs_np * np.log(probs_np + eps)) / np.log(len(probs_np)))
-            conf, idx = torch.topk(probs, min(top_k, len(probs)))
-            top_3_results = []
+
             detailed_predictions = []
-            for c, i in zip(conf, idx):
-                raw_label = self.resnet_classes[int(i)]
+            for i, p_val in enumerate(probs_np):
+                raw_label = self.resnet_classes[i]
                 label_ar = self.class_names_ar.get(raw_label, raw_label)
-                prob_val = float(c.item())
-                confidence_val = float(prob_val * 100.0)
-                top_3_results.append({
-                    "class": raw_label,
-                    "confidence": f"{confidence_val:.2f}%"
-                })
+                prob_val = float(p_val)
+                conf_val = float(prob_val * 100.0)
                 detailed_predictions.append({
                     "class": raw_label,
                     "label": raw_label,
                     "label_ar": label_ar,
                     "name": f"{raw_label} ({label_ar})",
                     "confidence": round(prob_val, 4),
-                    "confidence_percent": round(confidence_val, 2),
-                    "confidence_str": f"{confidence_val:.2f}%"
+                    "confidence_percent": round(conf_val, 2),
+                    "confidence_str": f"{conf_val:.2f}%"
                 })
+
+            detailed_predictions.sort(key=lambda x: x["confidence"], reverse=True)
+            top_3_results = [
+                {"class": p["class"], "confidence": p["confidence_str"]}
+                for p in detailed_predictions[:top_k]
+            ]
+
+            if crop_canonical:
+                top_3_results, detailed_predictions = filter_predictions_by_crop(
+                    detailed_predictions, crop_canonical
+                )
+
             top_pred = detailed_predictions[0]
             plant_check = self.validate_plant_image_opencv(contents, top_conf=top_pred["confidence"], norm_entropy=norm_entropy)
             if not plant_check.get("is_plant", True):
@@ -341,12 +366,12 @@ class PlantDiseaseClassifier:
             return {
                 "is_plant": True,
                 "plant_check": plant_check,
-                "top_predictions": top_3_results,
+                "top_predictions": top_3_results[:top_k],
                 "predicted_class": top_pred["label"],
                 "predicted_class_ar": top_pred["label_ar"],
                 "confidence": top_pred["confidence_percent"],
                 "confidence_str": top_pred["confidence_str"],
-                "predictions": detailed_predictions,
+                "predictions": detailed_predictions[:top_k],
                 "crop_type": crop_type,
                 "crop_type_ar": crop_ar,
                 "disease_name": f"{top_pred['label']} ({disease_ar})",
@@ -371,19 +396,12 @@ class PlantDiseaseClassifier:
             eps = 1e-9
             norm_entropy = float(-np.sum(score_np * np.log(score_np + eps)) / np.log(len(score_np)))
 
-            top_indices = np.argsort(score_np)[::-1][:top_k]
-
-            top_3_results = []
             detailed_predictions = []
-            for idx in top_indices:
-                raw_label = self.class_names[int(idx)]
+            for idx in range(len(score_np)):
+                raw_label = self.class_names[idx]
                 label_ar = self.class_names_ar.get(raw_label, raw_label)
                 prob_val = float(score_np[idx])
                 confidence_val = float(score_np[idx] * 100)
-                top_3_results.append({
-                    "class": raw_label,
-                    "confidence": f"{confidence_val:.2f}%"
-                })
                 detailed_predictions.append({
                     "class": raw_label,
                     "label": raw_label,
@@ -393,6 +411,17 @@ class PlantDiseaseClassifier:
                     "confidence_percent": round(confidence_val, 2),
                     "confidence_str": f"{confidence_val:.2f}%"
                 })
+
+            detailed_predictions.sort(key=lambda x: x["confidence"], reverse=True)
+            top_3_results = [
+                {"class": p["class"], "confidence": p["confidence_str"]}
+                for p in detailed_predictions[:top_k]
+            ]
+
+            if crop_canonical:
+                top_3_results, detailed_predictions = filter_predictions_by_crop(
+                    detailed_predictions, crop_canonical
+                )
         else:
             import requests
             try:
@@ -420,6 +449,10 @@ class PlantDiseaseClassifier:
                     "confidence_percent": round(conf_pct, 2),
                     "confidence_str": conf_str
                 })
+            if crop_canonical:
+                top_3_results, detailed_predictions = filter_predictions_by_crop(
+                    detailed_predictions, crop_canonical
+                )
 
         top_pred = detailed_predictions[0]
         plant_check = self.validate_plant_image_opencv(contents, top_conf=top_pred["confidence"], norm_entropy=norm_entropy)
@@ -432,12 +465,12 @@ class PlantDiseaseClassifier:
         return {
             "is_plant": True,
             "plant_check": plant_check,
-            "top_predictions": top_3_results,
+            "top_predictions": top_3_results[:top_k],
             "predicted_class": top_pred["label"],
             "predicted_class_ar": top_pred["label_ar"],
             "confidence": top_pred["confidence_percent"],
             "confidence_str": top_pred["confidence_str"],
-            "predictions": detailed_predictions,
+            "predictions": detailed_predictions[:top_k],
             "crop_type": crop_type,
             "crop_type_ar": crop_ar,
             "disease_name": f"{top_pred['label']} ({disease_ar})",

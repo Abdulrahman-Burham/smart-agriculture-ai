@@ -381,11 +381,21 @@
             color: #80ed99;
             border: 1px solid rgba(128, 237, 153, 0.25);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            transition: transform 0.15s ease, background 0.15s ease;
+            transition: all 0.18s ease;
+            cursor: pointer;
+            user-select: none;
         }
         .crop-pill-tag:hover {
-            transform: translateY(-1px);
-            background: rgba(128, 237, 153, 0.18);
+            transform: translateY(-2px);
+            background: rgba(128, 237, 153, 0.22);
+            border-color: rgba(128, 237, 153, 0.5);
+        }
+        .crop-pill-tag.active {
+            background: #2D6A4F !important;
+            color: #ffffff !important;
+            border-color: #52B788 !important;
+            box-shadow: 0 2px 10px rgba(45, 106, 79, 0.45) !important;
+            transform: translateY(-1px) scale(1.04);
         }
         [data-theme="light"] .crop-pill-tag {
             background: #ffffff;
@@ -394,7 +404,12 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
         [data-theme="light"] .crop-pill-tag:hover {
-            background: rgba(45, 106, 79, 0.08);
+            background: rgba(45, 106, 79, 0.1);
+        }
+        [data-theme="light"] .crop-pill-tag.active {
+            background: #2D6A4F !important;
+            color: #ffffff !important;
+            border-color: #1B4332 !important;
         }
 
         /* HCI Floating Toast Notification */
@@ -1585,22 +1600,27 @@
                 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.45rem;">
                     <span style="font-size: 0.82rem; font-weight: 800; color: var(--primary-green); display: flex; align-items: center; gap: 0.35rem;">
                         <span>📸</span>
-                        <span>المحاصيل المتاحة لفحص الأوراق بالذكاء الاصطناعي (8 محاصيل):</span>
+                        <span>المحاصيل المتاحة لفحص الأوراق بالذكاء الاصطناعي (13 محصولاً):</span>
                     </span>
-                    <span style="font-size: 0.72rem; font-weight: 700; background: rgba(45, 106, 79, 0.16); color: var(--primary-green); padding: 0.15rem 0.5rem; border-radius: 6px; border: 1px solid rgba(45, 106, 79, 0.25);">30 مرضاً وحالة</span>
+                    <span style="font-size: 0.72rem; font-weight: 700; background: rgba(45, 106, 79, 0.16); color: var(--primary-green); padding: 0.15rem 0.5rem; border-radius: 6px; border: 1px solid rgba(45, 106, 79, 0.25);">50+ مرضاً وحالة</span>
                 </div>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.4rem;">
-                    <span class="crop-pill-tag">🍅 طماطم</span>
-                    <span class="crop-pill-tag">🥔 بطاطس</span>
-                    <span class="crop-pill-tag">🌽 ذرة</span>
-                    <span class="crop-pill-tag">🍇 عنب</span>
-                    <span class="crop-pill-tag">🍎 تفاح</span>
-                    <span class="crop-pill-tag">🍓 فراولة</span>
-                    <span class="crop-pill-tag">🫑 فلفل</span>
-                    <span class="crop-pill-tag">🍊 موالح وبرتقال</span>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.4rem;" id="crop-pills-container">
+                    <span class="crop-pill-tag clickable" data-crop="طماطم" onclick="selectCropFromPill('طماطم', this)">🍅 طماطم</span>
+                    <span class="crop-pill-tag clickable" data-crop="بطاطس" onclick="selectCropFromPill('بطاطس', this)">🥔 بطاطس</span>
+                    <span class="crop-pill-tag clickable" data-crop="مانجو" onclick="selectCropFromPill('مانجو', this)">🥭 مانجو</span>
+                    <span class="crop-pill-tag clickable" data-crop="قمح" onclick="selectCropFromPill('قمح', this)">🌾 قمح</span>
+                    <span class="crop-pill-tag clickable" data-crop="ذرة" onclick="selectCropFromPill('ذرة', this)">🌽 ذرة</span>
+                    <span class="crop-pill-tag clickable" data-crop="عنب" onclick="selectCropFromPill('عنب', this)">🍇 عنب</span>
+                    <span class="crop-pill-tag clickable" data-crop="زيتون" onclick="selectCropFromPill('زيتون', this)">🫒 زيتون</span>
+                    <span class="crop-pill-tag clickable" data-crop="أرز" onclick="selectCropFromPill('أرز', this)">🍚 أرز</span>
+                    <span class="crop-pill-tag clickable" data-crop="بصل" onclick="selectCropFromPill('بصل', this)">🧅 بصل وثوم</span>
+                    <span class="crop-pill-tag clickable" data-crop="تفاح" onclick="selectCropFromPill('تفاح', this)">🍎 تفاح</span>
+                    <span class="crop-pill-tag clickable" data-crop="فراولة" onclick="selectCropFromPill('فراولة', this)">🍓 فراولة</span>
+                    <span class="crop-pill-tag clickable" data-crop="فلفل حلو" onclick="selectCropFromPill('فلفل حلو', this)">🫑 فلفل</span>
+                    <span class="crop-pill-tag clickable" data-crop="برتقال" onclick="selectCropFromPill('برتقال', this)">🍊 موالح وبرتقال</span>
                 </div>
                 <div style="font-size: 0.73rem; color: var(--text-muted); line-height: 1.45;">
-                    💡 <em>موديل الرؤية مدرب بدقة على فحص أوراق هذه المحاصيل الثمانية. لباقي المحاصيل (قمح، أرز، مانجو، نخيل، زيتون...) يمكنك استشارة الخبير الزراعي فوراً في الشات لكتابة الأعراض وتشخيصها.</em>
+                    💡 <em>اضغط على المحصول لتوجيه الفحص المتخصص وعزل النتائج بدقة، أو اتركها تلقائياً للفحص المفتوح لكافة المحاصيل.</em>
                 </div>
             </div>
 
@@ -1787,15 +1807,17 @@
 
                     <div class="farm-field">
                         <label>المحصول:</label>
-                        <select id="crop-select" class="farm-control" onchange="saveFarmPrefs()">
+                        <select id="crop-select" class="farm-control" onchange="saveFarmPrefs(); if (typeof syncCropPillsWithSelect === 'function') syncCropPillsWithSelect();">
                             <option value="">تلقائي / عام</option>
                             <option value="طماطم">طماطم</option>
                             <option value="بطاطس">بطاطس</option>
+                            <option value="مانجو">مانجو</option>
                             <option value="قمح">قمح</option>
                             <option value="ذرة">ذرة</option>
-                            <option value="مانجو">مانجو</option>
-                            <option value="أرز">أرز</option>
                             <option value="عنب">عنب</option>
+                            <option value="زيتون">زيتون</option>
+                            <option value="أرز">أرز</option>
+                            <option value="بصل">بصل وثوم</option>
                             <option value="تفاح">تفاح</option>
                             <option value="برتقال">موالح وبرتقال</option>
                             <option value="فلفل حلو">فلفل</option>
@@ -2242,6 +2264,11 @@
             if (savedArea && document.getElementById('area-input')) document.getElementById('area-input').value = savedArea;
             const savedIrrig = localStorage.getItem('agri_farm_irrig');
             if (savedIrrig && document.getElementById('irrig-select')) document.getElementById('irrig-select').value = savedIrrig;
+            const savedCrop = localStorage.getItem('agri_farm_crop');
+            if (savedCrop && document.getElementById('crop-select')) {
+                document.getElementById('crop-select').value = savedCrop;
+                syncCropPillsWithSelect();
+            }
         } catch (e) {}
 
         async function syncPinnedPreferencesToServer(locSource = 'manual') {
@@ -2274,11 +2301,40 @@
             try {
                 const aEl = document.getElementById('area-input');
                 const iEl = document.getElementById('irrig-select');
+                const cEl = document.getElementById('crop-select');
                 if (aEl && aEl.value) localStorage.setItem('agri_farm_area', aEl.value);
                 if (iEl && iEl.value) localStorage.setItem('agri_farm_irrig', iEl.value);
+                if (cEl) localStorage.setItem('agri_farm_crop', cEl.value || '');
             } catch (e) {}
             updateFarmSummaryPill();
             syncPinnedPreferencesToServer();
+            syncCropPillsWithSelect();
+        }
+
+        function selectCropFromPill(cropVal, el) {
+            const cropSelect = document.getElementById('crop-select');
+            const wasActive = el && el.classList.contains('active');
+            document.querySelectorAll('.crop-pill-tag').forEach(p => p.classList.remove('active'));
+            if (wasActive) {
+                if (cropSelect) cropSelect.value = '';
+            } else {
+                if (el) el.classList.add('active');
+                if (cropSelect) cropSelect.value = cropVal;
+            }
+            saveFarmPrefs();
+        }
+
+        function syncCropPillsWithSelect() {
+            const cropSelect = document.getElementById('crop-select');
+            const val = cropSelect ? cropSelect.value : '';
+            document.querySelectorAll('.crop-pill-tag').forEach(p => {
+                const pCrop = p.getAttribute('data-crop') || '';
+                if (val && (pCrop === val || val.includes(pCrop) || pCrop.includes(val))) {
+                    p.classList.add('active');
+                } else {
+                    p.classList.remove('active');
+                }
+            });
         }
 
         function onManualGovChange() {
@@ -2833,6 +2889,7 @@
                     formData.append('location', govVal);
                     formData.append('area_feddan', String(areaVal));
                     formData.append('irrigation_type', irrigVal);
+                    if (cropVal) formData.append('crop', cropVal);
                     if (chatSessionId) formData.append('session_id', chatSessionId);
                     if (text) formData.append('query', text);
 
@@ -3277,9 +3334,11 @@
             }
 
             const govEl = document.getElementById('gov-select');
+            const cropEl = document.getElementById('crop-select');
             const areaEl = document.getElementById('area-input');
             const irrigEl = document.getElementById('irrig-select');
             const govVal = govEl ? govEl.value : 'القاهرة';
+            const cropVal = cropEl && cropEl.value ? cropEl.value : null;
             const areaVal = areaEl && areaEl.value ? parseFloat(areaEl.value) : 1.0;
             const irrigVal = irrigEl && irrigEl.value ? irrigEl.value : 'غمر';
 
@@ -3300,6 +3359,7 @@
                 formData.append('location', govVal);
                 formData.append('area_feddan', String(areaVal));
                 formData.append('irrigation_type', irrigVal);
+                if (cropVal) formData.append('crop', cropVal);
                 if (chatSessionId) formData.append('session_id', chatSessionId);
                 formData.append('query', 'ما هو المرض وما هو العلاج المناسب؟');
 
