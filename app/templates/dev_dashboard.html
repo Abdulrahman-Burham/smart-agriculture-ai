@@ -848,6 +848,7 @@
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
             <button class="btn" onclick="filterUncertainOnly()" id="uncertainFilterBtn">🎯 عرض الصور غير المؤكدة فقط</button>
+            <button class="btn" onclick="filterNotPlantOnly()" id="notPlantFilterBtn" style="border-color:#ef4444; color:#fca5a5;">🚫 الصور غير النباتية المرفوضة</button>
             <input type="text" id="globalSearch" class="search-box" placeholder="🔍 ابحث (موديل، مفتاح، توكن، كوكي، اسم، سؤال، مرض، IP...)" oninput="filterTables()">
         </div>
     </div>
@@ -1224,6 +1225,21 @@
         if (res.ok) {
             loadAnalytics();
         }
+    }
+
+    let onlyNotPlantMode = false;
+
+    function filterNotPlantOnly() {
+        onlyNotPlantMode = !onlyNotPlantMode;
+        const btn = document.getElementById('notPlantFilterBtn');
+        btn.style.background = onlyNotPlantMode ? 'rgba(239, 68, 68, 0.2)' : 'transparent';
+        btn.style.borderColor = onlyNotPlantMode ? '#ef4444' : '#7f1d1d';
+        btn.style.color = onlyNotPlantMode ? '#fca5a5' : '#f87171';
+        if (onlyNotPlantMode) {
+            const imgTabBtn = document.getElementById('tabBtnImages');
+            if (imgTabBtn) switchTab('images', imgTabBtn);
+        }
+        filterTables();
     }
 
     function filterUncertainOnly() {
@@ -1991,8 +2007,11 @@
                 const top3 = (img.top_predictions || []).map(p => `${p.class_ar || p.class}: ${p.confidence || (p.probability ? (p.probability*100).toFixed(1)+'%' : '')}`).join(' | ');
                 const isUncertain = img.is_uncertain === 1;
                 const verified = img.verified_label || '';
+                const isNotPlant = img.predicted_class === 'Not_A_Plant' || (img.green_ratio != null && img.green_ratio < 18);
+                const isPoorQuality = String(img.quality_flag).includes('❌') || String(img.quality_flag).includes('منخفضة');
+                const qualityBadgeClass = String(img.quality_flag).includes('ممتازة') ? 'badge-green' : (isPoorQuality || isNotPlant ? 'badge-red' : 'badge-amber');
                 return `
-                <tr class="searchable-row" data-uncertain="${isUncertain ? '1' : '0'}">
+                <tr class="searchable-row" data-uncertain="${isUncertain ? '1' : '0'}" data-not-plant="${isNotPlant ? '1' : '0'}">
                     <td>
                         <strong>#${img.id}</strong>
                         <div style="font-size:0.72rem; color:var(--text-muted); white-space:nowrap;">${esc(img.created_at)}</div>
@@ -2013,37 +2032,46 @@
                     <td style="font-size:0.76rem;">
                         <div>📐 <strong>${img.width || '?'}×${img.height || '?'}</strong> (${img.file_size_kb || '?'} KB)</div>
                         <div>🔍 حدة (Blur): <strong>${img.blur_score ?? '-'}</strong> | ☀️ إضاءة: <strong>${img.brightness_score ?? '-'}</strong></div>
-                        <div>🌿 نسبة النبات: <strong>${img.green_ratio ?? '-'}%</strong></div>
-                        <div style="margin-top:3px;"><span class="badge ${String(img.quality_flag).includes('ممتازة') ? 'badge-green' : 'badge-amber'}">${esc(img.quality_flag || 'تم الفحص')}</span></div>
+                        <div>🌿 نسبة النبات: <strong style="${isNotPlant ? 'color:#ef4444;' : ''}">${img.green_ratio ?? '-'}% ${isNotPlant ? '⚠️ (< 18%)' : ''}</strong></div>
+                        <div style="margin-top:3px;"><span class="badge ${qualityBadgeClass}">${esc(img.quality_flag || (isNotPlant ? '❌ نسبة نبات منخفضة جداً' : 'تم الفحص'))}</span></div>
                         ${img.exif_camera ? `<div style="margin-top:3px; color:#93c5fd;">📷 ${esc(img.exif_camera)}</div>` : ''}
                     </td>
                     <td>
-                        <span class="badge badge-blue">${esc(img.model_used)}</span>
-                        <div style="font-weight:700; color:#34d399; margin-top:4px;">${esc(img.predicted_class_ar || img.predicted_class)}</div>
-                        <div class="mono" style="font-size:0.75rem;">${esc(img.predicted_class)}</div>
-                        <div style="margin-top:3px;">
-                            <span class="badge badge-amber">الثقة: ${esc(img.confidence)}</span>
-                            <span class="badge ${isUncertain ? 'badge-red' : 'badge-green'}">هامش: ${img.margin_score ?? 100}%</span>
-                        </div>
-                        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">${esc(top3)}</div>
+                        <span class="badge ${isNotPlant ? 'badge-red' : 'badge-blue'}">${isNotPlant ? '🚫 حارس المجموع الخضري' : esc(img.model_used)}</span>
+                        <div style="font-weight:700; color:${isNotPlant ? '#f87171' : '#34d399'}; margin-top:4px;">${isNotPlant ? '🚫 صورة مرفوضة (ليست نباتاً)' : esc(img.predicted_class_ar || img.predicted_class)}</div>
+                        <div class="mono" style="font-size:0.75rem; color:${isNotPlant ? '#fca5a5' : 'inherit'};">${esc(img.predicted_class)}</div>
+                        ${!isNotPlant ? `
+                            <div style="margin-top:3px;">
+                                <span class="badge badge-amber">الثقة: ${esc(img.confidence)}</span>
+                                <span class="badge ${isUncertain ? 'badge-red' : 'badge-green'}">هامش: ${img.margin_score ?? 100}%</span>
+                            </div>
+                            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">${esc(top3)}</div>
+                        ` : `
+                            <div style="font-size:0.75rem; color:#f87171; margin-top:4px;">❌ تم حجب التشخيص لقلة النسيج الورقي</div>
+                        `}
                     </td>
                     <td>
-                        ${verified
-                            ? `<div style="margin-bottom:6px;"><span class="badge badge-green">✅ معتمد للتدريب: ${esc(verified)}</span></div>`
-                            : (isUncertain ? `<div style="margin-bottom:6px;"><span class="badge badge-red">⚠️ يحتاج مراجعة المطور</span></div>` : '')
-                        }
-                        <div style="display:flex; flex-direction:column; gap:5px;">
-                            <input id="verify-input-${img.id}" class="verify-input" type="text"
-                                   value="${esc(verified || img.predicted_class)}"
-                                   placeholder="اسم الفئة الصحيح (Ground Truth)">
-                            <input id="verify-notes-${img.id}" class="verify-input" type="text"
-                                   value="${esc(img.developer_notes || '')}"
-                                   placeholder="ملاحظات المطور (اختياري)">
-                            <button class="btn btn-primary" style="padding:4px 10px; font-size:0.76rem; justify-content:center;"
-                                    onclick="saveVerifiedLabel(${img.id}, '${esc(img.predicted_class)}')">
-                                💾 تأكيد وحفظ في Dataset التدريب
-                            </button>
-                        </div>
+                        ${isNotPlant ? `
+                            <div style="margin-bottom:6px;"><span class="badge badge-red">🚫 مستبعدة من تدريب النباتات</span></div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">صورة غير صالحة ولا تحتوي على نسيج نباتي كافٍ (أقل من 18%).</div>
+                        ` : `
+                            ${verified
+                                ? `<div style="margin-bottom:6px;"><span class="badge badge-green">✅ معتمد للتدريب: ${esc(verified)}</span></div>`
+                                : (isUncertain ? `<div style="margin-bottom:6px;"><span class="badge badge-red">⚠️ يحتاج مراجعة المطور</span></div>` : '')
+                            }
+                            <div style="display:flex; flex-direction:column; gap:5px;">
+                                <input id="verify-input-${img.id}" class="verify-input" type="text"
+                                       value="${esc(verified || img.predicted_class)}"
+                                       placeholder="اسم الفئة الصحيح (Ground Truth)">
+                                <input id="verify-notes-${img.id}" class="verify-input" type="text"
+                                       value="${esc(img.developer_notes || '')}"
+                                       placeholder="ملاحظات المطور (اختياري)">
+                                <button class="btn btn-primary" style="padding:4px 10px; font-size:0.76rem; justify-content:center;"
+                                        onclick="saveVerifiedLabel(${img.id}, '${esc(img.predicted_class)}')">
+                                    💾 تأكيد وحفظ في Dataset التدريب
+                                </button>
+                            </div>
+                        `}
                     </td>
                     <td>
                         <div class="text-scroll">${esc(img.rag_advice || 'تم الفحص عبر /cv/predict')}</div>
@@ -2108,7 +2136,8 @@
         document.querySelectorAll('.searchable-row').forEach(row => {
             const matchText = !q || row.textContent.toLowerCase().includes(q);
             const matchUncertain = !onlyUncertainMode || !row.hasAttribute('data-uncertain') || row.getAttribute('data-uncertain') === '1';
-            row.style.display = (matchText && matchUncertain) ? '' : 'none';
+            const matchNotPlant = !onlyNotPlantMode || !row.hasAttribute('data-not-plant') || row.getAttribute('data-not-plant') === '1';
+            row.style.display = (matchText && matchUncertain && matchNotPlant) ? '' : 'none';
         });
     }
 
