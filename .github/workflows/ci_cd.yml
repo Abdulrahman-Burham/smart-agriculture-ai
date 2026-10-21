@@ -137,7 +137,7 @@ jobs:
           ssh $SSH_OPTS "$AZURE_VM_USER@$AZURE_VM_HOST" "bash -s" << 'EOF'
             set -e
             echo "📡 Connected to Azure VM: $(hostname)"
-            cd /home/azureuser/smart-agriculture-ai
+            cd "$HOME/smart-agriculture-ai" || cd ~/smart-agriculture-ai || cd /home/*/smart-agriculture-ai
 
             echo "📥 Fetching and applying latest code from main..."
             git fetch origin main
