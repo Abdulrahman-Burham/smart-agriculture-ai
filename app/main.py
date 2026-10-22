@@ -51,9 +51,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager: Initialize database and warm up models."""
     logger.info("Initializing Smart Agriculture AI Platform...")
     init_db()
-    # Warm up CV classifier and RAG pipeline in background threads so first queries are instant
-    asyncio.create_task(asyncio.to_thread(get_cv_classifier))
-    asyncio.create_task(asyncio.to_thread(get_rag_pipeline))
+    # Staggered background model warmup to preserve RAM and prevent CPU starvation on 2-vCPU VMs
+    async def _staggered_warmup():
+        try:
+            await asyncio.sleep(4)
+            logger.info("Background warming up CV Classifier...")
+            await asyncio.to_thread(get_cv_classifier)
+            await asyncio.sleep(4)
+            logger.info("Background warming up RAG Pipeline...")
+            await asyncio.to_thread(get_rag_pipeline)
+            logger.info("All background AI models warmed up successfully.")
+        except Exception as e:
+            logger.warning("Background model warmup error (will load on first request): %s", e)
+
+    asyncio.create_task(_staggered_warmup())
     yield
     logger.info("Smart Agriculture AI Platform shutting down cleanly.")
 
