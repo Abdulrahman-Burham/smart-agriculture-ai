@@ -6,13 +6,19 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from app.schemas.calculator import (
+    FertilizerRequest,
+    FertilizerResponse,
     SalinityRequest,
     SalinityResponse,
+    SprayWindowRequest,
+    SprayWindowResponse,
     TankMixRequest,
     TankMixResponse,
 )
 from app.services.agri_calculator_service import (
+    calculate_fertilizer_needs,
     calculate_tank_mix,
+    evaluate_spray_window,
     evaluate_water_salinity,
 )
 
@@ -40,4 +46,28 @@ async def water_salinity_advisor_endpoint(payload: SalinityRequest) -> SalinityR
         logger.error(f"Salinity evaluation error: {e}")
         raise HTTPException(
             status_code=400, detail=f"خطأ في تقييم ملوحة المياه: {str(e)}"
+        )
+
+
+@router.post("/api/calculator/fertilizer", response_model=FertilizerResponse)
+async def fertilizer_program_endpoint(payload: FertilizerRequest) -> FertilizerResponse:
+    """Calculate crop N-P-K nutrient units, commercial 50kg bags, and growth stage feeding schedule."""
+    try:
+        return calculate_fertilizer_needs(payload)
+    except Exception as e:
+        logger.error(f"Fertilizer calculation error: {e}")
+        raise HTTPException(
+            status_code=400, detail=f"خطأ في حساب برنامج التسميد: {str(e)}"
+        )
+
+
+@router.post("/api/calculator/spray-window", response_model=SprayWindowResponse)
+async def spray_weather_window_endpoint(payload: SprayWindowRequest) -> SprayWindowResponse:
+    """Evaluate weather conditions for pesticide drift risk and safe spraying time window."""
+    try:
+        return evaluate_spray_window(payload)
+    except Exception as e:
+        logger.error(f"Spray window evaluation error: {e}")
+        raise HTTPException(
+            status_code=400, detail=f"خطأ في تقييم أمان وقت الرش: {str(e)}"
         )

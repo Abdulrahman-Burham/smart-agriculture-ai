@@ -358,6 +358,23 @@ def diagnose_expanded_crop(
         )
 
     top_pred = detailed_predictions[0]
+    is_healthy = any(
+        h in top_pred["label"].lower() or h in top_pred["label_ar"]
+        for h in ("healthy", "سليم", "سليمة")
+    )
+    if is_healthy:
+        lesion_area = 0.0
+        sev_level = "سليم (خالٍ من الإصابة)"
+        urg_ar = "عادي (برنامج وقائي فقط)"
+    elif visual_signals and "lesion_area_pct" in visual_signals:
+        lesion_area = float(visual_signals.get("lesion_area_pct", 0.0))
+        sev_level = str(visual_signals.get("severity_level", "متوسطة"))
+        urg_ar = str(visual_signals.get("urgency_ar", "متوسطة (تدخل علاجي سريع)"))
+    else:
+        lesion_area = 15.0
+        sev_level = "متوسطة"
+        urg_ar = "متوسطة (تدخل علاجي سريع)"
+
     return {
         "is_plant": True,
         "top_predictions": top_3_results[:3],
@@ -370,6 +387,9 @@ def diagnose_expanded_crop(
         "crop_type_ar": catalogue["crop_ar"],
         "disease_name": f"{top_pred['label']} ({top_pred['label_ar']})",
         "top_confidence": top_pred["confidence"],
+        "lesion_area_pct": lesion_area,
+        "severity_level": sev_level,
+        "urgency_ar": urg_ar,
         "model_used": f"Specialist_{catalogue['crop_en']}_Model",
     }
 

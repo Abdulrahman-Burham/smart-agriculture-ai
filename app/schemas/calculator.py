@@ -134,3 +134,108 @@ class SalinityResponse(BaseModel):
     alleviation_protocol: List[str] = Field(
         default_factory=list, description="Practical soil/water mitigation treatments"
     )
+
+
+# ─── Fertilizer Program & NPK Commercial Bag Schemas ───────────────────────
+
+
+class FertilizerRequest(BaseModel):
+    crop_name: str = Field(
+        "بطاطس",
+        description="Egyptian crop name, e.g. طماطم, بطاطس, قمح, ذرة, مانجو, بصل, فراولة",
+    )
+    area_value: float = Field(
+        1.0, gt=0, description="Area quantity, e.g. 1.0, 5, 12"
+    )
+    area_unit: str = Field(
+        "feddan", description="feddan (فدان) or qirat (قيراط)"
+    )
+    soil_type: str = Field(
+        "clay_old",
+        description="clay_old (أرض طينية / وادي ودلتا) or sandy_new (أرض رملية / استصلاح جديد)",
+    )
+    irrigation_method: str = Field(
+        "drip", description="drip (تنقيط) or flood (غمر)"
+    )
+    nitrogen_source: str = Field(
+        "nitrate",
+        description="nitrate (نترات نشادر 33.5%), urea (يوريا 46.5%), or sulfate (سلفات نشادر 20.6%)",
+    )
+    phosphorus_source: str = Field(
+        "single_super",
+        description="single_super (سوبر فوسفات عادي 15.5%), triple_super (تريبل فوسفات 46%), or phosphoric_acid (حمض فوسفوريك 85%)",
+    )
+    potassium_source: str = Field(
+        "sulfate",
+        description="sulfate (سلفات بوتاسيوم 50%) or nitrate_potassium (نترات بوتاسيوم 46%)",
+    )
+
+
+class FertilizerStagePlan(BaseModel):
+    stage_name_ar: str = Field(..., description="اسم مرحلة نمو النبات")
+    stage_timing_ar: str = Field(..., description="التوقيت ومرحلة عمر النبات")
+    n_percentage: float = Field(..., description="نسبة الأزوت المخصصة لهذه المرحلة %")
+    p_percentage: float = Field(..., description="نسبة الفوسفور المخصصة لهذه المرحلة %")
+    k_percentage: float = Field(..., description="نسبة البوتاسيوم المخصصة لهذه المرحلة %")
+    recommendations_ar: List[str] = Field(
+        default_factory=list, description="توصيات التسميد والري العملية لهذه المرحلة"
+    )
+
+
+class FertilizerResponse(BaseModel):
+    status: str = "success"
+    crop_name: str
+    area_feddan: float
+    area_display: str
+    soil_type_ar: str
+    irrigation_method_ar: str
+    total_n_units: float = Field(..., description="إجمالي وحدات الأزوت N الصافية المطلوبة")
+    total_p_units: float = Field(..., description="إجمالي وحدات الفوسفور P2O5 المطلوبة")
+    total_k_units: float = Field(..., description="إجمالي وحدات البوتاسيوم K2O المطلوبة")
+    nitrogen_fertilizer_name: str
+    nitrogen_bags_50kg: float = Field(..., description="عدد شكاير 50 كجم سماد أزوتي")
+    nitrogen_total_kg: float = Field(..., description="إجمالي الوزن بالكيلوجرام")
+    phosphorus_fertilizer_name: str
+    phosphorus_bags_50kg: float = Field(..., description="عدد شكاير 50 كجم سماد فوسفاتي أو لترات")
+    phosphorus_total_kg: float
+    potassium_fertilizer_name: str
+    potassium_bags_50kg: float = Field(..., description="عدد شكاير 50 كجم سماد بوتاسي")
+    potassium_total_kg: float
+    growth_stages_schedule: List[FertilizerStagePlan] = Field(
+        default_factory=list, description="جدول توزيع الدفعات السمادية على مراحل النمو"
+    )
+    compatibility_and_soil_cautions: List[str] = Field(
+        default_factory=list, description="محاذير الخلط والتسميد الهامة لحماية النبات والشبكة"
+    )
+
+
+# ─── Spray Weather Window & Drift Risk Schemas ─────────────────────────────
+
+
+class SprayWindowRequest(BaseModel):
+    governorate: str = Field("الدقهلية", description="اسم المحافظة لجلب الطقس الحي")
+    temperature_c: Optional[float] = Field(None, description="درجة الحرارة المئوية (يدوي اختياري)")
+    wind_speed_kmh: Optional[float] = Field(None, description="سرعة الرياح كم/س (يدوي اختياري)")
+    humidity_pct: Optional[float] = Field(None, description="الرطوبة النسبية % (يدوي اختياري)")
+    rain_prob_pct: Optional[float] = Field(0.0, description="احتمالية سقوط أمطار %")
+    chemical_category: str = Field(
+        "fungicide_systemic",
+        description="fungicide_systemic (فطري جهازي), insecticide_contact (حشري ملامسة), herbicide_selective (حشائش اختياري), foliar_fertilizer (مغذيات ورقية)",
+    )
+
+
+class SprayWindowResponse(BaseModel):
+    status: str = "success"
+    governorate: str
+    safety_code: str = Field(..., description="ideal (مثالي), caution (بحذر), danger (ممنوع)")
+    safety_label_ar: str
+    safety_badge_color: str
+    temperature_c: float
+    wind_speed_kmh: float
+    humidity_pct: float
+    rain_prob_pct: float
+    drift_risk_level: str
+    evaporation_scorch_risk: str
+    rain_wash_risk: str
+    optimal_time_window_ar: str
+    field_rules_ar: List[str] = Field(default_factory=list)

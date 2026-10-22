@@ -189,6 +189,10 @@ class PlantDiseaseClassifier:
             "green_foliage_pct": 25.0,
             "exg_pct": 25.0,
             "yellow_leaf_pct": 0.0,
+            "necrotic_pct": 0.0,
+            "lesion_area_pct": 0.0,
+            "severity_level": "سليم",
+            "urgency_ar": "عادي / وقائي",
             "total_plant_pct": 25.0,
             "face_area_pct": 0.0,
             "flat_ui_pct": 0.0,
@@ -242,7 +246,15 @@ class PlantDiseaseClassifier:
                 float(np.count_nonzero(yellow_mask)) / total_px * 100.0, 2
             )
 
-            # 4. Flat UI / Screenshot / Document check (identical adjacent pixels + desaturated background)
+            # 4. Necrotic lesions / dead brown spots (Hue 6..24, Sat >= 30, Val 20..180, R >= B)
+            necrotic_mask = (
+                cv2.inRange(hsv, np.array([6, 30, 20]), np.array([24, 255, 180])) > 0
+            ) & (r_ch >= b_ch)
+            necrotic_pct = round(
+                float(np.count_nonzero(necrotic_mask)) / total_px * 100.0, 2
+            )
+
+            # 5. Flat UI / Screenshot / Document check (identical adjacent pixels + desaturated background)
             adj_same = np.all(img256[:, 1:, :] == img256[:, :-1, :], axis=-1)
             flat_ui_pct = round(
                 float(np.count_nonzero(adj_same)) / float(256 * 255) * 100.0, 2
@@ -252,7 +264,7 @@ class PlantDiseaseClassifier:
             )
             desat_pct = round(float(np.count_nonzero(desat_mask)) / total_px * 100.0, 2)
 
-            # 5. Human Face Detection
+            # 6. Human Face Detection
             face_area_pct = 0.0
             if self.face_cascade is not None:
                 faces = self.face_cascade.detectMultiScale(
@@ -268,11 +280,36 @@ class PlantDiseaseClassifier:
 
             total_plant_pct = round(green_foliage_pct + yellow_leaf_pct, 2)
 
+            # Foliar damage & lesion severity calculation
+            foliage_mask = strict_green_mask | yellow_mask | necrotic_mask
+            foliage_px = float(np.count_nonzero(foliage_mask))
+            if foliage_px > 40:
+                lesion_px = float(
+                    np.count_nonzero(necrotic_mask | (yellow_mask & ~strict_green_mask))
+                )
+                lesion_area_pct = round((lesion_px / foliage_px) * 100.0, 1)
+            else:
+                lesion_area_pct = 0.0
+
+            if lesion_area_pct < 10.0:
+                severity_level = "طفيفة"
+                urgency_ar = "منخفضة (متابعة ورش وقائي)"
+            elif lesion_area_pct <= 28.0:
+                severity_level = "متوسطة"
+                urgency_ar = "متوسطة (تدخل علاجي سريع)"
+            else:
+                severity_level = "شديدة"
+                urgency_ar = "قصوى (تدخل علاجي فوري وحاسم)"
+
             res.update(
                 {
                     "green_foliage_pct": green_foliage_pct,
                     "exg_pct": exg_pct,
                     "yellow_leaf_pct": yellow_leaf_pct,
+                    "necrotic_pct": necrotic_pct,
+                    "lesion_area_pct": lesion_area_pct,
+                    "severity_level": severity_level,
+                    "urgency_ar": urgency_ar,
                     "total_plant_pct": total_plant_pct,
                     "face_area_pct": face_area_pct,
                     "flat_ui_pct": flat_ui_pct,
@@ -469,6 +506,23 @@ class PlantDiseaseClassifier:
 
             crop_type, _ = self._parse_label(top_pred["label"])
             crop_ar, disease_ar = self._parse_label(top_pred["label_ar"])
+
+            is_healthy = any(
+                h in top_pred["label"].lower() or h in top_pred["label_ar"]
+                for h in ("healthy", "سليم", "سليمة")
+            )
+            lesion_area = 0.0 if is_healthy else float(plant_check.get("lesion_area_pct", 0.0))
+            sev_level = (
+                "سليم (خالٍ من الإصابة)"
+                if is_healthy
+                else str(plant_check.get("severity_level", "متوسطة"))
+            )
+            urg_ar = (
+                "عادي (برنامج وقائي فقط)"
+                if is_healthy
+                else str(plant_check.get("urgency_ar", "متوسطة (تدخل علاجي سريع)"))
+            )
+
             return {
                 "is_plant": True,
                 "plant_check": plant_check,
@@ -482,6 +536,9 @@ class PlantDiseaseClassifier:
                 "crop_type_ar": crop_ar,
                 "disease_name": f"{top_pred['label']} ({disease_ar})",
                 "top_confidence": top_pred["confidence"],
+                "lesion_area_pct": lesion_area,
+                "severity_level": sev_level,
+                "urgency_ar": urg_ar,
                 "model_used": "ResNet18",
             }
 
@@ -587,6 +644,22 @@ class PlantDiseaseClassifier:
         crop_type, _ = self._parse_label(top_pred["label"])
         crop_ar, disease_ar = self._parse_label(top_pred["label_ar"])
 
+        is_healthy = any(
+            h in top_pred["label"].lower() or h in top_pred["label_ar"]
+            for h in ("healthy", "سليم", "سليمة")
+        )
+        lesion_area = 0.0 if is_healthy else float(plant_check.get("lesion_area_pct", 0.0))
+        sev_level = (
+            "سليم (خالٍ من الإصابة)"
+            if is_healthy
+            else str(plant_check.get("severity_level", "متوسطة"))
+        )
+        urg_ar = (
+            "عادي (برنامج وقائي فقط)"
+            if is_healthy
+            else str(plant_check.get("urgency_ar", "متوسطة (تدخل علاجي سريع)"))
+        )
+
         return {
             "is_plant": True,
             "plant_check": plant_check,
@@ -600,6 +673,9 @@ class PlantDiseaseClassifier:
             "crop_type_ar": crop_ar,
             "disease_name": f"{top_pred['label']} ({disease_ar})",
             "top_confidence": top_pred["confidence"],
+            "lesion_area_pct": lesion_area,
+            "severity_level": sev_level,
+            "urgency_ar": urg_ar,
             "model_used": "EfficientNetV2B2_best.keras",
         }
 

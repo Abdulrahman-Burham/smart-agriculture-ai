@@ -1855,6 +1855,12 @@
         <button type="button" class="nav-btn" onclick="openSalinityModal()">
             💧 فاحص الملوحة
         </button>
+        <button type="button" class="nav-btn" onclick="openFertilizerModal()">
+            🌾 حاسبة التسميد والشكاير
+        </button>
+        <button type="button" class="nav-btn" onclick="openSprayWindowModal()">
+            🌤️ نافذة الرش والطقس
+        </button>
         <a class="nav-btn" href="/offline-guide">
             📚 دليل الإسعافات (أوفلاين)
         </a>
@@ -2129,6 +2135,8 @@
                         <div style="display:flex; gap:0.45rem; margin-top:0.6rem; flex-wrap:wrap;">
                             <button type="button" class="chat-action-btn" onclick="shareChecklistViaWhatsApp()">📲 إرسال قائمة المهام للعامل بالواتساب</button>
                             <button type="button" class="chat-action-btn" onclick="openTankMixModal()">🧪 حاسبة خلط المبيد بالماتور</button>
+                            <button type="button" class="chat-action-btn" onclick="openSprayWindowModal()">🌤️ توقيت أمان الرش</button>
+                            <button type="button" class="chat-action-btn" onclick="openFertilizerModal()">🌾 جرعات التسميد والشكاير</button>
                         </div>
                     </div>
                     <div id="cv-prescription-actions" style="margin-top: 0.75rem; display: none; grid-template-columns: 1fr 1fr; gap: 0.55rem;">
@@ -3819,6 +3827,18 @@
                     </div>
                 `;
             });
+
+            if (cvData.severity_level && !cvData.severity_level.includes('سليم')) {
+                const sevColor = cvData.severity_level === 'شديدة' ? '#dc2626' : (cvData.severity_level === 'متوسطة' ? '#d97706' : '#059669');
+                container.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px 12px; margin-top:8px;">
+                        <span style="font-size:0.8rem; font-weight:700; color:#334155;">🔬 شدة الإصابة المقدرة ونسبة تضرر الأنسجة:</span>
+                        <span style="display:inline-flex; align-items:center; gap:5px; font-size:0.78rem; font-weight:800; padding:3px 9px; border-radius:8px; background:${sevColor}; color:white;">
+                            ${cvData.severity_level} (${cvData.lesion_area_pct || 0}% تلف نسيجي)
+                        </span>
+                    </div>
+                `;
+            }
 
             if (inlineBox && inlineText && adviceText) {
                 inlineText.innerHTML = formatResponse(adviceText);

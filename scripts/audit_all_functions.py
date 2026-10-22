@@ -120,6 +120,65 @@ def audit_calculators():
     ok_tol = res_tol.is_critical_risk is False and res_tol.yield_potential_percent == 100.0
     record("Calculators", "evaluate_water_salinity(palm_tolerant)", "Logic", ok_tol, f"CriticalRisk={res_tol.is_critical_risk}, YieldPotential={res_tol.yield_potential_percent}%")
 
+    # 1.5 Fertilizer Program & Commercial Bags Engine
+    from app.schemas.calculator import FertilizerRequest, SprayWindowRequest
+    from app.services.agri_calculator_service import (
+        calculate_fertilizer_needs,
+        evaluate_spray_window,
+    )
+
+    req_fert = FertilizerRequest(
+        crop_name="بطاطس",
+        area_value=1.0,
+        area_unit="feddan",
+        soil_type="clay_old",
+        irrigation_method="drip",
+    )
+    res_fert = calculate_fertilizer_needs(req_fert)
+    ok_fert = (
+        res_fert.area_feddan == 1.0
+        and res_fert.total_n_units >= 100.0
+        and 6.5 <= res_fert.nitrogen_bags_50kg <= 8.5
+        and len(res_fert.growth_stages_schedule) >= 3
+        and len(res_fert.compatibility_and_soil_cautions) > 0
+    )
+    record(
+        "Calculators",
+        "calculate_fertilizer_needs(potato_drip)",
+        "Logic",
+        ok_fert,
+        f"Bags={res_fert.nitrogen_bags_50kg}, N_units={res_fert.total_n_units}, Stages={len(res_fert.growth_stages_schedule)}",
+    )
+
+    # 1.6 Spray Weather Window Evaluator
+    req_spray_ok = SprayWindowRequest(
+        temperature_c=22.0,
+        wind_speed_kmh=8.0,
+        humidity_pct=65.0,
+        rain_prob_pct=5.0,
+    )
+    res_spray_ok = evaluate_spray_window(req_spray_ok)
+    ok_spray_ideal = res_spray_ok.safety_code == "ideal" and "منخفض" in res_spray_ok.drift_risk_level
+
+    req_spray_bad = SprayWindowRequest(
+        temperature_c=25.0,
+        wind_speed_kmh=28.0,
+        humidity_pct=50.0,
+        rain_prob_pct=10.0,
+    )
+    res_spray_bad = evaluate_spray_window(req_spray_bad)
+    ok_spray_danger = res_spray_bad.safety_code == "danger" and any(
+        w in res_spray_bad.drift_risk_level for w in ("شديد", "عالي", "حرج", "خطر", "خطير")
+    )
+
+    record(
+        "Calculators",
+        "evaluate_spray_window(weather_traffic_light)",
+        "Logic",
+        ok_spray_ideal and ok_spray_danger,
+        f"IdealCode={res_spray_ok.safety_code}, DangerCode={res_spray_bad.safety_code}",
+    )
+
 
 # ─── 2. Computer Vision & Specialists Subsystem ───────────────────────────────
 
@@ -190,6 +249,29 @@ def audit_computer_vision():
     renorm_conf = normalized_detailed[0]["confidence"] if normalized_detailed else 0.0
     ok_filter = only_tomato and math.isclose(renorm_conf, 1.0, rel_tol=1e-3)
     record("ComputerVision", "filter_predictions_by_crop(renormalization)", "Logic", ok_filter, f"Only tomato={only_tomato}, renorm_conf={renorm_conf}")
+
+    # 2.6 Foliar Lesion Damage & Severity Estimation
+    import cv2
+    import numpy as np
+
+    img_lesion = np.zeros((256, 256, 3), dtype=np.uint8)
+    img_lesion[:, :] = (40, 160, 50)  # Green leaf
+    cv2.circle(img_lesion, (128, 128), 50, (20, 60, 140), -1)  # Necrotic spot
+    _, buf_lesion = cv2.imencode(".jpg", img_lesion)
+    res_lesion = classifier.validate_plant_image_opencv(buf_lesion.tobytes())
+    ok_lesion = (
+        res_lesion.get("is_plant") is True
+        and res_lesion.get("lesion_area_pct", 0) > 0.0
+        and res_lesion.get("severity_level") in ("طفيفة", "متوسطة", "شديدة")
+        and "urgency_ar" in res_lesion
+    )
+    record(
+        "ComputerVision",
+        "foliar_lesion_severity_estimation",
+        "Logic",
+        ok_lesion,
+        f"LesionPct={res_lesion.get('lesion_area_pct')}%, Severity={res_lesion.get('severity_level')}, Urgency={res_lesion.get('urgency_ar')}",
+    )
 
 
 # ─── 3. Database & Storage Subsystem ──────────────────────────────────────────

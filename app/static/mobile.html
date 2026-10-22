@@ -985,6 +985,12 @@
       <button type="button" onclick="openTankMixModal()" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; border-radius:10px; border:1px solid rgba(5,150,105,0.3); background:var(--bg-surface); color:var(--brand-forest); font-family:inherit; font-size:0.76rem; font-weight:800; white-space:nowrap; cursor:pointer;">
         🧮 حاسبة خلط المبيدات
       </button>
+      <button type="button" onclick="openFertilizerModal()" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; border-radius:10px; border:1px solid rgba(16,185,129,0.3); background:var(--bg-surface); color:var(--brand-forest); font-family:inherit; font-size:0.76rem; font-weight:800; white-space:nowrap; cursor:pointer;">
+        🌾 حاسبة التسميد
+      </button>
+      <button type="button" onclick="openSprayWindowModal()" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; border-radius:10px; border:1px solid rgba(2,132,199,0.3); background:var(--bg-surface); color:#0284c7; font-family:inherit; font-size:0.76rem; font-weight:800; white-space:nowrap; cursor:pointer;">
+        🌤️ أمان الرش
+      </button>
       <button type="button" onclick="openSalinityModal()" style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; border-radius:10px; border:1px solid rgba(3,105,161,0.3); background:var(--bg-surface); color:#0369a1; font-family:inherit; font-size:0.76rem; font-weight:800; white-space:nowrap; cursor:pointer;">
         💧 فاحص الملوحة
       </button>
@@ -1883,7 +1889,11 @@
         const adviceText = data.advice || data.rag_recommendations || 'تم التشخيص بنجاح.';
 
         titleEl.textContent = predAr;
-        badgeEl.textContent = confStr ? `درجة الثقة: ${confStr}` : 'مكتمل';
+        if (cv.severity_level && !cv.severity_level.includes('سليم')) {
+          badgeEl.textContent = `${confStr || 'مكتمل'} | شدة: ${cv.severity_level} (${cv.lesion_area_pct || 0}% تلف)`;
+        } else {
+          badgeEl.textContent = confStr ? `درجة الثقة: ${confStr}` : 'مكتمل';
+        }
         adviceEl.innerHTML = formatMarkdown(adviceText);
         renderMobileTreatmentChecklist(adviceText, data.image_id, predAr);
 

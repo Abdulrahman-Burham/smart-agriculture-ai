@@ -9,9 +9,16 @@ import pytest
 
 from app.main import app
 from app.core.config import DEV_SECRET_KEY
-from app.schemas.calculator import TankMixRequest, SalinityRequest
+from app.schemas.calculator import (
+    FertilizerRequest,
+    SalinityRequest,
+    SprayWindowRequest,
+    TankMixRequest,
+)
 from app.services.agri_calculator_service import (
+    calculate_fertilizer_needs,
     calculate_tank_mix,
+    evaluate_spray_window,
     evaluate_water_salinity,
 )
 
@@ -303,3 +310,134 @@ def test_followup_recovery_evaluation_endpoint():
 
     assert "advice" in result
     assert isinstance(result["should_repeat_spray"], bool)
+
+
+def test_calculate_fertilizer_needs_potato_drip():
+    """Verify ARC-aligned NPK fertilizer requirements for 1 feddan of Potato with drip irrigation."""
+    req = FertilizerRequest(
+        crop_name="بطاطس",
+        area_value=1.0,
+        area_unit="feddan",
+        soil_type="clay_old",
+        irrigation_method="drip",
+    )
+    res = calculate_fertilizer_needs(req)
+    assert res.area_feddan == 1.0
+    assert res.total_n_units >= 100.0
+    assert res.total_p_units >= 50.0
+    assert res.total_k_units >= 70.0
+    assert len(res.growth_stages_schedule) >= 3
+    # Ammonium nitrate bags check (120 units N / 16.75 units/bag = ~7.16 bags)
+    assert "نترات" in res.nitrogen_fertilizer_name
+    assert 6.5 <= res.nitrogen_bags_50kg <= 8.5
+    assert len(res.compatibility_and_soil_cautions) > 0
+
+
+def test_calculate_fertilizer_needs_qirat_conversion():
+    """Verify area conversion from Qirat (24 qirat = 1 feddan)."""
+    req = FertilizerRequest(
+        crop_name="طماطم",
+        area_value=24.0,
+        area_unit="qirat",
+        soil_type="sandy_new",
+        irrigation_method="flood",
+    )
+    res = calculate_fertilizer_needs(req)
+    assert res.area_feddan == 1.0
+    # Flood efficiency factor is 1.15x
+    assert res.total_n_units >= 150.0 * 1.15
+    assert len(res.growth_stages_schedule) >= 3
+
+
+def test_evaluate_spray_window_ideal():
+    """Verify weather evaluator flags ideal spray conditions."""
+    req = SprayWindowRequest(
+        temperature_c=22.0,
+        wind_speed_kmh=8.0,
+        humidity_pct=65.0,
+        rain_prob_pct=5.0,
+    )
+    res = evaluate_spray_window(req)
+    assert res.safety_code == "ideal"
+    assert res.safety_badge_color == "#10b981"
+    assert "منخفض" in res.drift_risk_level
+    assert "منخفض" in res.evaporation_scorch_risk
+    assert "منخفض" in res.rain_wash_risk
+    assert "مثالي" in res.safety_label_ar
+
+
+def test_evaluate_spray_window_high_wind_danger():
+    """Verify high wind speed (> 20 km/h) triggers danger decision."""
+    req = SprayWindowRequest(
+        temperature_c=25.0,
+        wind_speed_kmh=26.0,
+        humidity_pct=50.0,
+        rain_prob_pct=10.0,
+    )
+    res = evaluate_spray_window(req)
+    assert res.safety_code == "danger"
+    assert any(
+        w in res.drift_risk_level for w in ("شديد", "عالي", "حرج", "خطر", "خطير")
+    )
+    assert len(res.field_rules_ar) > 0
+
+
+def test_api_calculator_endpoints():
+    """Verify HTTP POST endpoints for fertilizer and spray window calculators."""
+    # 1. Fertilizer endpoint
+    fert_resp = client.post(
+        "/api/calculator/fertilizer",
+        json={
+            "crop_name": "خيار",
+            "area_value": 2.0,
+            "area_unit": "feddan",
+            "soil_type": "sandy_new",
+            "irrigation_method": "drip",
+        },
+    )
+    assert fert_resp.status_code == 200
+    fert_data = fert_resp.json()
+    assert fert_data["crop_name"] == "خيار"
+    assert fert_data["area_feddan"] == 2.0
+    assert len(fert_data["growth_stages_schedule"]) >= 3
+
+    # 2. Spray window endpoint
+    spray_resp = client.post(
+        "/api/calculator/spray-window",
+        json={
+            "temperature_c": 36.0,
+            "wind_speed_kmh": 12.0,
+            "humidity_pct": 25.0,
+            "rain_prob_pct": 0.0,
+        },
+    )
+    assert spray_resp.status_code == 200
+    spray_data = spray_resp.json()
+    assert spray_data["safety_code"] in ("caution", "danger")
+
+
+def test_foliar_lesion_severity_estimation_opencv():
+    """Verify OpenCV lesion damage estimation and severity level calculation."""
+    from computer_vision.inference.classifier import PlantDiseaseClassifier
+    import numpy as np
+    import cv2
+
+    clf = PlantDiseaseClassifier()
+
+    # Create synthetic leaf image with green background and brown necrotic center spot
+    img = np.zeros((256, 256, 3), dtype=np.uint8)
+    # Healthy green tissue (BGR: 40, 160, 50)
+    img[:, :] = (40, 160, 50)
+    # Brown necrotic lesion spot (BGR: 20, 60, 140)
+    cv2.circle(img, (128, 128), 50, (20, 60, 140), -1)
+
+    _, buf = cv2.imencode(".jpg", img)
+    check = clf.validate_plant_image_opencv(buf.tobytes())
+
+    assert check["is_plant"] is True
+    assert check["green_foliage_pct"] > 50.0
+    assert "lesion_area_pct" in check
+    assert check["lesion_area_pct"] > 0.0
+    assert check["severity_level"] in ("طفيفة", "متوسطة", "شديدة")
+    assert "urgency_ar" in check
+

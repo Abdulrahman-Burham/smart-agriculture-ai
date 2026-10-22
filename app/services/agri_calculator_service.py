@@ -7,12 +7,18 @@ Implements official agronomic formulas for:
 
 from __future__ import annotations
 
+import asyncio
 import math
 from typing import Any, Dict, List, Tuple
 
 from app.schemas.calculator import (
+    FertilizerRequest,
+    FertilizerResponse,
+    FertilizerStagePlan,
     SalinityRequest,
     SalinityResponse,
+    SprayWindowRequest,
+    SprayWindowResponse,
     TankMixRequest,
     TankMixResponse,
 )
@@ -472,4 +478,379 @@ def evaluate_water_salinity(req: SalinityRequest) -> SalinityResponse:
         is_critical_risk=is_critical,
         evaluation_ar=eval_text,
         alleviation_protocol=alleviation,
+    )
+
+
+# ─── 3. Fertilizer Program & NPK Commercial Bag Calculations ──────────────
+
+EGYPT_CROP_FERTILIZER_TARGETS: Dict[str, Dict[str, Tuple[float, float, float]]] = {
+    "طماطم": {
+        "clay_old": (140.0, 65.0, 120.0),
+        "sandy_new": (180.0, 80.0, 160.0),
+    },
+    "بطاطس": {
+        "clay_old": (120.0, 60.0, 100.0),
+        "sandy_new": (150.0, 75.0, 120.0),
+    },
+    "قمح": {
+        "clay_old": (75.0, 30.0, 24.0),
+        "sandy_new": (100.0, 45.0, 48.0),
+    },
+    "ذرة": {
+        "clay_old": (120.0, 45.0, 48.0),
+        "sandy_new": (140.0, 60.0, 60.0),
+    },
+    "مانجو": {
+        "clay_old": (100.0, 50.0, 120.0),
+        "sandy_new": (130.0, 65.0, 150.0),
+    },
+    "بصل": {
+        "clay_old": (90.0, 45.0, 50.0),
+        "sandy_new": (120.0, 60.0, 75.0),
+    },
+    "فراولة": {
+        "clay_old": (140.0, 70.0, 150.0),
+        "sandy_new": (160.0, 80.0, 180.0),
+    },
+    "خيار": {
+        "clay_old": (120.0, 60.0, 110.0),
+        "sandy_new": (150.0, 75.0, 140.0),
+    },
+    "عنب": {
+        "clay_old": (80.0, 40.0, 90.0),
+        "sandy_new": (100.0, 50.0, 120.0),
+    },
+    "موالح": {
+        "clay_old": (110.0, 45.0, 100.0),
+        "sandy_new": (140.0, 60.0, 130.0),
+    },
+}
+
+COMMERCIAL_NITROGEN_SOURCES: Dict[str, Tuple[str, float, float]] = {
+    "nitrate": ("نترات نشادر (33.5% أزوت)", 0.335, 50.0),
+    "urea": ("يوريا (46.5% أزوت)", 0.465, 50.0),
+    "sulfate": ("سلفات نشادر / ملح (20.6% أزوت + 24% كبريت)", 0.206, 50.0),
+}
+
+COMMERCIAL_PHOSPHORUS_SOURCES: Dict[str, Tuple[str, float, float]] = {
+    "single_super": ("سوبر فوسفات أحادي عادي (15.5% P₂O₅)", 0.155, 50.0),
+    "triple_super": ("سوبر فوسفات ثلاثي تريبل (46% P₂O₅)", 0.460, 50.0),
+    "phosphoric_acid": ("حمض فوسفوريك 85% سائل (61.6% P₂O₅)", 0.616, 50.0),
+}
+
+COMMERCIAL_POTASSIUM_SOURCES: Dict[str, Tuple[str, float, float]] = {
+    "sulfate": ("سلفات بوتاسيوم (50% K₂O)", 0.500, 50.0),
+    "nitrate_potassium": ("نترات بوتاسيوم (46% K₂O + 13% N)", 0.460, 50.0),
+}
+
+
+def calculate_fertilizer_needs(req: FertilizerRequest) -> FertilizerResponse:
+    """Calculate exact net N-P-K nutrient units, commercial 50kg bag conversions, and growth stage plan."""
+    # 1. Normalize Area (Qirat vs Feddan)
+    if req.area_unit == "qirat":
+        area_feddan = req.area_value / 24.0
+        area_display = f"{req.area_value:g} قيراط (حوالي {area_feddan:.2f} فدان)"
+    else:
+        area_feddan = req.area_value
+        area_display = f"{req.area_value:g} فدان"
+
+    # 2. Normalize Crop Key
+    c_raw = (req.crop_name or "").strip().lower()
+    crop_key = "طماطم"
+    for k in EGYPT_CROP_FERTILIZER_TARGETS:
+        if k in c_raw:
+            crop_key = k
+            break
+
+    soil_key = "sandy_new" if "sandy" in req.soil_type or "رمل" in req.soil_type else "clay_old"
+    soil_display = "أرض رملية / استصلاح جديد" if soil_key == "sandy_new" else "أرض طينية قديمة (وادي ودلتا)"
+    irrig_display = "ري بالتنقيط (تسميد بالسمادة)" if req.irrigation_method == "drip" else "ري بالغمر (تسميد تكبيش/بدار)"
+
+    # Base net units per feddan
+    base_n, base_p, base_k = EGYPT_CROP_FERTILIZER_TARGETS[crop_key][soil_key]
+
+    # Flood irrigation has lower nutrient uptake efficiency (~15% leaching buffer)
+    efficiency_factor = 1.15 if req.irrigation_method == "flood" else 1.0
+
+    total_n = round(base_n * area_feddan * efficiency_factor, 1)
+    total_p = round(base_p * area_feddan * efficiency_factor, 1)
+    total_k = round(base_k * area_feddan * efficiency_factor, 1)
+
+    # 3. Commercial Bags Conversions
+    n_info = COMMERCIAL_NITROGEN_SOURCES.get(req.nitrogen_source, COMMERCIAL_NITROGEN_SOURCES["nitrate"])
+    p_info = COMMERCIAL_PHOSPHORUS_SOURCES.get(req.phosphorus_source, COMMERCIAL_PHOSPHORUS_SOURCES["single_super"])
+    k_info = COMMERCIAL_POTASSIUM_SOURCES.get(req.potassium_source, COMMERCIAL_POTASSIUM_SOURCES["sulfate"])
+
+    # Bags of 50kg = Total Units / (Bag_weight_kg * Active_fraction)
+    n_unit_per_bag = n_info[2] * n_info[1]
+    n_bags = round(total_n / max(0.1, n_unit_per_bag), 2)
+    n_kg = round(n_bags * 50.0, 1)
+
+    p_unit_per_bag = p_info[2] * p_info[1]
+    p_bags = round(total_p / max(0.1, p_unit_per_bag), 2)
+    p_kg = round(p_bags * 50.0, 1)
+
+    k_unit_per_bag = k_info[2] * k_info[1]
+    k_bags = round(total_k / max(0.1, k_unit_per_bag), 2)
+    k_kg = round(k_bags * 50.0, 1)
+
+    # 4. Growth Stages Schedule
+    stages: List[FertilizerStagePlan] = []
+    if crop_key in ("بطاطس", "طماطم", "فراولة"):
+        stages = [
+            FertilizerStagePlan(
+                stage_name_ar="إعداد الأرض والزراعة (خدمة الأساس)",
+                stage_timing_ar="أثناء حرث الأرض وتجهيز الخطوط والشتل",
+                n_percentage=20.0,
+                p_percentage=100.0,
+                k_percentage=20.0,
+                recommendations_ar=[
+                    f"نثر كامل سماد الفوسفور ({p_bags:.1f} شيكارة {p_info[0]}) خلطاً مع السماد البلدي المتحلل والكبريت الزراعي في باطن الخطوط.",
+                    f"إضافة حوالي {n_bags * 0.2:.1f} شيكارة أزوتية و {k_bags * 0.2:.1f} شيكارة بوتاسية كجرعة تنشيطية مع رية الزراعة.",
+                ],
+            ),
+            FertilizerStagePlan(
+                stage_name_ar="النمو الخضري والتفريع",
+                stage_timing_ar="من عمر 20 إلى 45 يوماً بعد الإنبات/الشتل",
+                n_percentage=40.0,
+                p_percentage=0.0,
+                k_percentage=20.0,
+                recommendations_ar=[
+                    f"توزيع {n_bags * 0.4:.1f} شيكارة من {n_info[0]} مقسمة على ريات الأسبوع لدعم تكوين المجموع الخضري والسيقان القوية.",
+                    f"إضافة {k_bags * 0.2:.1f} شيكارة بوتاسيوم لدعم نشاط الجذور والتنفس الخلوي.",
+                ],
+            ),
+            FertilizerStagePlan(
+                stage_name_ar="التزهير والعقد وتكوين الثمار / التدرين",
+                stage_timing_ar="من عمر 45 إلى 75 يوماً (أهم مرحلة إنتاجية)",
+                n_percentage=30.0,
+                p_percentage=0.0,
+                k_percentage=40.0,
+                recommendations_ar=[
+                    f"إضافة {n_bags * 0.3:.1f} شيكارة أزوت مع رفع البوتاسيوم إلى {k_bags * 0.4:.1f} شيكارة لتشجيع صب المواد الغذائية في الثمار/الدرنات.",
+                    "الرش الورقي بمركب كالسيوم بورون (مفصولاً في رشة مستقلة) لمنع عفن الطرف الزهري وتثبيت العقد.",
+                ],
+            ),
+            FertilizerStagePlan(
+                stage_name_ar="التحجيم النهائي والنضج",
+                stage_timing_ar="من عمر 75 يوماً حتى ما قبل الحصاد بأسبوعين",
+                n_percentage=10.0,
+                p_percentage=0.0,
+                k_percentage=20.0,
+                recommendations_ar=[
+                    f"إضافة المتبقي من البوتاسيوم ({k_bags * 0.2:.1f} شيكارة) مع خفض الأزوت إلى حده الأدنى ({n_bags * 0.1:.1f} شيكارة).",
+                    "التوقف الكامل عن التسميد قبل الحصاد بـ 15 إلى 18 يوماً (فترة الفطام) لصلابة المحصول وجودة التخزين.",
+                ],
+            ),
+        ]
+    elif crop_key == "قمح":
+        stages = [
+            FertilizerStagePlan(
+                stage_name_ar="تجهيز الأرض والزراعة",
+                stage_timing_ar="مع الخدمة قبل بدار التقاوي",
+                n_percentage=0.0,
+                p_percentage=100.0,
+                k_percentage=0.0,
+                recommendations_ar=[
+                    f"إضافة كامل كمية الفوسفور ({p_bags:.1f} شيكارة) نثراً على البلاط قبل آخر حرثة.",
+                ],
+            ),
+            FertilizerStagePlan(
+                stage_name_ar="رية المحاياة (التفريع الأول)",
+                stage_timing_ar="بعد 21 إلى 25 يوماً من الزراعة",
+                n_percentage=40.0,
+                p_percentage=0.0,
+                k_percentage=50.0,
+                recommendations_ar=[
+                    f"إضافة {n_bags * 0.4:.1f} شيكارة من {n_info[0]} مع نصف كمية البوتاسيوم ({k_bags * 0.5:.1f} شيكارة) قبل الري مباشرة.",
+                ],
+            ),
+            FertilizerStagePlan(
+                stage_name_ar="الرية الثانية (الاستطالة وبداية طرد السنابل)",
+                stage_timing_ar="عند عمر 45 إلى 55 يوماً",
+                n_percentage=40.0,
+                p_percentage=0.0,
+                k_percentage=50.0,
+                recommendations_ar=[
+                    f"إضافة الدفعة الثانية من الأزوت ({n_bags * 0.4:.1f} شيكارة) والمتبقي من البوتاسيوم ({k_bags * 0.5:.1f} شيكارة).",
+                ],
+            ),
+            FertilizerStagePlan(
+                stage_name_ar="طرد السنابل وامتلاء الحبوب",
+                stage_timing_ar="عند اكتمال طرد السنابل (عمر 70-80 يوماً)",
+                n_percentage=20.0,
+                p_percentage=0.0,
+                k_percentage=0.0,
+                recommendations_ar=[
+                    f"إضافة الدفعة الأخيرة من الأزوت ({n_bags * 0.2:.1f} شيكارة)، ويمنع التسميد نهائياً بعد مرحلة طرد السنابل.",
+                ],
+            ),
+        ]
+    else:
+        stages = [
+            FertilizerStagePlan(
+                stage_name_ar="بداية الموسم / النشاط الربيعي",
+                stage_timing_ar="مع خروج العيون وانتفاخ البراعم والنمو الجديد",
+                n_percentage=35.0,
+                p_percentage=100.0,
+                k_percentage=25.0,
+                recommendations_ar=[
+                    f"إضافة كامل الفوسفور ({p_bags:.1f} شيكارة) مع {n_bags * 0.35:.1f} شيكارة أزوتية لتنشيط الجذور.",
+                ],
+            ),
+            FertilizerStagePlan(
+                stage_name_ar="التزهير والعقد ونمو الثمار",
+                stage_timing_ar="منتصف الموسم وذروة الاحتياج المائي والسمادي",
+                n_percentage=45.0,
+                p_percentage=0.0,
+                k_percentage=45.0,
+                recommendations_ar=[
+                    f"إضافة {n_bags * 0.45:.1f} شيكارة أزوت مع {k_bags * 0.45:.1f} شيكارة بوتاسيوم لدعم حجم الثمار.",
+                ],
+            ),
+            FertilizerStagePlan(
+                stage_name_ar="التحجيم والنضج النهائي",
+                stage_timing_ar="قبل الجمع والحصاد بـ 3 إلى 4 أسابيع",
+                n_percentage=20.0,
+                p_percentage=0.0,
+                k_percentage=30.0,
+                recommendations_ar=[
+                    f"إضافة المتبقي من البوتاسيوم ({k_bags * 0.3:.1f} شيكارة) لتحسين السكريات واللون والصلابة.",
+                ],
+            ),
+        ]
+
+    # 5. Compatibility Cautions
+    cautions = [
+        "⚠️ قاعدة خلط حاسمة: يمنع منعاً باتاً خلط نترات الكالسيوم مع سلفات البوتاسيوم أو سلفات النشادر أو حمض الفوسفوريك في نفس التانك؛ الخلط يسبب ترسب الجبس وفوسفات الكالسيوم التي تسد النقاطات وتتلف شبكة الري فوراً.",
+        "⚠️ تنبيه سماد اليوريا: لا يوصى باستخدام اليوريا في الأراضي الجيرية (الكلسية) أو عند ارتفاع درجات الحرارة فوق 30°C تجنباً لتطاير النيتروجين في صورة غاز أمونيا وضياع الفائدة؛ استخدم نترات النشادر أو سلفات النشادر كبديل آمن.",
+        "💡 توصية التربة المصرية: يفضل إضافة 50 إلى 100 كجم كبريت زراعي ناعم للفدان مع الخدمة الشتوية أو إعداد الأرض؛ حيث يعمل على معادلة قلوية التربة المصرية (pH 8-8.5) وتحرير الفوسفور والعناصر الصغرى وتيسير امتصاصها.",
+        "💧 نصيحة الري بالتنقيط: يفضل حقن الأسمدة في الثلثين الأوسطين من فترة الري، وتشغيل المياه النقية في الربع ساعة الأخير لغسيل شبكة وخراطيم التنقيط من أي بقايا سمادية.",
+    ]
+
+    return FertilizerResponse(
+        status="success",
+        crop_name=crop_key,
+        area_feddan=round(area_feddan, 2),
+        area_display=area_display,
+        soil_type_ar=soil_display,
+        irrigation_method_ar=irrig_display,
+        total_n_units=total_n,
+        total_p_units=total_p,
+        total_k_units=total_k,
+        nitrogen_fertilizer_name=n_info[0],
+        nitrogen_bags_50kg=n_bags,
+        nitrogen_total_kg=n_kg,
+        phosphorus_fertilizer_name=p_info[0],
+        phosphorus_bags_50kg=p_bags,
+        phosphorus_total_kg=p_kg,
+        potassium_fertilizer_name=k_info[0],
+        potassium_bags_50kg=k_bags,
+        potassium_total_kg=k_kg,
+        growth_stages_schedule=stages,
+        compatibility_and_soil_cautions=cautions,
+    )
+
+
+# ─── 4. Spray Weather Window & Drift Risk Evaluator ────────────────────────
+
+def evaluate_spray_window(req: SprayWindowRequest) -> SprayWindowResponse:
+    """Evaluate real-time or manual weather conditions to determine safe pesticide spray windows and drift risk."""
+    gov = (req.governorate or "الدقهلية").strip()
+
+    temp_c = req.temperature_c
+    wind_kmh = req.wind_speed_kmh
+    humid_pct = req.humidity_pct
+    rain_pct = float(req.rain_prob_pct or 0.0)
+
+    if temp_c is None or wind_kmh is None or humid_pct is None:
+        try:
+            from app.services.weather_service import fetch_weather_forecast
+
+            loop = None
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                pass
+            if loop and loop.is_running():
+                w_res = None
+            else:
+                w_res = asyncio.run(fetch_weather_forecast(gov))
+
+            if w_res and w_res.temperature is not None:
+                temp_c = float(w_res.temperature) if temp_c is None else temp_c
+                wind_kmh = float(w_res.wind_speed) if wind_kmh is None else wind_kmh
+                humid_pct = float(w_res.humidity) if humid_pct is None else humid_pct
+        except Exception:
+            pass
+
+    temp_c = 24.0 if temp_c is None else float(temp_c)
+    wind_kmh = 8.0 if wind_kmh is None else float(wind_kmh)
+    humid_pct = 65.0 if humid_pct is None else float(humid_pct)
+
+    # 1. Wind & Drift Risk
+    if wind_kmh < 10.0:
+        drift_risk = "منخفض جداً (آمن — هدوء نسبي للرياح)"
+    elif wind_kmh <= 15.0:
+        drift_risk = "متوسط (احتمال تطاير طفيف؛ قرب البشبوري 40-50 سم من الورقة)"
+    elif wind_kmh <= 20.0:
+        drift_risk = "مرتفع (تطاير شديد وإهدار للمبيد وتلويث للحقول المجاورة)"
+    else:
+        drift_risk = "حرج جداً وخطير (ممنوع الرش نهائياً؛ الرياح عاصفة)"
+
+    # 2. Temperature & Evaporation Risk
+    if temp_c < 28.0:
+        evap_risk = "منخفض (امتصاص ورقي مثالي دون خطر احتراق)"
+    elif temp_c <= 32.0:
+        evap_risk = "متوسط (تبخر سريع لقطرات الرش الدقيقة؛ رش في الصباح الباكر فقط)"
+    else:
+        evap_risk = "مرتفع جداً (خطر احتراق الأنسجة النباتية Phytotoxicity)"
+
+    # 3. Rain Wash Risk
+    if rain_pct < 25.0:
+        rain_risk = "منخفض (لا يوجد خطر غسيل للأمطار)"
+    elif rain_pct <= 45.0:
+        rain_risk = "متوسط (احتمال سقوط زخات؛ يوصى باستخدام مادة لاصقة ناشرة)"
+    else:
+        rain_risk = "مرتفع (خطر غسيل المطر للمبيد وإهدار تكلفة الرش)"
+
+    # 4. Overall Decision Code
+    if wind_kmh > 18.0 or temp_c > 32.0 or rain_pct > 45.0:
+        safety_code = "danger"
+        safety_label = "🔴 تحذير شديد: غير مناسب للرش الآن (ممنوع)"
+        badge_color = "#dc2626"
+        optimal_window = "الانتظار حتى هدوء الرياح وانكسار الحرارة؛ أنسب توقيت غداً بين 6:30 و 9:00 صباحاً."
+    elif wind_kmh >= 10.0 or temp_c >= 28.0 or rain_pct >= 25.0:
+        safety_code = "caution"
+        safety_label = "🟡 رش بحذر (تقريب البشبوري وخفض ضغط الرشاشة)"
+        badge_color = "#d97706"
+        optimal_window = "الرش فوراً في الساعات الأولى من الصباح (قبل 9:30 صباحاً) أو قبل الغروب بساعتين."
+    else:
+        safety_code = "ideal"
+        safety_label = "🟢 وقت مثالي ومناسب جداً للرش والامتصاص الكامل"
+        badge_color = "#10b981"
+        optimal_window = "الظروف الجوية ممتازة حالياً؛ الصباح الباكر بعد جفاف الندى أو في العصر حتى الغروب."
+
+    rules: List[str] = [
+        "لا ترش والمطر قادم أو الندى يملأ الأوراق؛ الرش فوق الندى الكثيف يؤدي لسيلان المبيد وسقوطه على الأرض.",
+        "احرص دائماً على إضافة مادة ناشرة لاصقة (Spreader/Sticker) بمعدل 50 سم³ لكل 100 لتر ماء لزيادة مساحة الالتصاق ومقاومة الغسيل.",
+        "ارتدِ قناع التنفس والقفازات الواقية دائماً، ورش في اتجاه الرياح بحيث تكون الرياح في ظهرك ولا تتطاير الرذاذ نحوك.",
+        "اغسل تانك الرشاشة ونظف البشابير فور الانتهاء بالماء النظيف لمنع انسداد الفوهات أو تفاعل بقايا المبيدات مع الرشة القادمة.",
+    ]
+
+    return SprayWindowResponse(
+        status="success",
+        governorate=gov,
+        safety_code=safety_code,
+        safety_label_ar=safety_label,
+        safety_badge_color=badge_color,
+        temperature_c=round(temp_c, 1),
+        wind_speed_kmh=round(wind_kmh, 1),
+        humidity_pct=round(humid_pct, 1),
+        rain_prob_pct=round(rain_pct, 1),
+        drift_risk_level=drift_risk,
+        evaporation_scorch_risk=evap_risk,
+        rain_wash_risk=rain_risk,
+        optimal_time_window_ar=optimal_window,
+        field_rules_ar=rules,
     )

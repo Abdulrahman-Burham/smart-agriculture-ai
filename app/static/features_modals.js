@@ -410,6 +410,170 @@
           <div id="fuResultBox" class="agri-result-box"></div>
         </div>
       </div>
+
+      <!-- 4. FERTILIZER & NPK COMMERCIAL BAG MODAL -->
+      <div id="fertilizerModalOverlay" class="agri-modal-overlay">
+        <div class="agri-modal-card">
+          <div class="agri-modal-header">
+            <h3 class="agri-modal-title">🌾 حاسبة التسميد والشكاير الذكية (ARC N-P-K)</h3>
+            <button class="agri-modal-close" onclick="closeFertilizerModal()">&times;</button>
+          </div>
+          <form onsubmit="submitFertilizerForm(event)">
+            <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:10px; margin-bottom:12px;">
+              <div>
+                <label class="agri-form-label">المحصول المستهدف:</label>
+                <select id="fertCrop" class="agri-select">
+                  <option value="بطاطس" selected>بطاطس (120 ن - 60 ف - 100 بو)</option>
+                  <option value="طماطم">طماطم (140 ن - 65 ف - 120 بو)</option>
+                  <option value="قمح">قمح (75 ن - 30 ف - 24 بو)</option>
+                  <option value="ذرة">ذرة شامية (120 ن - 45 ف - 48 بو)</option>
+                  <option value="مانجو">مانجو (100 ن - 50 ف - 120 بو)</option>
+                  <option value="بصل">بصل (90 ن - 45 ف - 50 بو)</option>
+                  <option value="فراولة">فراولة (140 ن - 70 ف - 150 بو)</option>
+                  <option value="خيار">خيار (120 ن - 60 ف - 110 بو)</option>
+                  <option value="عنب">عنب (80 ن - 40 ف - 90 بو)</option>
+                  <option value="موالح">موالح برتقال/ليمون (110 ن - 45 ف - 100 بو)</option>
+                </select>
+              </div>
+              <div>
+                <label class="agri-form-label">نوع التربة:</label>
+                <select id="fertSoil" class="agri-select">
+                  <option value="clay_old" selected>أرض طينية قديمة (وادي ودلتا)</option>
+                  <option value="sandy_new">أرض رملية (استصلاح جديد)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:12px;">
+              <div>
+                <label class="agri-form-label">مساحة الأرض:</label>
+                <input type="number" step="0.1" id="fertAreaVal" class="agri-input" value="1" required>
+              </div>
+              <div>
+                <label class="agri-form-label">الوحدة:</label>
+                <select id="fertAreaUnit" class="agri-select">
+                  <option value="feddan" selected>فدان</option>
+                  <option value="qirat">قيراط</option>
+                </select>
+              </div>
+              <div>
+                <label class="agri-form-label">نظام الري:</label>
+                <select id="fertIrrigation" class="agri-select">
+                  <option value="drip" selected>ري بالتنقيط</option>
+                  <option value="flood">ري بالغمر</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="background:#f8fafc; padding:10px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:12px;">
+              <span style="font-weight:700; font-size:0.8rem; color:#059669; display:block; margin-bottom:6px;">🧪 اختر مصادر الأسمدة التجارية المتوفرة لديك:</span>
+              <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
+                <div>
+                  <label class="agri-form-label" style="font-size:0.75rem;">الأزوت N:</label>
+                  <select id="fertNSource" class="agri-select" style="font-size:0.8rem;">
+                    <option value="nitrate" selected>نترات نشادر 33.5%</option>
+                    <option value="urea">يوريا 46.5%</option>
+                    <option value="sulfate">سلفات نشادر 20.6%</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="agri-form-label" style="font-size:0.75rem;">الفوسفور P:</label>
+                  <select id="fertPSource" class="agri-select" style="font-size:0.8rem;">
+                    <option value="single_super" selected>سوبر عادي 15.5%</option>
+                    <option value="triple_super">تريبل فوسفات 46%</option>
+                    <option value="phosphoric_acid">حمض فوسفوريك 85%</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="agri-form-label" style="font-size:0.75rem;">البوتاسيوم K:</label>
+                  <select id="fertKSource" class="agri-select" style="font-size:0.8rem;">
+                    <option value="sulfate" selected>سلفات بوتاسيوم 50%</option>
+                    <option value="nitrate_potassium">نترات بوتاسيوم 46%</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" id="fertSubmitBtn" class="agri-btn-submit">🌱 احسب برنامج التسميد والشكاير المطلوبة</button>
+          </form>
+
+          <div id="fertResultBox" class="agri-result-box"></div>
+        </div>
+      </div>
+
+      <!-- 5. SPRAY WEATHER WINDOW & DRIFT RISK MODAL -->
+      <div id="sprayWindowModalOverlay" class="agri-modal-overlay">
+        <div class="agri-modal-card">
+          <div class="agri-modal-header">
+            <h3 class="agri-modal-title">🌤️ مؤشر أمان وقت الرش وظروف الطقس الحقلية</h3>
+            <button class="agri-modal-close" onclick="closeSprayWindowModal()">&times;</button>
+          </div>
+          <form onsubmit="submitSprayWindowForm(event)">
+            <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:10px; margin-bottom:12px;">
+              <div>
+                <label class="agri-form-label">المحافظة (لجلب الطقس التقديري):</label>
+                <select id="swGov" class="agri-select">
+                  <option value="الدقهلية" selected>الدقهلية</option>
+                  <option value="البحيرة">البحيرة</option>
+                  <option value="الشرقية">الشرقية</option>
+                  <option value="الغربية">الغربية</option>
+                  <option value="كفر الشيخ">كفر الشيخ</option>
+                  <option value="المنوفية">المنوفية</option>
+                  <option value="القليوبية">القليوبية</option>
+                  <option value="الإسكندرية">الإسكندرية</option>
+                  <option value="الجيزة">الجيزة</option>
+                  <option value="الفيوم">الفيوم</option>
+                  <option value="بني سويف">بني سويف</option>
+                  <option value="المنيا">المنيا</option>
+                  <option value="أسيوط">أسيوط</option>
+                  <option value="سوهاج">سوهاج</option>
+                  <option value="قنا">قنا</option>
+                  <option value="الأقصر">الأقصر</option>
+                  <option value="أسوان">أسوان</option>
+                  <option value="الإسماعيلية">الإسماعيلية</option>
+                  <option value="مطروح">مطروح</option>
+                  <option value="الوادي الجديد">الوادي الجديد</option>
+                </select>
+              </div>
+              <div>
+                <label class="agri-form-label">نوع المركب المراد رشه:</label>
+                <select id="swChemicalCat" class="agri-select">
+                  <option value="fungicide_systemic" selected>مبيد فطري جهازي</option>
+                  <option value="insecticide_contact">مبيد حشري ملامسة</option>
+                  <option value="herbicide_selective">مبيد حشائش اختياري</option>
+                  <option value="foliar_fertilizer">مغذي ورقي / عناصر صغرى</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="background:#f1f5f9; padding:10px; border-radius:10px; margin-bottom:12px;">
+              <span style="font-size:0.78rem; font-weight:700; color:#475569; display:block; margin-bottom:6px;">⚙️ قياسات الحقل الحالية (اختياري - يترك فارغاً لاستخدام بيانات المحافظة):</span>
+              <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:8px;">
+                <div>
+                  <label class="agri-form-label" style="font-size:0.72rem;">حرارة °م:</label>
+                  <input type="number" step="0.5" id="swTemp" class="agri-input" placeholder="25">
+                </div>
+                <div>
+                  <label class="agri-form-label" style="font-size:0.72rem;">رياح كم/س:</label>
+                  <input type="number" step="0.5" id="swWind" class="agri-input" placeholder="10">
+                </div>
+                <div>
+                  <label class="agri-form-label" style="font-size:0.72rem;">رطوبة %:</label>
+                  <input type="number" step="1" id="swHumid" class="agri-input" placeholder="55">
+                </div>
+                <div>
+                  <label class="agri-form-label" style="font-size:0.72rem;">مطر %:</label>
+                  <input type="number" step="1" id="swRain" class="agri-input" placeholder="0">
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" id="swSubmitBtn" class="agri-btn-submit">🎯 تقييم أمان الرش ومخاطر التطاير</button>
+          </form>
+
+          <div id="swResultBox" class="agri-result-box"></div>
+        </div>
+      </div>
     `;
 
     document.body.appendChild(root);
@@ -491,6 +655,24 @@
   };
   window.closeFollowupModal = function () {
     const el = document.getElementById('followupModalOverlay');
+    if (el) el.classList.remove('active');
+  };
+
+  window.openFertilizerModal = function () {
+    initModalsDOM();
+    document.getElementById('fertilizerModalOverlay').classList.add('active');
+  };
+  window.closeFertilizerModal = function () {
+    const el = document.getElementById('fertilizerModalOverlay');
+    if (el) el.classList.remove('active');
+  };
+
+  window.openSprayWindowModal = function () {
+    initModalsDOM();
+    document.getElementById('sprayWindowModalOverlay').classList.add('active');
+  };
+  window.closeSprayWindowModal = function () {
+    const el = document.getElementById('sprayWindowModalOverlay');
     if (el) el.classList.remove('active');
   };
 
@@ -775,6 +957,198 @@
       btn.disabled = false;
       btn.innerText = '🩺 مقارنة الحالتين وحساب نسبة الشفاء';
       alert('تعذر الاتصال بالخادم.');
+    }
+  };
+
+  window.submitFertilizerForm = async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('fertSubmitBtn');
+    const resBox = document.getElementById('fertResultBox');
+    btn.disabled = true;
+    btn.innerText = '⏳ جاري حساب التوصيات السمادية والشكاير...';
+    resBox.style.display = 'none';
+
+    try {
+      const payload = {
+        crop_name: document.getElementById('fertCrop').value,
+        soil_type: document.getElementById('fertSoil').value,
+        area_value: parseFloat(document.getElementById('fertAreaVal').value),
+        area_unit: document.getElementById('fertAreaUnit').value,
+        irrigation_method: document.getElementById('fertIrrigation').value,
+        nitrogen_source: document.getElementById('fertNSource').value,
+        phosphorus_source: document.getElementById('fertPSource').value,
+        potassium_source: document.getElementById('fertKSource').value
+      };
+
+      const res = await fetch('/api/calculator/fertilizer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      btn.disabled = false;
+      btn.innerText = '🌱 احسب برنامج التسميد والشكاير المطلوبة';
+
+      if (!res.ok) {
+        alert(data.detail || 'حدث خطأ في حساب التسميد');
+        return;
+      }
+
+      let stagesHtml = '';
+      if (data.growth_stages_schedule && data.growth_stages_schedule.length > 0) {
+        stagesHtml = data.growth_stages_schedule.map(st => `
+          <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-weight:800; font-size:0.9rem; color:#059669;">🌱 ${st.stage_name_ar}</span>
+              <span style="font-size:0.75rem; color:#64748b;">${st.stage_timing_ar}</span>
+            </div>
+            <div style="display:flex; gap:10px; font-size:0.8rem; color:#334155; margin-bottom:6px;">
+              <span>أزوت N: <strong>${st.n_percentage}%</strong></span>
+              <span>فوسفور P: <strong>${st.p_percentage}%</strong></span>
+              <span>بوتاسيوم K: <strong>${st.k_percentage}%</strong></span>
+            </div>
+            <ul style="margin:0; padding-right:16px; font-size:0.78rem; color:#475569; line-height:1.5;">
+              ${st.recommendations_ar.map(r => `<li>${r}</li>`).join('')}
+            </ul>
+          </div>
+        `).join('');
+      }
+
+      let cautionsHtml = '';
+      if (data.compatibility_and_soil_cautions && data.compatibility_and_soil_cautions.length > 0) {
+        cautionsHtml = `
+          <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:10px; margin-top:10px;">
+            <span style="font-weight:800; font-size:0.82rem; color:#b45309; display:block; margin-bottom:4px;">⚠️ محاذير خلط وتسميد هامة لحماية النبات والشبكة:</span>
+            <ul style="margin:0; padding-right:16px; font-size:0.78rem; color:#92400e; line-height:1.5;">
+              ${data.compatibility_and_soil_cautions.map(c => `<li>${c}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      resBox.innerHTML = `
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; margin-bottom:12px; text-align:center;">
+          <div style="font-size:0.85rem; color:#166534;">المحصول: <strong>${data.crop_name}</strong> | المساحة: <strong>${data.area_display}</strong></div>
+          <div style="font-size:0.78rem; color:#15803d; margin-top:2px;">${data.soil_type_ar} — ${data.irrigation_method_ar}</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
+          <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:#64748b;">الأزوت N الصافي</div>
+            <div style="font-size:1.15rem; font-weight:900; color:#0284c7;">${data.total_n_units} <span style="font-size:0.75rem;">وحدة</span></div>
+            <div style="font-size:0.75rem; color:#0369a1; margin-top:4px; font-weight:700;">📦 ${data.nitrogen_bags_50kg} شيكارة 50ك</div>
+            <div style="font-size:0.68rem; color:#64748b;">${data.nitrogen_fertilizer_name}</div>
+          </div>
+          <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:#64748b;">الفوسفور P₂O₅</div>
+            <div style="font-size:1.15rem; font-weight:900; color:#ea580c;">${data.total_p_units} <span style="font-size:0.75rem;">وحدة</span></div>
+            <div style="font-size:0.75rem; color:#c2410c; margin-top:4px; font-weight:700;">📦 ${data.phosphorus_bags_50kg} شيكارة/لتر</div>
+            <div style="font-size:0.68rem; color:#64748b;">${data.phosphorus_fertilizer_name}</div>
+          </div>
+          <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:#64748b;">البوتاسيوم K₂O</div>
+            <div style="font-size:1.15rem; font-weight:900; color:#7c3aed;">${data.total_k_units} <span style="font-size:0.75rem;">وحدة</span></div>
+            <div style="font-size:0.75rem; color:#6d28d9; margin-top:4px; font-weight:700;">📦 ${data.potassium_bags_50kg} شيكارة 50ك</div>
+            <div style="font-size:0.68rem; color:#64748b;">${data.potassium_fertilizer_name}</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <span style="font-weight:800; font-size:0.85rem; color:#0f172a; display:block; margin-bottom:6px;">📅 جدول دفعات التسميد حسب مراحل عمر النبات:</span>
+          ${stagesHtml}
+        </div>
+
+        ${cautionsHtml}
+      `;
+      resBox.style.display = 'block';
+
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerText = '🌱 احسب برنامج التسميد والشكاير المطلوبة';
+      alert('تعذر الاتصال بالخادم لحساب التسميد.');
+    }
+  };
+
+  window.submitSprayWindowForm = async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('swSubmitBtn');
+    const resBox = document.getElementById('swResultBox');
+    btn.disabled = true;
+    btn.innerText = '⏳ جاري تدقيق معايير الأرصاد ومخاطر التطاير...';
+    resBox.style.display = 'none';
+
+    try {
+      const tempVal = document.getElementById('swTemp').value;
+      const windVal = document.getElementById('swWind').value;
+      const humidVal = document.getElementById('swHumid').value;
+      const rainVal = document.getElementById('swRain').value;
+
+      const payload = {
+        governorate: document.getElementById('swGov').value,
+        chemical_category: document.getElementById('swChemicalCat').value,
+        temperature_c: tempVal ? parseFloat(tempVal) : null,
+        wind_speed_kmh: windVal ? parseFloat(windVal) : null,
+        humidity_pct: humidVal ? parseFloat(humidVal) : null,
+        rain_prob_pct: rainVal ? parseFloat(rainVal) : 0.0
+      };
+
+      const res = await fetch('/api/calculator/spray-window', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      btn.disabled = false;
+      btn.innerText = '🎯 تقييم أمان الرش ومخاطر التطاير';
+
+      if (!res.ok) {
+        alert(data.detail || 'حدث خطأ في تقييم ظروف الرش');
+        return;
+      }
+
+      resBox.innerHTML = `
+        <div style="text-align:center; padding:12px 0;">
+          <div style="display:inline-block; padding:8px 16px; border-radius:20px; font-weight:900; font-size:1.05rem; color:white; background:${data.safety_badge_color}; margin-bottom:6px;">
+            ${data.safety_label_ar}
+          </div>
+          <div style="font-size:0.8rem; color:#64748b;">
+            بيانات الطقس (${data.governorate}): حرارة <strong>${data.temperature_c}°م</strong> | رياح <strong>${data.wind_speed_kmh} كم/س</strong> | رطوبة <strong>${data.humidity_pct}%</strong> | احتمالية مطر <strong>${data.rain_prob_pct}%</strong>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:12px 0;">
+          <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px; text-align:center;">
+            <div style="font-size:0.73rem; color:#64748b;">مخاطر انجراف الرذاذ (Drift)</div>
+            <div style="font-weight:800; font-size:0.85rem; color:#0f172a; margin-top:2px;">${data.drift_risk_level}</div>
+          </div>
+          <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px; text-align:center;">
+            <div style="font-size:0.73rem; color:#64748b;">خطر تبخر القطرات والاحتراق</div>
+            <div style="font-weight:800; font-size:0.85rem; color:#0f172a; margin-top:2px;">${data.evaporation_scorch_risk}</div>
+          </div>
+          <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px; text-align:center;">
+            <div style="font-size:0.73rem; color:#64748b;">خطر الغسيل بالأمطار</div>
+            <div style="font-weight:800; font-size:0.85rem; color:#0f172a; margin-top:2px;">${data.rain_wash_risk}</div>
+          </div>
+        </div>
+
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:10px; margin-bottom:10px;">
+          <span style="font-weight:800; font-size:0.85rem; color:#1d4ed8; display:block; margin-bottom:2px;">⏰ نافذة الرش الحقلية المثلى:</span>
+          <div style="font-size:0.85rem; color:#1e40af;">${data.optimal_time_window_ar}</div>
+        </div>
+
+        <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px;">
+          <span style="font-weight:800; font-size:0.82rem; color:#334155; display:block; margin-bottom:4px;">📋 تعليمات حقل الرش وضبط الماتور:</span>
+          <ul style="margin:0; padding-right:16px; font-size:0.78rem; color:#475569; line-height:1.5;">
+            ${data.field_rules_ar.map(r => `<li>${r}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+      resBox.style.display = 'block';
+
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerText = '🎯 تقييم أمان الرش ومخاطر التطاير';
+      alert('تعذر الاتصال بالخادم لتقييم الطقس.');
     }
   };
 
