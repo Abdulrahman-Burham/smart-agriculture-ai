@@ -146,8 +146,8 @@ jobs:
             echo "📦 Checking Python virtual environment dependencies..."
             ./venv/bin/pip install -q --no-cache-dir -r requirements.txt
 
-            echo "🔄 Restarting smart-agri systemd service..."
-            sudo systemctl restart smart-agri
+            echo "🔄 Restarting smart-agri and smart-agri-cv systemd services..."
+            sudo systemctl restart smart-agri smart-agri-cv
 
             echo "🩺 Probing local health check probe with warmup retry loop..."
             HEALTHY=false

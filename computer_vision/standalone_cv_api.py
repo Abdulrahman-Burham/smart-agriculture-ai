@@ -162,34 +162,25 @@ async def predict(
     try:
         contents = await file.read()
 
-        # Optional secondary model branch (only if explicitly selected)
-        if model_choice == "ResNet18" and resnet_model is not None:
-            import torch
-            from PIL import Image
-            img = Image.open(io.BytesIO(contents)).convert("RGB")
-            with torch.inference_mode():
-                probs = torch.softmax(resnet_model(resnet_tfm(img).unsqueeze(0)), dim=1)[0]
-            conf, idx = torch.topk(probs, 3)
-            top_3_results = [
-                {
-                    "class": resnet_classes[i],
-                    "confidence": f"{float(c.item() * 100):.2f}%"
-                }
-                for c, i in zip(conf, idx)
-            ]
+        # 1. First run the Strict Plant Gatekeeper (< 18% foliage rejection) & Crop Specialist Pipeline
+        from app.services.vision_service import get_cv_classifier
+        classifier = get_cv_classifier()
+        cv_res = classifier.predict(contents, model_choice=model_choice)
+        
+        is_plant = cv_res.get("is_plant", True)
+        if not is_plant or cv_res.get("predicted_class") == "Not_A_Plant":
             latency_ms = round((time.time() - start_ts) * 1000, 2)
             try:
-                top_cls = top_3_results[0]["class"] if top_3_results else ""
                 save_image_record(
                     image_bytes=contents,
                     filename=file.filename or "image.jpg",
                     content_type=file.content_type or "image/jpeg",
                     source_endpoint="/cv/predict",
-                    model_used="ResNet18",
-                    predicted_class=top_cls,
-                    predicted_class_ar=ARABIC_CLASS_MAP.get(top_cls, top_cls),
-                    confidence=top_3_results[0]["confidence"] if top_3_results else "0.00%",
-                    top_predictions=top_3_results,
+                    model_used="Vision_Gatekeeper",
+                    predicted_class="Not_A_Plant",
+                    predicted_class_ar=cv_res.get("detected_object_ar", "صورة غير نباتية"),
+                    confidence="0.00%",
+                    top_predictions=[],
                     client_ip=client_info["client_ip"],
                     user_agent=client_info["user_agent"],
                     device_type=client_info["device_type"],
@@ -198,69 +189,35 @@ async def predict(
                 )
             except Exception as db_err:
                 print(f"DB save warning: {db_err}")
+
             return {
-                "model_used": "ResNet18",
-                "top_predictions": top_3_results
+                "status": "rejected",
+                "is_plant": False,
+                "predicted_class": "Not_A_Plant",
+                "predicted_class_ar": cv_res.get("detected_object_ar", "صورة غير نباتية"),
+                "confidence": "0.00%",
+                "top_predictions": [],
+                "rejection_reason_ar": cv_res.get(
+                    "rejection_reason_ar",
+                    "تم رفض الصورة لأنها لا تحتوي على ورقة نبات واضحة أو نسبة المجموع الخضري ضئيلة جداً (< 18%)"
+                ),
+                "quality_flag": cv_res.get("quality_flag", "❌ نسبة نبات منخفضة جداً (غير صالحة للتشخيص)"),
             }
 
-        # Default locked model: EfficientNetV2B2_best.keras (100% identical to Kaggle & HF Space)
-        if best_model is not None and HAS_TF_CV2 and cv2 is not None and tf is not None:
-            nparr = np.frombuffer(contents, np.uint8)
-            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-            if image is None:
-                save_error_log(
-                    endpoint="/cv/predict",
-                    error="Invalid image file uploaded",
-                    status_code=400,
-                    client_ip=client_info["client_ip"],
-                    user_agent=client_info["user_agent"],
-                    device_type=client_info["device_type"],
-                    request_summary=f"filename={file.filename}, size={len(contents)}",
-                )
-                raise HTTPException(status_code=400, detail="Invalid image file.")
-
-            image_resized = cv2.resize(image, (224, 224))
-            image_rgb = cv2.cvtColor(image_resized, cv2.COLOR_BGR2RGB)
-
-            img_array = np.expand_dims(image_rgb, axis=0).astype(np.float32)
-            predictions = best_model.predict(img_array, verbose=0)
-
-            score = tf.nn.softmax(predictions[0]) if np.max(predictions[0]) > 1.0 else predictions[0]
-            score_np = score.numpy() if hasattr(score, 'numpy') else np.array(score)
-            top_3_indices = np.argsort(score_np)[::-1][:3]
-
-            top_3_results = []
-            for idx in top_3_indices:
-                confidence_val = float(score_np[idx] * 100)
-                top_3_results.append({
-                    "class": class_names[int(idx)],
-                    "confidence": f"{confidence_val:.2f}%"
-                })
-        else:
-            from PIL import Image
-            try:
-                Image.open(io.BytesIO(contents)).verify()
-            except Exception:
-                raise HTTPException(status_code=400, detail="Invalid image file.")
-            top_3_results = [
-                {"class": "Tomato___Late_blight", "confidence": "94.50%"},
-                {"class": "Tomato___Early_blight", "confidence": "3.80%"},
-                {"class": "Tomato___healthy", "confidence": "1.70%"},
-            ]
-
+        # 2. Plant confirmed -> Return specialist-isolated top predictions
+        top_3_results = cv_res.get("top_predictions", [])
+        top_cls = cv_res.get("predicted_class", "")
         latency_ms = round((time.time() - start_ts) * 1000, 2)
         try:
-            top_cls = top_3_results[0]["class"] if top_3_results else ""
             save_image_record(
                 image_bytes=contents,
                 filename=file.filename or "image.jpg",
                 content_type=file.content_type or "image/jpeg",
                 source_endpoint="/cv/predict",
-                model_used="EfficientNetV2B2_best.keras",
+                model_used=cv_res.get("model_used", model_choice),
                 predicted_class=top_cls,
-                predicted_class_ar=ARABIC_CLASS_MAP.get(top_cls, top_cls),
-                confidence=top_3_results[0]["confidence"] if top_3_results else "0.00%",
+                predicted_class_ar=cv_res.get("predicted_class_ar", ARABIC_CLASS_MAP.get(top_cls, top_cls)),
+                confidence=cv_res.get("confidence", "0.00%"),
                 top_predictions=top_3_results,
                 client_ip=client_info["client_ip"],
                 user_agent=client_info["user_agent"],
@@ -270,9 +227,15 @@ async def predict(
             )
         except Exception as db_err:
             print(f"DB save warning: {db_err}")
-            
+
         return {
             "status": "success",
+            "is_plant": True,
+            "crop": cv_res.get("crop"),
+            "crop_ar": cv_res.get("crop_ar"),
+            "predicted_class": top_cls,
+            "predicted_class_ar": cv_res.get("predicted_class_ar"),
+            "confidence": cv_res.get("confidence"),
             "top_predictions": top_3_results,
             "predictions": top_3_results,
         }
