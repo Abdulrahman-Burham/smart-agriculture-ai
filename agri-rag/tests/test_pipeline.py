@@ -13,8 +13,11 @@ async def test_answer_is_grounded_with_sources_and_citations(container):
 
 @pytest.mark.asyncio
 async def test_farm_context_reaches_prompt(container):
-    farm = FarmContext(crop="طماطم", soil=SoilReport(ph=8.2, ec_ds_m=3.1),
-                       diagnoses=[VisionDiagnosis(label="اللفحة المتأخرة", confidence=0.42)])
+    farm = FarmContext(
+        crop="طماطم",
+        soil=SoilReport(ph=8.2, ec_ds_m=3.1),
+        diagnoses=[VisionDiagnosis(label="اللفحة المتأخرة", confidence=0.42)],
+    )
     await container.pipeline.ask("عندي مشكلة في الورق", farm=farm)
     prompt = container.llm.calls[-1]["messages"][-1]["content"]
     assert "pH=8.2" in prompt and "غير مؤكد" in prompt and "<sources>" in prompt
@@ -38,9 +41,14 @@ async def test_followup_uses_session_history(container):
 
 @pytest.mark.asyncio
 async def test_vague_question_uses_confident_diagnosis_for_retrieval(container):
-    farm = FarmContext(crop="طماطم", diagnoses=[VisionDiagnosis(label="اللفحة المتأخرة", confidence=0.88)])
+    farm = FarmContext(
+        crop="طماطم",
+        diagnoses=[VisionDiagnosis(label="اللفحة المتأخرة", confidence=0.88)],
+    )
     res = await container.pipeline.ask("عندي مشكلة في الورق", farm=farm)
-    assert any("طماطم" in s["source"] or "tomato" in s["source"] for s in res.sources[:3])
+    assert any(
+        "طماطم" in s["source"] or "tomato" in s["source"] for s in res.sources[:3]
+    )
 
 
 @pytest.mark.asyncio
@@ -50,11 +58,14 @@ async def test_low_confidence_diagnosis_is_not_used_for_retrieval(container):
     assert "الصدأ" not in q
 
 
-@pytest.mark.parametrize("answer,expected", [
-    ("حسب [1] و[3].", [1, 3]),
-    ("كلام [1, 2] وكمان [2, farm_context]", [1, 2]),
-    ("بيانات مزرعتك [farm_context] ومصدر وهمي [99]", []),
-])
+@pytest.mark.parametrize(
+    "answer,expected",
+    [
+        ("حسب [1] و[3].", [1, 3]),
+        ("كلام [1, 2] وكمان [2, farm_context]", [1, 2]),
+        ("بيانات مزرعتك [farm_context] ومصدر وهمي [99]", []),
+    ],
+)
 def test_citation_extraction_is_tolerant(answer, expected):
     from agri_rag.pipeline import extract_cited_ids
 

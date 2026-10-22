@@ -52,8 +52,13 @@ def get_guest_usage_status(
                     eff_uname = vp["user_name"] or ""
 
             if eff_uid:
-                u_chats = conn.execute("SELECT COUNT(*) FROM chat_logs WHERE user_id = ?", (int(eff_uid),)).fetchone()[0]
-                u_imgs = conn.execute("SELECT COUNT(*) FROM uploaded_images WHERE user_id = ?", (int(eff_uid),)).fetchone()[0]
+                u_chats = conn.execute(
+                    "SELECT COUNT(*) FROM chat_logs WHERE user_id = ?", (int(eff_uid),)
+                ).fetchone()[0]
+                u_imgs = conn.execute(
+                    "SELECT COUNT(*) FROM uploaded_images WHERE user_id = ?",
+                    (int(eff_uid),),
+                ).fetchone()[0]
                 return {
                     "is_authenticated": True,
                     "user_id": int(eff_uid),
@@ -67,7 +72,9 @@ def get_guest_usage_status(
                     "enforce_login": bool(enforce_login),
                 }
 
-            ts_24h = (datetime.datetime.now() - datetime.timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+            ts_24h = (datetime.datetime.now() - datetime.timedelta(hours=24)).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
             if visitor_hash:
                 used_chats = conn.execute(
                     "SELECT COUNT(*) FROM chat_logs WHERE visitor_hash = ?",
@@ -133,7 +140,9 @@ def get_user_360_profile(
         visitor_profile = None
 
         if user_id:
-            u_row = conn.execute("SELECT * FROM users WHERE id = ?", (int(user_id),)).fetchone()
+            u_row = conn.execute(
+                "SELECT * FROM users WHERE id = ?", (int(user_id),)
+            ).fetchone()
             if u_row:
                 user_dict = dict(u_row)
                 user_dict.pop("password_hash", None)
@@ -141,11 +150,16 @@ def get_user_360_profile(
                     visitor_id = user_dict["last_visitor_id"]
 
         if visitor_id:
-            v_row = conn.execute("SELECT * FROM visitor_profiles WHERE visitor_id = ?", (visitor_id,)).fetchone()
+            v_row = conn.execute(
+                "SELECT * FROM visitor_profiles WHERE visitor_id = ?", (visitor_id,)
+            ).fetchone()
             if v_row:
                 visitor_profile = dict(v_row)
                 if not user_dict and visitor_profile.get("user_id"):
-                    u_row2 = conn.execute("SELECT * FROM users WHERE id = ?", (int(visitor_profile["user_id"]),)).fetchone()
+                    u_row2 = conn.execute(
+                        "SELECT * FROM users WHERE id = ?",
+                        (int(visitor_profile["user_id"]),),
+                    ).fetchone()
                     if u_row2:
                         user_dict = dict(u_row2)
                         user_dict.pop("password_hash", None)
@@ -244,7 +258,11 @@ def get_user_360_profile(
                 "chats_count": len(chats),
                 "visits_count": len(visits),
                 "tokens_used": int(tok_row["total_tokens"] or 0) if tok_row else 0,
-                "estimated_cost_usd": round(float(tok_row["estimated_cost_usd"] or 0.0), 5) if tok_row else 0.0,
+                "estimated_cost_usd": round(
+                    float(tok_row["estimated_cost_usd"] or 0.0), 5
+                )
+                if tok_row
+                else 0.0,
                 "features_used": sorted(list(features_used)),
                 "crops_interested": sorted(list(crops_interested)),
             },
@@ -277,7 +295,11 @@ def save_token_usage_log(
         init_db()
         now = datetime.datetime.now()
         now_str = created_at_override or now.strftime("%Y-%m-%d %H:%M:%S")
-        hour_bucket = now_str[:13] + ":00" if len(now_str) >= 13 else now.strftime("%Y-%m-%d %H:00")
+        hour_bucket = (
+            now_str[:13] + ":00"
+            if len(now_str) >= 13
+            else now.strftime("%Y-%m-%d %H:00")
+        )
 
         p_tok = max(0, int(prompt_tokens or 0))
         c_tok = max(0, int(completion_tokens or 0))
@@ -286,8 +308,14 @@ def save_token_usage_log(
             p_tok = int(t_tok * 0.7)
             c_tok = t_tok - p_tok
 
-        cost_usd = estimate_gemini_cost_usd(model_name, p_tok, c_tok) if status != "cache_hit" else 0.0
-        clean_key = mask_api_key(api_key_masked) if api_key_masked else "Key #1 (الأساسي)"
+        cost_usd = (
+            estimate_gemini_cost_usd(model_name, p_tok, c_tok)
+            if status != "cache_hit"
+            else 0.0
+        )
+        clean_key = (
+            mask_api_key(api_key_masked) if api_key_masked else "Key #1 (الأساسي)"
+        )
         preview_txt = (request_preview or query_preview or "")[:140]
 
         with sqlite3.connect(str(DB_PATH), timeout=10.0) as conn:
@@ -421,13 +449,20 @@ def save_visitor_log(
                         (
                             now_str,
                             user_id,
-                            user_name or "", user_name or "",
-                            user_identifier or "", user_identifier or "",
-                            client_ip, client_ip,
-                            geo["city"], geo["city"],
-                            geo["isp"], geo["isp"],
-                            device_type, device_type,
-                            browser_os, browser_os,
+                            user_name or "",
+                            user_name or "",
+                            user_identifier or "",
+                            user_identifier or "",
+                            client_ip,
+                            client_ip,
+                            geo["city"],
+                            geo["city"],
+                            geo["isp"],
+                            geo["isp"],
+                            device_type,
+                            device_type,
+                            browser_os,
+                            browser_os,
                             visitor_hash,
                         ),
                     )
@@ -441,9 +476,18 @@ def save_visitor_log(
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, 'ip', ?, ?, ?, ?, ?, 1)
                         """,
                         (
-                            visitor_hash, now_str, now_str, user_id, user_name or "", user_identifier or "",
-                            geo.get("city", "") or "القاهرة", client_ip, geo.get("city", ""), geo.get("isp", ""),
-                            device_type, browser_os,
+                            visitor_hash,
+                            now_str,
+                            now_str,
+                            user_id,
+                            user_name or "",
+                            user_identifier or "",
+                            geo.get("city", "") or "القاهرة",
+                            client_ip,
+                            geo.get("city", ""),
+                            geo.get("isp", ""),
+                            device_type,
+                            browser_os,
                         ),
                     )
             conn.commit()
@@ -501,12 +545,19 @@ def save_error_log(
 
         try:
             if int(status_code) >= 500:
-                from app.services.telegram_service import dispatch_telegram_alert_fire_and_forget
+                from app.services.telegram_service import (
+                    dispatch_telegram_alert_fire_and_forget,
+                )
+
                 dispatch_telegram_alert_fire_and_forget(
                     title=f"خطأ في السيرفر ({status_code})",
                     message=f"حدث خطأ في المسار <code>{endpoint}</code>:\n• النوع: <b>{error_type}</b>\n• الرسالة: {error_message[:200]}",
                     level="danger",
-                    details={"Endpoint": endpoint, "IP": client_ip, "Device": device_type},
+                    details={
+                        "Endpoint": endpoint,
+                        "IP": client_ip,
+                        "Device": device_type,
+                    },
                 )
         except Exception:
             pass
@@ -514,7 +565,9 @@ def save_error_log(
         pass
 
 
-def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dict[str, Any]:
+def get_developer_analytics(
+    limit: int = 100, primary_key_mask: str = ""
+) -> Dict[str, Any]:
     """Return full telemetry, KPIs, Active Learning stats, Knowledge Gaps, Peak Hours, Cookie Profiles, and detailed logs."""
     init_db()
     eff_primary_key = primary_key_mask or "Key #1 (الأساسي)"
@@ -533,20 +586,38 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
 
         # 1. Summary KPIs
         total_visits = conn.execute("SELECT COUNT(*) FROM visitor_logs").fetchone()[0]
-        unique_ips = conn.execute("SELECT COUNT(DISTINCT client_ip) FROM visitor_logs WHERE client_ip != ''").fetchone()[0]
-        unique_visitors = conn.execute("SELECT COUNT(DISTINCT visitor_hash) FROM visitor_logs WHERE visitor_hash != ''").fetchone()[0]
+        unique_ips = conn.execute(
+            "SELECT COUNT(DISTINCT client_ip) FROM visitor_logs WHERE client_ip != ''"
+        ).fetchone()[0]
+        unique_visitors = conn.execute(
+            "SELECT COUNT(DISTINCT visitor_hash) FROM visitor_logs WHERE visitor_hash != ''"
+        ).fetchone()[0]
         total_chats = conn.execute("SELECT COUNT(*) FROM chat_logs").fetchone()[0]
-        total_images = conn.execute("SELECT COUNT(*) FROM uploaded_images").fetchone()[0]
+        total_images = conn.execute("SELECT COUNT(*) FROM uploaded_images").fetchone()[
+            0
+        ]
         total_errors = conn.execute("SELECT COUNT(*) FROM error_logs").fetchone()[0]
         total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
 
-        uncertain_images = conn.execute("SELECT COUNT(*) FROM uploaded_images WHERE is_uncertain = 1").fetchone()[0]
-        verified_images = conn.execute("SELECT COUNT(*) FROM uploaded_images WHERE verified_label != ''").fetchone()[0]
-        knowledge_gaps = conn.execute("SELECT COUNT(*) FROM chat_logs WHERE is_knowledge_gap = 1").fetchone()[0]
+        uncertain_images = conn.execute(
+            "SELECT COUNT(*) FROM uploaded_images WHERE is_uncertain = 1"
+        ).fetchone()[0]
+        verified_images = conn.execute(
+            "SELECT COUNT(*) FROM uploaded_images WHERE verified_label != ''"
+        ).fetchone()[0]
+        knowledge_gaps = conn.execute(
+            "SELECT COUNT(*) FROM chat_logs WHERE is_knowledge_gap = 1"
+        ).fetchone()[0]
 
-        avg_chat_ms = conn.execute("SELECT COALESCE(AVG(latency_ms), 0) FROM chat_logs WHERE latency_ms > 0").fetchone()[0]
-        avg_img_ms = conn.execute("SELECT COALESCE(AVG(latency_ms), 0) FROM uploaded_images WHERE latency_ms > 0").fetchone()[0]
-        avg_visit_ms = conn.execute("SELECT COALESCE(AVG(latency_ms), 0) FROM visitor_logs WHERE latency_ms > 0").fetchone()[0]
+        avg_chat_ms = conn.execute(
+            "SELECT COALESCE(AVG(latency_ms), 0) FROM chat_logs WHERE latency_ms > 0"
+        ).fetchone()[0]
+        avg_img_ms = conn.execute(
+            "SELECT COALESCE(AVG(latency_ms), 0) FROM uploaded_images WHERE latency_ms > 0"
+        ).fetchone()[0]
+        avg_visit_ms = conn.execute(
+            "SELECT COALESCE(AVG(latency_ms), 0) FROM visitor_logs WHERE latency_ms > 0"
+        ).fetchone()[0]
 
         # 1b. Live Traffic Window Metrics (5m, 15m, 1h, 24h) & HTTP Status Breakdown
         now_dt = datetime.datetime.now()
@@ -555,17 +626,39 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
         ts_1h = (now_dt - datetime.timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
         ts_24h = (now_dt - datetime.timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
 
-        requests_5m = conn.execute("SELECT COUNT(*) FROM visitor_logs WHERE created_at >= ?", (ts_5m,)).fetchone()[0]
-        requests_1h = conn.execute("SELECT COUNT(*) FROM visitor_logs WHERE created_at >= ?", (ts_1h,)).fetchone()[0]
-        requests_24h = conn.execute("SELECT COUNT(*) FROM visitor_logs WHERE created_at >= ?", (ts_24h,)).fetchone()[0]
-        active_visitors_15m = conn.execute("SELECT COUNT(DISTINCT visitor_hash) FROM visitor_logs WHERE created_at >= ? AND visitor_hash != ''", (ts_15m,)).fetchone()[0]
-        active_ips_1h = conn.execute("SELECT COUNT(DISTINCT client_ip) FROM visitor_logs WHERE created_at >= ? AND client_ip != ''", (ts_1h,)).fetchone()[0]
-        chats_24h = conn.execute("SELECT COUNT(*) FROM chat_logs WHERE created_at >= ?", (ts_24h,)).fetchone()[0]
-        images_24h = conn.execute("SELECT COUNT(*) FROM uploaded_images WHERE created_at >= ?", (ts_24h,)).fetchone()[0]
+        requests_5m = conn.execute(
+            "SELECT COUNT(*) FROM visitor_logs WHERE created_at >= ?", (ts_5m,)
+        ).fetchone()[0]
+        requests_1h = conn.execute(
+            "SELECT COUNT(*) FROM visitor_logs WHERE created_at >= ?", (ts_1h,)
+        ).fetchone()[0]
+        requests_24h = conn.execute(
+            "SELECT COUNT(*) FROM visitor_logs WHERE created_at >= ?", (ts_24h,)
+        ).fetchone()[0]
+        active_visitors_15m = conn.execute(
+            "SELECT COUNT(DISTINCT visitor_hash) FROM visitor_logs WHERE created_at >= ? AND visitor_hash != ''",
+            (ts_15m,),
+        ).fetchone()[0]
+        active_ips_1h = conn.execute(
+            "SELECT COUNT(DISTINCT client_ip) FROM visitor_logs WHERE created_at >= ? AND client_ip != ''",
+            (ts_1h,),
+        ).fetchone()[0]
+        chats_24h = conn.execute(
+            "SELECT COUNT(*) FROM chat_logs WHERE created_at >= ?", (ts_24h,)
+        ).fetchone()[0]
+        images_24h = conn.execute(
+            "SELECT COUNT(*) FROM uploaded_images WHERE created_at >= ?", (ts_24h,)
+        ).fetchone()[0]
 
-        status_2xx = conn.execute("SELECT COUNT(*) FROM visitor_logs WHERE status_code >= 200 AND status_code < 400").fetchone()[0]
-        status_4xx = conn.execute("SELECT COUNT(*) FROM visitor_logs WHERE status_code >= 400 AND status_code < 500").fetchone()[0]
-        status_5xx = conn.execute("SELECT COUNT(*) FROM visitor_logs WHERE status_code >= 500").fetchone()[0]
+        status_2xx = conn.execute(
+            "SELECT COUNT(*) FROM visitor_logs WHERE status_code >= 200 AND status_code < 400"
+        ).fetchone()[0]
+        status_4xx = conn.execute(
+            "SELECT COUNT(*) FROM visitor_logs WHERE status_code >= 400 AND status_code < 500"
+        ).fetchone()[0]
+        status_5xx = conn.execute(
+            "SELECT COUNT(*) FROM visitor_logs WHERE status_code >= 500"
+        ).fetchone()[0]
 
         endpoint_rows = conn.execute(
             """
@@ -589,7 +682,11 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
             ORDER BY hour_of_day ASC
             """
         ).fetchall()
-        peak_hours = [{"hour": f"{r['hour_of_day']}:00", "count": r["requests_count"]} for r in hourly_rows if r["hour_of_day"]]
+        peak_hours = [
+            {"hour": f"{r['hour_of_day']}:00", "count": r["requests_count"]}
+            for r in hourly_rows
+            if r["hour_of_day"]
+        ]
 
         # 3. Top Crops & Topics Asked in Chat
         crop_rows = conn.execute(
@@ -602,7 +699,9 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
             LIMIT 10
             """
         ).fetchall()
-        top_chat_crops = [{"crop": r["crop_name"], "count": r["cnt"]} for r in crop_rows]
+        top_chat_crops = [
+            {"crop": r["crop_name"], "count": r["cnt"]} for r in crop_rows
+        ]
 
         topic_rows = conn.execute(
             """
@@ -626,7 +725,9 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
             LIMIT 10
             """
         ).fetchall()
-        top_diseases = [{"disease": r["disease_label"], "count": r["cnt"]} for r in disease_rows]
+        top_diseases = [
+            {"disease": r["disease_label"], "count": r["cnt"]} for r in disease_rows
+        ]
 
         # 5. Device Breakdown
         device_rows = conn.execute(
@@ -638,7 +739,9 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
             ORDER BY cnt DESC
             """
         ).fetchall()
-        devices_breakdown = [{"device": r["dev"], "count": r["cnt"]} for r in device_rows]
+        devices_breakdown = [
+            {"device": r["dev"], "count": r["cnt"]} for r in device_rows
+        ]
 
         # 6. Top Active Visitor IPs with Geo & ISP
         ip_rows = conn.execute(
@@ -741,8 +844,15 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
                 d["completion_tokens"] = ct
                 d["total_tokens"] = pt + ct
             if not d.get("llm_model"):
-                d["llm_model"] = "gemini-2.5-flash" if "Legacy" not in (d.get("rag_engine") or "") else "Legacy-RAG"
-            if not d.get("api_key_masked") or d.get("api_key_masked") == "Key #1 (الأساسي)":
+                d["llm_model"] = (
+                    "gemini-2.5-flash"
+                    if "Legacy" not in (d.get("rag_engine") or "")
+                    else "Legacy-RAG"
+                )
+            if (
+                not d.get("api_key_masked")
+                or d.get("api_key_masked") == "Key #1 (الأساسي)"
+            ):
                 d["api_key_masked"] = eff_primary_key
             recent_chats.append(d)
 
@@ -753,11 +863,26 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
                 "SELECT created_at, hour_bucket, rag_engine, user_query, bot_answer, latency_ms, status, user_id, user_name, visitor_hash, client_ip, prompt_tokens, completion_tokens, total_tokens, api_key_masked, llm_model FROM chat_logs ORDER BY id ASC"
             ).fetchall()
             for hc in hist_chats:
-                pt = int(hc["prompt_tokens"] or 0) or (520 + estimate_tokens(hc["user_query"] or ""))
-                ct = int(hc["completion_tokens"] or 0) or estimate_tokens(hc["bot_answer"] or "")
+                pt = int(hc["prompt_tokens"] or 0) or (
+                    520 + estimate_tokens(hc["user_query"] or "")
+                )
+                ct = int(hc["completion_tokens"] or 0) or estimate_tokens(
+                    hc["bot_answer"] or ""
+                )
                 tt = int(hc["total_tokens"] or 0) or (pt + ct)
-                m_name = hc["llm_model"] or ("gemini-2.5-flash" if "Legacy" not in (hc["rag_engine"] or "") else "Legacy-RAG")
-                k_mask = hc["api_key_masked"] if (hc["api_key_masked"] and hc["api_key_masked"] != "Key #1 (الأساسي)") else eff_primary_key
+                m_name = hc["llm_model"] or (
+                    "gemini-2.5-flash"
+                    if "Legacy" not in (hc["rag_engine"] or "")
+                    else "Legacy-RAG"
+                )
+                k_mask = (
+                    hc["api_key_masked"]
+                    if (
+                        hc["api_key_masked"]
+                        and hc["api_key_masked"] != "Key #1 (الأساسي)"
+                    )
+                    else eff_primary_key
+                )
                 cost_val = estimate_gemini_cost_usd(m_name, pt, ct)
                 conn.execute(
                     """
@@ -769,11 +894,23 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
-                        hc["created_at"], hc["hour_bucket"] or (hc["created_at"][:13] + ":00"),
-                        "استشارة الشات (Agri-RAG)", "/api/chat", m_name, k_mask,
-                        pt, ct, tt, cost_val, hc["latency_ms"] or 0.0, hc["status"] or "success",
-                        hc["user_id"], hc["user_name"] or "", hc["visitor_hash"] or "",
-                        hc["client_ip"] or "", (hc["user_query"] or "")[:140],
+                        hc["created_at"],
+                        hc["hour_bucket"] or (hc["created_at"][:13] + ":00"),
+                        "استشارة الشات (Agri-RAG)",
+                        "/api/chat",
+                        m_name,
+                        k_mask,
+                        pt,
+                        ct,
+                        tt,
+                        cost_val,
+                        hc["latency_ms"] or 0.0,
+                        hc["status"] or "success",
+                        hc["user_id"],
+                        hc["user_name"] or "",
+                        hc["visitor_hash"] or "",
+                        hc["client_ip"] or "",
+                        (hc["user_query"] or "")[:140],
                     ),
                 )
 
@@ -793,16 +930,30 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
-                        hi["created_at"], hr_b, "فلتر النبات الذكي (Vision Gatekeeper)",
-                        hi["source_endpoint"] or "/api/diagnose", "gemini-2.5-flash", eff_primary_key,
-                        gate_pt, gate_ct, gate_pt + gate_ct,
+                        hi["created_at"],
+                        hr_b,
+                        "فلتر النبات الذكي (Vision Gatekeeper)",
+                        hi["source_endpoint"] or "/api/diagnose",
+                        "gemini-2.5-flash",
+                        eff_primary_key,
+                        gate_pt,
+                        gate_ct,
+                        gate_pt + gate_ct,
                         estimate_gemini_cost_usd("gemini-2.5-flash", gate_pt, gate_ct),
-                        round(float(hi["latency_ms"] or 400.0) * 0.28, 1), "success",
-                        hi["user_id"], hi["user_name"] or "", hi["visitor_hash"] or "",
-                        hi["client_ip"] or "", f"فحص صورة: {hi['predicted_class_ar'] or ''}"[:140],
+                        round(float(hi["latency_ms"] or 400.0) * 0.28, 1),
+                        "success",
+                        hi["user_id"],
+                        hi["user_name"] or "",
+                        hi["visitor_hash"] or "",
+                        hi["client_ip"] or "",
+                        f"فحص صورة: {hi['predicted_class_ar'] or ''}"[:140],
                     ),
                 )
-                if hi["rag_advice"] and len(str(hi["rag_advice"])) > 40 and "/cv/predict" not in (hi["source_endpoint"] or ""):
+                if (
+                    hi["rag_advice"]
+                    and len(str(hi["rag_advice"])) > 40
+                    and "/cv/predict" not in (hi["source_endpoint"] or "")
+                ):
                     rag_pt = 560 + estimate_tokens(hi["user_query"] or "")
                     rag_ct = estimate_tokens(hi["rag_advice"] or "")
                     rag_tt = rag_pt + rag_ct
@@ -816,13 +967,25 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
-                            hi["created_at"], hr_b, "روشتة تشخيص الصورة (Agri-RAG)",
-                            hi["source_endpoint"] or "/api/diagnose", "gemini-2.5-flash", eff_primary_key,
-                            rag_pt, rag_ct, rag_tt,
-                            estimate_gemini_cost_usd("gemini-2.5-flash", rag_pt, rag_ct),
-                            round(float(hi["latency_ms"] or 1200.0) * 0.72, 1), "success",
-                            hi["user_id"], hi["user_name"] or "", hi["visitor_hash"] or "",
-                            hi["client_ip"] or "", f"روشتة علاج: {hi['predicted_class_ar'] or ''}"[:140],
+                            hi["created_at"],
+                            hr_b,
+                            "روشتة تشخيص الصورة (Agri-RAG)",
+                            hi["source_endpoint"] or "/api/diagnose",
+                            "gemini-2.5-flash",
+                            eff_primary_key,
+                            rag_pt,
+                            rag_ct,
+                            rag_tt,
+                            estimate_gemini_cost_usd(
+                                "gemini-2.5-flash", rag_pt, rag_ct
+                            ),
+                            round(float(hi["latency_ms"] or 1200.0) * 0.72, 1),
+                            "success",
+                            hi["user_id"],
+                            hi["user_name"] or "",
+                            hi["visitor_hash"] or "",
+                            hi["client_ip"] or "",
+                            f"روشتة علاج: {hi['predicted_class_ar'] or ''}"[:140],
                         ),
                     )
             conn.commit()
@@ -901,7 +1064,9 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
             kd = dict(r)
             kd["api_key"] = kd.get("api_key_masked") or eff_primary_key
             kd["daily_quota_limit"] = 1500
-            kd["daily_quota_pct"] = round(min(100.0, (float(kd.get("calls_24h") or 0) / 1500.0) * 100.0), 1)
+            kd["daily_quota_pct"] = round(
+                min(100.0, (float(kd.get("calls_24h") or 0) / 1500.0) * 100.0), 1
+            )
             tokens_by_key.append(kd)
 
         by_service_rows = conn.execute(
@@ -941,26 +1106,54 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
             td["query_preview"] = td.get("request_preview") or ""
             recent_token_logs.append(td)
 
-        total_tok_calls = int(tok_summary_row["total_calls"] or 0) if tok_summary_row else 0
-        total_tok_sum = int(tok_summary_row["total_tokens"] or 0) if tok_summary_row else 0
-        saved_tok = int(tok_summary_row["tokens_saved_by_cache"] or 0) if tok_summary_row else 0
+        total_tok_calls = (
+            int(tok_summary_row["total_calls"] or 0) if tok_summary_row else 0
+        )
+        total_tok_sum = (
+            int(tok_summary_row["total_tokens"] or 0) if tok_summary_row else 0
+        )
+        saved_tok = (
+            int(tok_summary_row["tokens_saved_by_cache"] or 0) if tok_summary_row else 0
+        )
 
         token_analytics = {
             "summary": {
                 "total_calls": total_tok_calls,
-                "prompt_tokens": int(tok_summary_row["prompt_tokens"] or 0) if tok_summary_row else 0,
-                "completion_tokens": int(tok_summary_row["completion_tokens"] or 0) if tok_summary_row else 0,
+                "prompt_tokens": int(tok_summary_row["prompt_tokens"] or 0)
+                if tok_summary_row
+                else 0,
+                "completion_tokens": int(tok_summary_row["completion_tokens"] or 0)
+                if tok_summary_row
+                else 0,
                 "total_tokens": total_tok_sum,
-                "avg_tokens_per_call": round(total_tok_sum / max(1, total_tok_calls), 1),
-                "estimated_cost_usd": round(float(tok_summary_row["total_cost_usd"] or 0.0), 4) if tok_summary_row else 0.0,
-                "avg_latency_ms": round(float(tok_summary_row["avg_latency_ms"] or 0.0), 1) if tok_summary_row else 0.0,
-                "cache_hits": int(tok_summary_row["cache_hits"] or 0) if tok_summary_row else 0,
+                "avg_tokens_per_call": round(
+                    total_tok_sum / max(1, total_tok_calls), 1
+                ),
+                "estimated_cost_usd": round(
+                    float(tok_summary_row["total_cost_usd"] or 0.0), 4
+                )
+                if tok_summary_row
+                else 0.0,
+                "avg_latency_ms": round(
+                    float(tok_summary_row["avg_latency_ms"] or 0.0), 1
+                )
+                if tok_summary_row
+                else 0.0,
+                "cache_hits": int(tok_summary_row["cache_hits"] or 0)
+                if tok_summary_row
+                else 0,
                 "tokens_saved_by_cache": saved_tok,
                 "cached_tokens_saved": saved_tok,
-                "rate_limit_429_count": int(tok_summary_row["rate_limit_429_count"] or 0) if tok_summary_row else 0,
+                "rate_limit_429_count": int(
+                    tok_summary_row["rate_limit_429_count"] or 0
+                )
+                if tok_summary_row
+                else 0,
                 "calls_24h": int(tok_24h_row["calls_24h"] or 0) if tok_24h_row else 0,
                 "tokens_24h": int(tok_24h_row["tokens_24h"] or 0) if tok_24h_row else 0,
-                "cost_24h_usd": round(float(tok_24h_row["cost_24h_usd"] or 0.0), 4) if tok_24h_row else 0.0,
+                "cost_24h_usd": round(float(tok_24h_row["cost_24h_usd"] or 0.0), 4)
+                if tok_24h_row
+                else 0.0,
             },
             "by_model": tokens_by_model,
             "by_api_key": tokens_by_key,
@@ -989,7 +1182,9 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
         for r in img_rows:
             d = dict(r)
             try:
-                d["top_predictions"] = json.loads(d.pop("top_predictions_json", "[]") or "[]")
+                d["top_predictions"] = json.loads(
+                    d.pop("top_predictions_json", "[]") or "[]"
+                )
             except Exception:
                 d["top_predictions"] = []
             recent_images.append(d)
@@ -1049,7 +1244,9 @@ def get_developer_analytics(limit: int = 100, primary_key_mask: str = "") -> Dic
             "status_2xx": status_2xx,
             "status_4xx": status_4xx,
             "status_5xx": status_5xx,
-            "db_size_mb": round(os.path.getsize(DB_PATH) / (1024 * 1024), 2) if os.path.exists(DB_PATH) else 0.0,
+            "db_size_mb": round(os.path.getsize(DB_PATH) / (1024 * 1024), 2)
+            if os.path.exists(DB_PATH)
+            else 0.0,
         },
         "token_analytics": token_analytics,
         "top_endpoints": top_endpoints,

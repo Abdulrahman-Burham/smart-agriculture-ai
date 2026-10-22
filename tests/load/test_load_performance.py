@@ -12,8 +12,8 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from fastapi.testclient import TestClient
-from app.main import app
+from fastapi.testclient import TestClient  # noqa: E402
+from app.main import app  # noqa: E402
 
 client = TestClient(app)
 
@@ -41,7 +41,9 @@ def run_load_stress_test(num_requests: int = 50) -> Dict[str, Any]:
 
         req_start = time.time()
         try:
-            response = client.post("/api/v1/diagnose-and-advise", files=files, data=data)
+            response = client.post(
+                "/api/v1/diagnose-and-advise", files=files, data=data
+            )
             latency = time.time() - req_start
             latencies.append(latency)
 
@@ -82,6 +84,12 @@ if __name__ == "__main__":
         sys.stdout.reconfigure(encoding="utf-8")
     print("⚡ Running System Load & Stability Performance Test...")
     res = run_load_stress_test(num_requests=50)
-    print(f"✅ Executed {res['num_requests']} requests in {res['total_duration_sec']}s ({res['requests_per_sec']} RPS)")
-    print(f"📊 Latency Percentiles: p50={res['p50_latency_sec']}s, p95={res['p95_latency_sec']}s, p99={res['p99_latency_sec']}s")
-    print(f"🎯 SLA Compliance Target (<3.0s): {'PASSED' if res['sla_target_passed'] else 'FAILED'}")
+    print(
+        f"✅ Executed {res['num_requests']} requests in {res['total_duration_sec']}s ({res['requests_per_sec']} RPS)"
+    )
+    print(
+        f"📊 Latency Percentiles: p50={res['p50_latency_sec']}s, p95={res['p95_latency_sec']}s, p99={res['p99_latency_sec']}s"
+    )
+    print(
+        f"🎯 SLA Compliance Target (<3.0s): {'PASSED' if res['sla_target_passed'] else 'FAILED'}"
+    )

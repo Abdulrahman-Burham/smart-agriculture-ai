@@ -26,7 +26,9 @@ from computer_vision.storage.image_repository import save_image_record
 client = TestClient(app)
 
 
-def _make_dummy_image(color: str = "green", size: tuple[int, int] = (224, 224), fmt: str = "JPEG") -> io.BytesIO:
+def _make_dummy_image(
+    color: str = "green", size: tuple[int, int] = (224, 224), fmt: str = "JPEG"
+) -> io.BytesIO:
     """Helper to generate in-memory dummy plant leaf images."""
     img = Image.new("RGB", size, color=color)
     buf = io.BytesIO()
@@ -39,13 +41,16 @@ def _make_dummy_image(color: str = "green", size: tuple[int, int] = (224, 224), 
 # 1. PUBLIC WEB PAGES & STATIC BRAND ASSETS SCENARIOS
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 def test_scenario_pages_landing_default_and_explicit():
     """Scenario 1.1: Root (/) and /landing load Arabic landing page with no-cache headers."""
     for path in ("/", "/landing"):
         resp = client.get(path)
         assert resp.status_code == 200
         assert "text/html" in resp.headers.get("content-type", "")
-        assert resp.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
+        assert (
+            resp.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
+        )
         assert "الخبير الزراعي" in resp.text or "smart" in resp.text.lower()
 
 
@@ -63,11 +68,19 @@ def test_scenario_pages_view_param_overrides():
 def test_scenario_pages_dashboard_user_agent_routing():
     """Scenario 1.4 & 1.5: /dashboard serves desktop on PC, but switches to mobile UI on smartphone User-Agents."""
     # Desktop UA
-    resp_pc = client.get("/dashboard", headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+    resp_pc = client.get(
+        "/dashboard",
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+    )
     assert resp_pc.status_code == 200
 
     # Mobile UA (iPhone / Android)
-    resp_phone = client.get("/dashboard", headers={"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile"})
+    resp_phone = client.get(
+        "/dashboard",
+        headers={
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile"
+        },
+    )
     assert resp_phone.status_code == 200
 
 
@@ -86,14 +99,23 @@ def test_scenario_pages_offline_guide():
     """Scenario 1.8: Offline agricultural first-aid and safety guide loads with 200 OK."""
     resp = client.get("/offline-guide")
     assert resp.status_code == 200
-    assert "دليل" in resp.text or "الإسعافات" in resp.text or "أوفلاين" in resp.text or "offline" in resp.text.lower()
+    assert (
+        "دليل" in resp.text
+        or "الإسعافات" in resp.text
+        or "أوفلاين" in resp.text
+        or "offline" in resp.text.lower()
+    )
 
 
 def test_scenario_pages_login_and_oauth_chooser():
     """Scenario 1.9 & 1.10: Login & OAuth chooser pages."""
     resp_login = client.get("/login")
     assert resp_login.status_code == 200
-    assert "تسجيل" in resp_login.text or "دخول" in resp_login.text or "login" in resp_login.text.lower()
+    assert (
+        "تسجيل" in resp_login.text
+        or "دخول" in resp_login.text
+        or "login" in resp_login.text.lower()
+    )
 
     resp_chooser = client.get("/auth/choose-account")
     assert resp_chooser.status_code == 200
@@ -136,12 +158,15 @@ def test_scenario_pages_prescription_existing_vs_nonexistent():
     )
     resp_200 = client.get(f"/prescription/{img_id}")
     assert resp_200.status_code == 200
-    assert "طماطم" in resp_200.text or "ندوة" in resp_200.text or "روشتة" in resp_200.text
+    assert (
+        "طماطم" in resp_200.text or "ندوة" in resp_200.text or "روشتة" in resp_200.text
+    )
 
 
 # ═════════════════════════════════════════════════════════════════════════════
 # 2. FARMER AUTHENTICATION, REGISTRATION & PREFERENCE SCENARIOS
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 def test_scenario_auth_full_registration_and_duplicate_handling():
     """Scenario 2.1 & 2.2: Register new farmer, verify cookie, and prevent duplicate registration."""
@@ -178,22 +203,28 @@ def test_scenario_auth_full_registration_and_duplicate_handling():
 def test_scenario_auth_registration_validation_errors():
     """Scenario 2.3: Validation rejects invalid names, non-matching passwords, and invalid phone formats."""
     # Password mismatch
-    resp_pw = client.post("/api/auth/register", json={
-        "full_name": "أحمد الشناوي",
-        "identifier": "01012345678",
-        "password": "Password123",
-        "confirm_password": "DifferentPassword123",
-        "governorate": "كفر الشيخ",
-    })
+    resp_pw = client.post(
+        "/api/auth/register",
+        json={
+            "full_name": "أحمد الشناوي",
+            "identifier": "01012345678",
+            "password": "Password123",
+            "confirm_password": "DifferentPassword123",
+            "governorate": "كفر الشيخ",
+        },
+    )
     assert resp_pw.status_code == 400
 
     # Short name
-    resp_name = client.post("/api/auth/register", json={
-        "full_name": "أ",
-        "identifier": "01012345678",
-        "password": "Password123",
-        "confirm_password": "Password123",
-    })
+    resp_name = client.post(
+        "/api/auth/register",
+        json={
+            "full_name": "أ",
+            "identifier": "01012345678",
+            "password": "Password123",
+            "confirm_password": "Password123",
+        },
+    )
     assert resp_name.status_code == 400
 
 
@@ -202,29 +233,38 @@ def test_scenario_auth_login_success_and_failure():
     ts = int(time.time()) + 1
     phone = f"011{ts % 100000000:08d}"
     # Register first
-    client.post("/api/auth/register", json={
-        "full_name": "سيد قطب المنوفي",
-        "identifier": phone,
-        "password": "CorrectPassword123",
-        "confirm_password": "CorrectPassword123",
-        "governorate": "المنوفية",
-        "primary_crop": "بطاطس",
-    })
+    client.post(
+        "/api/auth/register",
+        json={
+            "full_name": "سيد قطب المنوفي",
+            "identifier": phone,
+            "password": "CorrectPassword123",
+            "confirm_password": "CorrectPassword123",
+            "governorate": "المنوفية",
+            "primary_crop": "بطاطس",
+        },
+    )
 
     # Valid Login
-    login_ok = client.post("/api/auth/login", json={
-        "identifier": phone,
-        "password": "CorrectPassword123",
-    })
+    login_ok = client.post(
+        "/api/auth/login",
+        json={
+            "identifier": phone,
+            "password": "CorrectPassword123",
+        },
+    )
     assert login_ok.status_code == 200
     assert login_ok.json()["status"] == "ok"
     assert "token" in login_ok.json()
 
     # Invalid Password (returns 401 Unauthorized)
-    login_bad = client.post("/api/auth/login", json={
-        "identifier": phone,
-        "password": "WrongPassword999",
-    })
+    login_bad = client.post(
+        "/api/auth/login",
+        json={
+            "identifier": phone,
+            "password": "WrongPassword999",
+        },
+    )
     assert login_bad.status_code == 401
 
 
@@ -241,16 +281,19 @@ def test_scenario_auth_me_endpoint_guest_vs_authenticated():
     # Logged-in farmer request
     ts = int(time.time()) + 2
     phone = f"012{ts % 100000000:08d}"
-    reg_resp = client.post("/api/auth/register", json={
-        "full_name": "سعد زغلول البحراوي",
-        "identifier": phone,
-        "password": "PasswordPass123",
-        "confirm_password": "PasswordPass123",
-        "governorate": "البحيرة",
-        "primary_crop": "برتقال وموالح",
-        "farm_size_feddan": 20.0,
-        "irrigation_type": "رش",
-    })
+    reg_resp = client.post(
+        "/api/auth/register",
+        json={
+            "full_name": "سعد زغلول البحراوي",
+            "identifier": phone,
+            "password": "PasswordPass123",
+            "confirm_password": "PasswordPass123",
+            "governorate": "البحيرة",
+            "primary_crop": "برتقال وموالح",
+            "farm_size_feddan": 20.0,
+            "irrigation_type": "رش",
+        },
+    )
     token = reg_resp.json()["token"]
 
     auth_resp = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
@@ -311,6 +354,7 @@ def test_scenario_auth_social_quick_auth():
 # 3. SYSTEM HEALTH, PUBLIC STATS, WEATHER & EPIDEMIC ALERTS
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 def test_scenario_system_health_and_readiness():
     """Scenario 3.1: System readiness and health check."""
     for method in (client.get, client.head):
@@ -323,7 +367,10 @@ def test_scenario_public_stats_anonymized():
     resp = client.get("/api/public-stats")
     assert resp.status_code == 200
     data = resp.json()
-    assert any(k in data for k in ("registered_farmers", "rag_engine", "avg_rag_ms", "avg_vision_ms"))
+    assert any(
+        k in data
+        for k in ("registered_farmers", "rag_engine", "avg_rag_ms", "avg_vision_ms")
+    )
 
 
 def test_scenario_weather_by_governorate():
@@ -353,6 +400,7 @@ def test_scenario_weather_by_gps_nearest_mapping():
 # 4. SMART AGRICULTURAL CALCULATORS SCENARIOS
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 def test_scenario_tank_mix_direct_single_tank_mode():
     """Scenario 4.1: Single tank direct mode (20L knapsack sprayer, 50ml/100L)."""
     payload = {
@@ -372,7 +420,10 @@ def test_scenario_tank_mix_direct_single_tank_mode():
     assert data["total_water_liters"] == 20.0
     assert data["amount_per_tank"] == 10.0
     assert data["total_chemical_amount"] == 10.0
-    assert "سرنجة" in data["amount_per_tank_practical"] or "سم³" in data["amount_per_tank_practical"]
+    assert (
+        "سرنجة" in data["amount_per_tank_practical"]
+        or "سم³" in data["amount_per_tank_practical"]
+    )
 
 
 def test_scenario_tank_mix_direct_barrel_200l_mode():
@@ -394,7 +445,11 @@ def test_scenario_tank_mix_direct_barrel_200l_mode():
     assert data["total_water_liters"] == 200.0
     assert data["amount_per_tank"] == 500.0
     assert data["total_chemical_amount"] == 500.0
-    assert "كوب" in data["amount_per_tank_practical"] or "كيس" in data["amount_per_tank_practical"] or "500" in data["amount_per_tank_practical"]
+    assert (
+        "كوب" in data["amount_per_tank_practical"]
+        or "كيس" in data["amount_per_tank_practical"]
+        or "500" in data["amount_per_tank_practical"]
+    )
 
 
 def test_scenario_tank_mix_whole_area_mode():
@@ -444,30 +499,36 @@ def test_scenario_tank_mix_qirat_conversion():
 def test_scenario_tank_mix_chemical_incompatibilities():
     """Scenario 4.5 & 4.6: Incompatibility detection for toxic / clogging tank mixtures."""
     # Copper + Amino Acids
-    resp_cu = client.post("/api/calculator/tank-mix", json={
-        "area_value": 1.0,
-        "tank_type": "motor_600l",
-        "dosage_rate": 250.0,
-        "dosage_unit": "per_100l",
-        "chemical_type": "powder",
-        "crop_category": "orchard",
-        "product_name": "أوكسي كلورور النحاس",
-        "mix_partners": ["أحماض أمينية"],
-    })
+    resp_cu = client.post(
+        "/api/calculator/tank-mix",
+        json={
+            "area_value": 1.0,
+            "tank_type": "motor_600l",
+            "dosage_rate": 250.0,
+            "dosage_unit": "per_100l",
+            "chemical_type": "powder",
+            "crop_category": "orchard",
+            "product_name": "أوكسي كلورور النحاس",
+            "mix_partners": ["أحماض أمينية"],
+        },
+    )
     assert resp_cu.status_code == 200
     assert len(resp_cu.json()["compatibility_warnings"]) > 0
 
     # Sulfur + Mineral Oil
-    resp_s = client.post("/api/calculator/tank-mix", json={
-        "area_value": 1.0,
-        "tank_type": "motor_600l",
-        "dosage_rate": 200.0,
-        "dosage_unit": "per_100l",
-        "chemical_type": "liquid",
-        "crop_category": "orchard",
-        "product_name": "كبريت ميكروني",
-        "mix_partners": ["زيت شتوي معدني"],
-    })
+    resp_s = client.post(
+        "/api/calculator/tank-mix",
+        json={
+            "area_value": 1.0,
+            "tank_type": "motor_600l",
+            "dosage_rate": 200.0,
+            "dosage_unit": "per_100l",
+            "chemical_type": "liquid",
+            "crop_category": "orchard",
+            "product_name": "كبريت ميكروني",
+            "mix_partners": ["زيت شتوي معدني"],
+        },
+    )
     assert resp_s.status_code == 200
     assert len(resp_s.json()["compatibility_warnings"]) > 0
 
@@ -475,12 +536,15 @@ def test_scenario_tank_mix_chemical_incompatibilities():
 def test_scenario_salinity_advisor_sensitive_vs_tolerant():
     """Scenario 4.7 & 4.8: Water salinity evaluation on sensitive strawberries vs tolerant date palm."""
     # Sensitive crop under high salinity (1600 ppm triggers critical risk)
-    resp_sens = client.post("/api/calculator/salinity", json={
-        "salinity_value": 1600.0,
-        "salinity_unit": "ppm",
-        "crop_name": "فراولة",
-        "irrigation_method": "تنقيط",
-    })
+    resp_sens = client.post(
+        "/api/calculator/salinity",
+        json={
+            "salinity_value": 1600.0,
+            "salinity_unit": "ppm",
+            "crop_name": "فراولة",
+            "irrigation_method": "تنقيط",
+        },
+    )
     assert resp_sens.status_code == 200
     data_sens = resp_sens.json()
     assert data_sens["is_critical_risk"] is True
@@ -488,12 +552,15 @@ def test_scenario_salinity_advisor_sensitive_vs_tolerant():
     assert len(data_sens["alleviation_protocol"]) > 0
 
     # Tolerant crop under safe salinity
-    resp_tol = client.post("/api/calculator/salinity", json={
-        "salinity_value": 2.5,
-        "salinity_unit": "ec",
-        "crop_name": "نخيل",
-        "irrigation_method": "غمر",
-    })
+    resp_tol = client.post(
+        "/api/calculator/salinity",
+        json={
+            "salinity_value": 2.5,
+            "salinity_unit": "ec",
+            "crop_name": "نخيل",
+            "irrigation_method": "غمر",
+        },
+    )
     assert resp_tol.status_code == 200
     data_tol = resp_tol.json()
     assert data_tol["is_critical_risk"] is False
@@ -503,6 +570,7 @@ def test_scenario_salinity_advisor_sensitive_vs_tolerant():
 # ═════════════════════════════════════════════════════════════════════════════
 # 5. COMPUTER VISION, LEAF DIAGNOSIS & RECOVERY FOLLOW-UP SCENARIOS
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 def test_scenario_leaf_diagnosis_with_valid_image():
     """Scenario 5.1: Plant leaf diagnosis produces Arabic disease name, confidence %, and prescription."""
@@ -532,7 +600,10 @@ def test_scenario_leaf_diagnosis_corrupted_file_handling():
     files_empty = {"image": ("empty.jpg", empty_buf, "image/jpeg")}
     resp_empty = client.post("/api/diagnose", files=files_empty)
     assert resp_empty.status_code == 400
-    assert "empty" in resp_empty.json()["detail"].lower() or "صورة" in resp_empty.json()["detail"]
+    assert (
+        "empty" in resp_empty.json()["detail"].lower()
+        or "صورة" in resp_empty.json()["detail"]
+    )
 
 
 def test_scenario_leaf_recovery_followup_evaluation():
@@ -586,6 +657,7 @@ def test_scenario_leaf_recovery_followup_missing_baseline():
 # 6. CONVERSATIONAL AGRI-RAG & EGYPTIAN DIALECT ADVISOR SCENARIOS
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 def test_scenario_chat_memory_retrieval():
     """Scenario 6.1: Chat memory endpoint returns conversation context."""
     resp = client.get("/api/chat/memory")
@@ -612,7 +684,10 @@ def test_scenario_chat_advisory_grounded_answer():
 
 def test_scenario_chat_memory_multi_account_strict_isolation():
     """Scenario 6.3: Multi-account chat history strict isolation (switching accounts never leaks prior user turns or names)."""
-    from computer_vision.storage.chat_repository import save_chat_log, get_agent_memory_context
+    from computer_vision.storage.chat_repository import (
+        save_chat_log,
+        get_agent_memory_context,
+    )
     from computer_vision.storage.user_repository import register_user
 
     ts = int(time.time()) + 999
@@ -669,10 +744,10 @@ def test_scenario_chat_memory_multi_account_strict_isolation():
     assert len(mem_b["recent_turns"]) == 0
 
 
-
 # ═════════════════════════════════════════════════════════════════════════════
 # 7. EGYPTIAN SPEECH SYNTHESIS & AUDIO SCENARIOS
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 def test_scenario_egyptian_tts_voice_synthesis_get_and_post():
     """Scenario 7.1 & 7.2: Voice synthesis via GET and POST returns audio/mpeg stream or 503 fallback."""
@@ -681,7 +756,10 @@ def test_scenario_egyptian_tts_voice_synthesis_get_and_post():
     assert resp_get.status_code in (200, 503)
 
     # POST payload with Salma voice
-    resp_post = client.post("/api/tts", json={"text": "جرعة الرش الموصى بها هي ملعقتين", "voice": "ar-EG-SalmaNeural"})
+    resp_post = client.post(
+        "/api/tts",
+        json={"text": "جرعة الرش الموصى بها هي ملعقتين", "voice": "ar-EG-SalmaNeural"},
+    )
     assert resp_post.status_code in (200, 503)
 
 
@@ -696,6 +774,7 @@ def test_scenario_egyptian_stt_endpoint():
 # 8. DEVELOPER ADMIN TELEMETRY, BACKUP & SECURITY SCENARIOS
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 def test_scenario_dev_panel_unauthorized_access_denied():
     """Scenario 8.1: Accessing developer telemetry endpoints without secret key is rejected with 403 or 404."""
     unauthorized_endpoints = [
@@ -708,7 +787,10 @@ def test_scenario_dev_panel_unauthorized_access_denied():
     ]
     for ep in unauthorized_endpoints:
         resp = client.get(ep)
-        assert resp.status_code in (403, 404), f"Expected 403 or 404 on {ep}, got {resp.status_code}"
+        assert resp.status_code in (
+            403,
+            404,
+        ), f"Expected 403 or 404 on {ep}, got {resp.status_code}"
 
 
 def test_scenario_dev_panel_authorized_access():
@@ -716,7 +798,10 @@ def test_scenario_dev_panel_authorized_access():
     resp = client.get(f"/api/dev/analytics?key={DEV_SECRET_KEY}")
     assert resp.status_code == 200
     data = resp.json()
-    assert any(k in data for k in ("kpis", "devices_breakdown", "guest_policy", "cookie_profiles"))
+    assert any(
+        k in data
+        for k in ("kpis", "devices_breakdown", "guest_policy", "cookie_profiles")
+    )
 
 
 def test_scenario_dev_database_backup_and_cache_flush():
@@ -747,6 +832,7 @@ def test_scenario_dev_telegram_config_endpoints():
 # ═════════════════════════════════════════════════════════════════════════════
 # 9. EPIDEMIC HEATMAP & PDF PRESCRIPTION SCENARIOS
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 def test_scenario_epidemic_heatmap_page_and_api():
     """Scenario 9.1: Interactive Epidemic Heatmap page and live all-governorates risk API."""
@@ -790,4 +876,3 @@ def test_scenario_prescription_html2pdf_direct_download():
     assert "btnDownloadPDF" in resp.text
     assert "downloadPrescriptionPDF" in resp.text
     assert "html2pdf" in resp.text
-

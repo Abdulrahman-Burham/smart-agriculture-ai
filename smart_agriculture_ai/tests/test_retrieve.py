@@ -14,11 +14,30 @@ def test_rrf_score():
 def test_hybrid_retrieval_shape():
     class FakeVectorStore:
         def similarity_search(self, query, k=20, filters=None):
-            return [{"id": "v1", "content": "Tomato disease guidance", "metadata": {"crop_type": "tomato", "disease_name": "blight"}}]
+            return [
+                {
+                    "id": "v1",
+                    "content": "Tomato disease guidance",
+                    "metadata": {"crop_type": "tomato", "disease_name": "blight"},
+                }
+            ]
 
     class FakeBM25Index:
         def search(self, query, k=20):
-            return [{"doc_id": "b1", "score": 0.8, "text": "Tomato blight treatment guidance"}]
+            return [
+                {
+                    "doc_id": "b1",
+                    "score": 0.8,
+                    "text": "Tomato blight treatment guidance",
+                }
+            ]
 
-    result = hybrid_retrieval("مرض الطماطم", FakeVectorStore(), FakeBM25Index(), "BAAI/bge-m3", intent="disease_query", top_k=5)
+    result = hybrid_retrieval(
+        "مرض الطماطم",
+        FakeVectorStore(),
+        FakeBM25Index(),
+        "BAAI/bge-m3",
+        intent="disease_query",
+        top_k=5,
+    )
     assert len(result) >= 1

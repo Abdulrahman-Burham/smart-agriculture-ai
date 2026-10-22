@@ -15,7 +15,9 @@ def test_build_prompt_contains_constraints():
 
 
 def test_generate_answer():
-    result = generate_answer("هل يمكن العمل؟", [{"content": "محتوى", "score": 0.8}], FakeLLM())
+    result = generate_answer(
+        "هل يمكن العمل؟", [{"content": "محتوى", "score": 0.8}], FakeLLM()
+    )
     assert "answer" in result
     assert "retrieval_confidence" in result
     assert isinstance(result["citations"], list)

@@ -4,6 +4,7 @@ Farmers in different governorates use different words for the same crop, pest or
 (e.g. "قوطة" vs "طماطم"). The glossary maps dialect variants to the canonical term used in the
 knowledge base so both lexical and semantic retrieval see the canonical wording.
 """
+
 from __future__ import annotations
 
 import json
@@ -23,7 +24,9 @@ class GlossaryEntry:
 @dataclass
 class Expansion:
     expanded: str
-    matches: list[tuple[str, str]] = field(default_factory=list)  # (matched variant, canonical)
+    matches: list[tuple[str, str]] = field(
+        default_factory=list
+    )  # (matched variant, canonical)
 
 
 class Glossary:
@@ -44,8 +47,14 @@ class Glossary:
             return cls([])
         raw = json.loads(Path(path).read_text(encoding="utf-8"))
         return cls(
-            [GlossaryEntry(e["canonical"], tuple(e.get("variants", [])), e.get("category", "general"))
-             for e in raw["entries"]]
+            [
+                GlossaryEntry(
+                    e["canonical"],
+                    tuple(e.get("variants", [])),
+                    e.get("category", "general"),
+                )
+                for e in raw["entries"]
+            ]
         )
 
     _WINDOW_SLACK = 2  # dialect speech inserts filler words: "الورق بتاع القوطة بيصفر"
@@ -58,7 +67,10 @@ class Glossary:
             return key[0] in tokens
         size = n + cls._WINDOW_SLACK
         needed = set(key)
-        return any(needed <= set(tokens[i:i + size]) for i in range(max(1, len(tokens) - size + 1)))
+        return any(
+            needed <= set(tokens[i : i + size])
+            for i in range(max(1, len(tokens) - size + 1))
+        )
 
     def expand(self, query: str) -> Expansion:
         tokens = tokenize(query, drop_stopwords=False)

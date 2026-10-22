@@ -14,7 +14,9 @@ class RegisterPayload(BaseModel):
     governorate: str = Field("القاهرة", description="Egyptian governorate")
     primary_crop: str = Field("", description="Main crop cultivated")
     farm_size_feddan: float = Field(1.0, description="Farm size in feddans")
-    irrigation_type: str = Field("غمر", description="Irrigation method (غمر / تنقيط / رش)")
+    irrigation_type: str = Field(
+        "غمر", description="Irrigation method (غمر / تنقيط / رش)"
+    )
 
 
 class LoginPayload(BaseModel):
@@ -23,7 +25,9 @@ class LoginPayload(BaseModel):
 
 
 class SocialQuickAuthPayload(BaseModel):
-    provider: str = Field("google", description="google | microsoft | apple | quick_phone | passkey")
+    provider: str = Field(
+        "google", description="google | microsoft | apple | quick_phone | passkey"
+    )
     identifier: str = Field("", description="Phone number or email")
     full_name: str = Field("", description="Full name from social profile")
     governorate: str = Field("القاهرة", description="Governorate")

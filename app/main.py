@@ -33,7 +33,6 @@ from app.routers import (
     pages_router,
     weather_router,
 )
-from app.schemas import *  # Backward compatibility re-export
 from app.services.llm_service import (
     format_agri_rag_sources,
     get_rag_pipeline,
@@ -51,6 +50,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager: Initialize database and warm up models."""
     logger.info("Initializing Smart Agriculture AI Platform...")
     init_db()
+
     # Staggered background model warmup to preserve RAM and prevent CPU starvation on 2-vCPU VMs
     async def _staggered_warmup():
         try:
@@ -62,7 +62,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             await asyncio.to_thread(get_rag_pipeline)
             logger.info("All background AI models warmed up successfully.")
         except Exception as e:
-            logger.warning("Background model warmup error (will load on first request): %s", e)
+            logger.warning(
+                "Background model warmup error (will load on first request): %s", e
+            )
 
     asyncio.create_task(_staggered_warmup())
     yield

@@ -5,7 +5,12 @@ from __future__ import annotations
 from typing import Any
 
 
-def metadata_filters(candidates: list[dict[str, Any]], crop: str | None = None, disease: str | None = None, region: str | None = None) -> list[dict[str, Any]]:
+def metadata_filters(
+    candidates: list[dict[str, Any]],
+    crop: str | None = None,
+    disease: str | None = None,
+    region: str | None = None,
+) -> list[dict[str, Any]]:
     """Filter candidate chunks by crop, disease, and region metadata."""
 
     filtered = []
@@ -21,8 +26,12 @@ def metadata_filters(candidates: list[dict[str, Any]], crop: str | None = None, 
     return filtered
 
 
-def rerank_candidates(candidates: list[dict[str, Any]], top_k: int = 5) -> list[dict[str, Any]]:
+def rerank_candidates(
+    candidates: list[dict[str, Any]], top_k: int = 5
+) -> list[dict[str, Any]]:
     """Simple reranking over candidates before final context assembly."""
 
-    ranked = sorted(candidates, key=lambda item: float(item.get("score", 0.0)), reverse=True)
+    ranked = sorted(
+        candidates, key=lambda item: float(item.get("score", 0.0)), reverse=True
+    )
     return ranked[:top_k]

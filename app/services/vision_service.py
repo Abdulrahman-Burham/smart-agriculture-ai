@@ -43,6 +43,7 @@ def get_cv_classifier() -> Optional[Any]:
     if _cv_classifier is None:
         try:
             from computer_vision.inference.classifier import PlantDiseaseClassifier
+
             _cv_classifier = PlantDiseaseClassifier()
             logger.info("🌿 Plant Disease CV Model loaded successfully.")
         except Exception as e:
@@ -54,7 +55,9 @@ def get_cv_classifier() -> Optional[Any]:
     return _cv_classifier
 
 
-def verify_plant_image_gemini_sync(image_bytes: bytes, mime_type: str = "image/jpeg") -> Dict[str, Any]:
+def verify_plant_image_gemini_sync(
+    image_bytes: bytes, mime_type: str = "image/jpeg"
+) -> Dict[str, Any]:
     """Fast Gemini Vision gatekeeper (runs in parallel with CV classifier) to reject non-plant images."""
     global _VISION_KEY_RR_IDX
 
@@ -65,7 +68,10 @@ def verify_plant_image_gemini_sync(image_bytes: bytes, mime_type: str = "image/j
     n_keys = len(keys)
     start_idx = _VISION_KEY_RR_IDX % n_keys
     _VISION_KEY_RR_IDX += 1
-    ordered_pairs = [((start_idx + i) % n_keys + 1, keys[(start_idx + i) % n_keys]) for i in range(n_keys)]
+    ordered_pairs = [
+        ((start_idx + i) % n_keys + 1, keys[(start_idx + i) % n_keys])
+        for i in range(n_keys)
+    ]
 
     b64_img = base64.b64encode(image_bytes).decode("ascii")
     clean_mime = (mime_type or "image/jpeg").split(";")[0].strip()
@@ -89,7 +95,12 @@ def verify_plant_image_gemini_sync(image_bytes: bytes, mime_type: str = "image/j
                         {
                             "parts": [
                                 {"text": PLANT_GATEKEEPER_PROMPT},
-                                {"inlineData": {"mimeType": clean_mime, "data": b64_img}},
+                                {
+                                    "inlineData": {
+                                        "mimeType": clean_mime,
+                                        "data": b64_img,
+                                    }
+                                },
                             ]
                         }
                     ],
@@ -121,13 +132,24 @@ def verify_plant_image_gemini_sync(image_bytes: bytes, mime_type: str = "image/j
                                 query_preview=f"Plant Gatekeeper -> {ans[:80]}",
                             )
                             upper_ans = ans.upper()
-                            if upper_ans.startswith("NOT_PLANT") or "NOT_PLANT" in upper_ans:
+                            if (
+                                upper_ans.startswith("NOT_PLANT")
+                                or "NOT_PLANT" in upper_ans
+                            ):
                                 det = "جسم غير نباتي"
                                 if "|" in ans:
                                     det = ans.split("|", 1)[1].strip() or det
-                                return {"checked": True, "is_plant": False, "detected_ar": det}
+                                return {
+                                    "checked": True,
+                                    "is_plant": False,
+                                    "detected_ar": det,
+                                }
                             if upper_ans.startswith("PLANT"):
-                                return {"checked": True, "is_plant": True, "detected_ar": "نبات"}
+                                return {
+                                    "checked": True,
+                                    "is_plant": True,
+                                    "detected_ar": "نبات",
+                                }
                 elif r.status_code == 429:
                     save_token_usage_log(
                         endpoint="/api/diagnose (Gatekeeper)",

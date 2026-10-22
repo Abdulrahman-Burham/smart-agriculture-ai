@@ -176,7 +176,6 @@ def calculate_agronomic_disease_risks(
     return alerts
 
 
-
 async def fetch_weather_forecast(
     governorate: Optional[str] = None,
     lat: Optional[float] = None,
@@ -185,7 +184,12 @@ async def fetch_weather_forecast(
 ) -> WeatherResponse:
     """Fetch current weather data from Open-Meteo or cached response."""
     now_ts = time.time()
-    is_gps = lat is not None and lon is not None and (-90 <= lat <= 90) and (-180 <= lon <= 180)
+    is_gps = (
+        lat is not None
+        and lon is not None
+        and (-90 <= lat <= 90)
+        and (-180 <= lon <= 180)
+    )
 
     if is_gps:
         gov_key = nearest_governorate(float(lat), float(lon))
@@ -278,18 +282,20 @@ async def get_all_governorates_epidemic_status() -> Dict[str, Any]:
             highest_level = "safe"
             total_safe += 1
 
-        governorates_data.append({
-            "governorate": w.governorate,
-            "lat": w.lat,
-            "lon": w.lon,
-            "temperature": w.temperature,
-            "humidity": w.humidity,
-            "wind_speed": w.wind_speed,
-            "season": w.season,
-            "risk_level": highest_level,
-            "alert_count": len(w.alerts),
-            "alerts": [a.model_dump() for a in w.alerts],
-        })
+        governorates_data.append(
+            {
+                "governorate": w.governorate,
+                "lat": w.lat,
+                "lon": w.lon,
+                "temperature": w.temperature,
+                "humidity": w.humidity,
+                "wind_speed": w.wind_speed,
+                "season": w.season,
+                "risk_level": highest_level,
+                "alert_count": len(w.alerts),
+                "alerts": [a.model_dump() for a in w.alerts],
+            }
+        )
 
     return {
         "status": "ok",
@@ -315,7 +321,9 @@ async def get_public_platform_stats() -> Dict[str, Any]:
             "total_diagnoses": int(summary.get("total_images") or 0),
             "total_consultations": int(summary.get("total_chats") or 0),
             "registered_farmers": int(summary.get("total_users") or 0),
-            "avg_vision_ms": round(float(summary.get("avg_image_latency_ms") or 420), 0),
+            "avg_vision_ms": round(
+                float(summary.get("avg_image_latency_ms") or 420), 0
+            ),
             "avg_rag_ms": round(float(summary.get("avg_chat_latency_ms") or 1250), 0),
             "vision_model": "EfficientNetV2B2",
             "rag_engine": "Hybrid Multilingual-e5 + BM25 + Gemini",

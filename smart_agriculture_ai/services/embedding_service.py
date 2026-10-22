@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 
 class EmbeddingService:
     """Adapter for embedding models with a swappable model name."""
@@ -30,7 +28,9 @@ class EmbeddingService:
         return [self.embed_text(text) for text in texts]
 
 
-def build_embedding_service(model_name: str, api_key: str | None = None) -> EmbeddingService:
+def build_embedding_service(
+    model_name: str, api_key: str | None = None
+) -> EmbeddingService:
     """Factory for constructing the configured embedding service."""
 
     return EmbeddingService(model_name=model_name, api_key=api_key)

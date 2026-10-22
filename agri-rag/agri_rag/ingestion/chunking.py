@@ -7,6 +7,7 @@ Strategy (defined in Week 2 of the roadmap):
   3. Prefix every chunk with "title > heading path": this contextual header materially
      improves both BM25 and dense retrieval for short, terse agricultural guidance.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -38,7 +39,9 @@ def _sections(text: str) -> list[tuple[list[str], str]]:
             sections.append(([h for _, h in path], []))
         else:
             sections[-1][1].append(line)
-    return [(p, "\n".join(body).strip()) for p, body in sections if "\n".join(body).strip()]
+    return [
+        (p, "\n".join(body).strip()) for p, body in sections if "\n".join(body).strip()
+    ]
 
 
 def _units(body: str, max_chars: int) -> list[str]:
@@ -51,7 +54,9 @@ def _units(body: str, max_chars: int) -> list[str]:
             units.append(para)
             continue
         for sentence in _SENTENCE_SPLIT.split(para):
-            while len(sentence) > max_chars:  # pathological sentence: hard split on whitespace
+            while (
+                len(sentence) > max_chars
+            ):  # pathological sentence: hard split on whitespace
                 cut = sentence.rfind(" ", 0, max_chars) or max_chars
                 units.append(sentence[:cut].strip())
                 sentence = sentence[cut:].strip()
@@ -82,14 +87,21 @@ def _pack(units: list[str], max_chars: int, overlap_chars: int) -> list[str]:
     return ["\n".join(c) for c in chunks]
 
 
-def chunk_document(doc: Document, max_chars: int = 900, overlap_chars: int = 120) -> list[Chunk]:
+def chunk_document(
+    doc: Document, max_chars: int = 900, overlap_chars: int = 120
+) -> list[Chunk]:
     out: list[Chunk] = []
     for heading_path, body in _sections(doc.text):
-        header = " › ".join([doc.title, *heading_path[1:]] if heading_path and heading_path[0] == doc.title
-                            else [doc.title, *heading_path])
+        header = " › ".join(
+            [doc.title, *heading_path[1:]]
+            if heading_path and heading_path[0] == doc.title
+            else [doc.title, *heading_path]
+        )
         for piece in _pack(_units(body, max_chars), max_chars, overlap_chars):
             idx = len(out)
-            digest = hashlib.sha1(f"{doc.source}|{idx}|{piece}".encode()).hexdigest()[:16]
+            digest = hashlib.sha1(f"{doc.source}|{idx}|{piece}".encode()).hexdigest()[
+                :16
+            ]
             meta = {
                 "source": doc.source,
                 "title": doc.title,

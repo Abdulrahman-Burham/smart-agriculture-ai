@@ -73,12 +73,23 @@ async def register_endpoint(payload: RegisterPayload, http_request: Request):
         irrigation_type=payload.irrigation_type,
     )
     if err or not user_dict:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err or "تعذر إنشاء الحساب.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=err or "تعذر إنشاء الحساب."
+        )
 
-    await asyncio.to_thread(link_visitor_to_user, client_info["visitor_hash"], user_dict)
+    await asyncio.to_thread(
+        link_visitor_to_user, client_info["visitor_hash"], user_dict
+    )
 
     token = create_auth_token(user_dict)
-    resp = JSONResponse(content={"status": "ok", "token": token, "user": user_dict, "visitor_id": client_info["visitor_hash"]})
+    resp = JSONResponse(
+        content={
+            "status": "ok",
+            "token": token,
+            "user": user_dict,
+            "visitor_id": client_info["visitor_hash"],
+        }
+    )
     resp.set_cookie(
         key="agri_auth_token",
         value=token,
@@ -102,12 +113,24 @@ async def login_endpoint(payload: LoginPayload, http_request: Request):
         device_type=client_info["device_type"],
     )
     if err or not user_dict:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=err or "بيانات الدخول غير صحيحة.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=err or "بيانات الدخول غير صحيحة.",
+        )
 
-    await asyncio.to_thread(link_visitor_to_user, client_info["visitor_hash"], user_dict)
+    await asyncio.to_thread(
+        link_visitor_to_user, client_info["visitor_hash"], user_dict
+    )
 
     token = create_auth_token(user_dict)
-    resp = JSONResponse(content={"status": "ok", "token": token, "user": user_dict, "visitor_id": client_info["visitor_hash"]})
+    resp = JSONResponse(
+        content={
+            "status": "ok",
+            "token": token,
+            "user": user_dict,
+            "visitor_id": client_info["visitor_hash"],
+        }
+    )
     resp.set_cookie(
         key="agri_auth_token",
         value=token,
@@ -127,7 +150,15 @@ async def get_oauth_config_endpoint():
         "google_client_id": cfg["google_client_id"],
         "microsoft_client_id": cfg["microsoft_client_id"],
         "is_google_configured": bool(cfg["google_client_id"]),
-        "providers": ["google", "facebook", "yahoo", "microsoft", "apple", "quick_phone", "passkey"],
+        "providers": [
+            "google",
+            "facebook",
+            "yahoo",
+            "microsoft",
+            "apple",
+            "quick_phone",
+            "passkey",
+        ],
     }
 
 
@@ -141,7 +172,11 @@ async def google_oauth_redirect_login(request: Request, next: str = Query("/")):
         return RedirectResponse(url=f"/login?next={next}", status_code=302)
 
     proto = request.headers.get("x-forwarded-proto") or request.url.scheme or "https"
-    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or "plantapi-abdo.uaenorth.cloudapp.azure.com"
+    host = (
+        request.headers.get("x-forwarded-host")
+        or request.headers.get("host")
+        or "plantapi-abdo.uaenorth.cloudapp.azure.com"
+    )
     redirect_uri = f"{proto}://{host}/api/auth/google/callback"
 
     params = {
@@ -160,11 +195,15 @@ async def google_oauth_redirect_login(request: Request, next: str = Query("/")):
 @router.get("/api/auth/google/callback", include_in_schema=False)
 async def google_oauth_callback_page():
     """Serve the Google OAuth 2.0 callback handler page."""
-    return FileResponse(TEMPLATES_DIR / "google_callback.html", headers=_NO_CACHE_HEADERS)
+    return FileResponse(
+        TEMPLATES_DIR / "google_callback.html", headers=_NO_CACHE_HEADERS
+    )
 
 
 @router.post("/api/auth/social")
-async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_request: Request):
+async def social_or_quick_auth_endpoint(
+    payload: SocialQuickAuthPayload, http_request: Request
+):
     """Sign in or auto-register with Google (OAuth2 code / userinfo / GSI ID Token), Microsoft, Apple, or One-Tap Phone."""
     client_info = extract_client_info(http_request)
     identifier = (payload.identifier or "").strip()
@@ -177,9 +216,19 @@ async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_re
         cfg = load_oauth_config()
         cid = cfg.get("google_client_id", "").strip()
         csec = cfg.get("google_client_secret", "").strip()
-        proto = http_request.headers.get("x-forwarded-proto") or http_request.url.scheme or "https"
-        host = http_request.headers.get("x-forwarded-host") or http_request.headers.get("host") or "plantapi-abdo.uaenorth.cloudapp.azure.com"
-        red_uri = (payload.redirect_uri or "").strip() or f"{proto}://{host}/api/auth/google/callback"
+        proto = (
+            http_request.headers.get("x-forwarded-proto")
+            or http_request.url.scheme
+            or "https"
+        )
+        host = (
+            http_request.headers.get("x-forwarded-host")
+            or http_request.headers.get("host")
+            or "plantapi-abdo.uaenorth.cloudapp.azure.com"
+        )
+        red_uri = (
+            payload.redirect_uri or ""
+        ).strip() or f"{proto}://{host}/api/auth/google/callback"
 
         def _exchange_google_code(code_str: str):
             try:
@@ -209,6 +258,7 @@ async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_re
 
     # 1. If a real Google OAuth2 access_token is provided, fetch profile from userinfo API
     if payload.access_token and provider == "google":
+
         def _fetch_google_userinfo(token_str: str):
             try:
                 r = ext_requests.get(
@@ -222,9 +272,14 @@ async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_re
                 pass
             return None
 
-        g_user = await asyncio.to_thread(_fetch_google_userinfo, payload.access_token.strip())
+        g_user = await asyncio.to_thread(
+            _fetch_google_userinfo, payload.access_token.strip()
+        )
         if not g_user or not g_user.get("email"):
-            raise HTTPException(status_code=400, detail="تعذر التحقق من رمز دخول حساب Google. يرجى المحاولة مرة أخرى.")
+            raise HTTPException(
+                status_code=400,
+                detail="تعذر التحقق من رمز دخول حساب Google. يرجى المحاولة مرة أخرى.",
+            )
         identifier = g_user["email"]
         full_name = g_user.get("name") or g_user.get("given_name") or full_name
         avatar_url = g_user.get("picture") or avatar_url
@@ -232,6 +287,7 @@ async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_re
 
     # 2. If a Google Identity Services (GSI) JWT credential is provided, verify via tokeninfo
     elif payload.credential_jwt:
+
         def _verify_google_jwt(jwt_str: str):
             try:
                 r = ext_requests.get(
@@ -244,9 +300,14 @@ async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_re
                 pass
             return None
 
-        g_info = await asyncio.to_thread(_verify_google_jwt, payload.credential_jwt.strip())
+        g_info = await asyncio.to_thread(
+            _verify_google_jwt, payload.credential_jwt.strip()
+        )
         if not g_info or not g_info.get("email"):
-            raise HTTPException(status_code=400, detail="تعذر التحقق من جلسة Google. يرجى المحاولة مرة أخرى.")
+            raise HTTPException(
+                status_code=400,
+                detail="تعذر التحقق من جلسة Google. يرجى المحاولة مرة أخرى.",
+            )
         identifier = g_info["email"]
         full_name = g_info.get("name") or g_info.get("given_name") or full_name
         avatar_url = g_info.get("picture") or avatar_url
@@ -254,6 +315,7 @@ async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_re
 
     # 3. If a Microsoft Graph access_token is provided
     elif payload.access_token and provider == "microsoft":
+
         def _fetch_ms_userinfo(token_str: str):
             try:
                 r = ext_requests.get(
@@ -267,14 +329,18 @@ async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_re
                 pass
             return None
 
-        ms_user = await asyncio.to_thread(_fetch_ms_userinfo, payload.access_token.strip())
+        ms_user = await asyncio.to_thread(
+            _fetch_ms_userinfo, payload.access_token.strip()
+        )
         if ms_user and (ms_user.get("mail") or ms_user.get("userPrincipalName")):
             identifier = ms_user.get("mail") or ms_user.get("userPrincipalName")
             full_name = ms_user.get("displayName") or full_name
             provider = "microsoft"
 
     # Inherit cookie-pinned preferences if not provided
-    pinned = await asyncio.to_thread(get_pinned_visitor_profile, client_info["visitor_hash"], None)
+    pinned = await asyncio.to_thread(
+        get_pinned_visitor_profile, client_info["visitor_hash"], None
+    )
     gov = (payload.governorate or "").strip() or pinned.get("governorate") or "القاهرة"
     crop = (payload.primary_crop or "").strip() or pinned.get("primary_crop") or ""
 
@@ -285,8 +351,12 @@ async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_re
         full_name=full_name,
         governorate=gov,
         primary_crop=crop,
-        farm_size_feddan=payload.farm_size_feddan or pinned.get("farm_size_feddan") or 1.0,
-        irrigation_type=payload.irrigation_type or pinned.get("irrigation_type") or "تنقيط",
+        farm_size_feddan=payload.farm_size_feddan
+        or pinned.get("farm_size_feddan")
+        or 1.0,
+        irrigation_type=payload.irrigation_type
+        or pinned.get("irrigation_type")
+        or "تنقيط",
         avatar_url=avatar_url,
         client_ip=client_info["client_ip"],
         device_type=client_info["device_type"],
@@ -294,16 +364,20 @@ async def social_or_quick_auth_endpoint(payload: SocialQuickAuthPayload, http_re
     if err or not user_dict:
         raise HTTPException(status_code=400, detail=err or "تعذر إتمام الدخول السريع.")
 
-    await asyncio.to_thread(link_visitor_to_user, client_info["visitor_hash"], user_dict)
+    await asyncio.to_thread(
+        link_visitor_to_user, client_info["visitor_hash"], user_dict
+    )
 
     token = create_auth_token(user_dict)
-    resp = JSONResponse(content={
-        "status": "ok",
-        "token": token,
-        "user": user_dict,
-        "visitor_id": client_info["visitor_hash"],
-        "provider": provider,
-    })
+    resp = JSONResponse(
+        content={
+            "status": "ok",
+            "token": token,
+            "user": user_dict,
+            "visitor_id": client_info["visitor_hash"],
+            "provider": provider,
+        }
+    )
     resp.set_cookie(
         key="agri_auth_token",
         value=token,
@@ -336,8 +410,12 @@ async def auth_me_endpoint(http_request: Request):
         user_dict = await asyncio.to_thread(get_user_by_id, u_id)
 
     if user_dict:
-        await asyncio.to_thread(link_visitor_to_user, client_info["visitor_hash"], user_dict)
-        pinned = await asyncio.to_thread(get_pinned_visitor_profile, client_info["visitor_hash"], u_id)
+        await asyncio.to_thread(
+            link_visitor_to_user, client_info["visitor_hash"], user_dict
+        )
+        pinned = await asyncio.to_thread(
+            get_pinned_visitor_profile, client_info["visitor_hash"], u_id
+        )
         guest_quota = await asyncio.to_thread(
             get_guest_usage_status,
             client_info["visitor_hash"],
@@ -347,14 +425,16 @@ async def auth_me_endpoint(http_request: Request):
             policy["enforce_login"],
         )
         fresh_token = create_auth_token(user_dict)
-        resp = JSONResponse(content={
-            "authenticated": True,
-            "user": user_dict,
-            "token": fresh_token,
-            "visitor_id": client_info["visitor_hash"],
-            "pinned_profile": pinned,
-            "guest_quota": guest_quota,
-        })
+        resp = JSONResponse(
+            content={
+                "authenticated": True,
+                "user": user_dict,
+                "token": fresh_token,
+                "visitor_id": client_info["visitor_hash"],
+                "pinned_profile": pinned,
+                "guest_quota": guest_quota,
+            }
+        )
         resp.set_cookie(
             key="agri_auth_token",
             value=fresh_token,
@@ -365,7 +445,9 @@ async def auth_me_endpoint(http_request: Request):
         )
         return resp
 
-    pinned = await asyncio.to_thread(get_pinned_visitor_profile, client_info["visitor_hash"], None)
+    pinned = await asyncio.to_thread(
+        get_pinned_visitor_profile, client_info["visitor_hash"], None
+    )
     guest_quota = await asyncio.to_thread(
         get_guest_usage_status,
         client_info["visitor_hash"],
@@ -374,13 +456,16 @@ async def auth_me_endpoint(http_request: Request):
         policy["max_free_uses"],
         policy["enforce_login"],
     )
-    return JSONResponse(status_code=200, content={
-        "authenticated": False,
-        "user": None,
-        "visitor_id": client_info["visitor_hash"],
-        "pinned_profile": pinned,
-        "guest_quota": guest_quota,
-    })
+    return JSONResponse(
+        status_code=200,
+        content={
+            "authenticated": False,
+            "user": None,
+            "visitor_id": client_info["visitor_hash"],
+            "pinned_profile": pinned,
+            "guest_quota": guest_quota,
+        },
+    )
 
 
 @router.get("/api/user/preferences")
@@ -389,7 +474,9 @@ async def get_user_preferences_endpoint(http_request: Request):
     client_info = extract_client_info(http_request)
     token_user = extract_user_from_request(http_request)
     u_id = int(token_user["uid"]) if token_user and token_user.get("uid") else None
-    pinned = await asyncio.to_thread(get_pinned_visitor_profile, client_info["visitor_hash"], u_id)
+    pinned = await asyncio.to_thread(
+        get_pinned_visitor_profile, client_info["visitor_hash"], u_id
+    )
     return {
         "status": "ok",
         "visitor_id": client_info["visitor_hash"],
@@ -398,7 +485,9 @@ async def get_user_preferences_endpoint(http_request: Request):
 
 
 @router.post("/api/user/preferences")
-async def save_user_preferences_endpoint(payload: UserPreferencesPayload, http_request: Request):
+async def save_user_preferences_endpoint(
+    payload: UserPreferencesPayload, http_request: Request
+):
     """Pin the user's location (governorate + optional GPS lat/lon) and farm profile in DB and 1-year cookie."""
     client_info = extract_client_info(http_request)
     token_user = extract_user_from_request(http_request)
@@ -418,7 +507,8 @@ async def save_user_preferences_endpoint(payload: UserPreferencesPayload, http_r
         governorate=gov,
         gps_lat=lat,
         gps_lon=lon,
-        location_source=payload.location_source or ("gps" if lat is not None else "manual"),
+        location_source=payload.location_source
+        or ("gps" if lat is not None else "manual"),
         primary_crop=payload.primary_crop,
         farm_size_feddan=payload.farm_size_feddan,
         irrigation_type=payload.irrigation_type,
@@ -426,20 +516,27 @@ async def save_user_preferences_endpoint(payload: UserPreferencesPayload, http_r
         device_type=client_info["device_type"],
     )
 
-    resp = JSONResponse(content={
-        "status": "ok",
-        "visitor_id": client_info["visitor_hash"],
-        "preferences": saved,
-    })
-    cookie_json = urllib.parse.quote(json.dumps({
-        "gov": saved.get("governorate") or "القاهرة",
-        "lat": saved.get("gps_lat"),
-        "lon": saved.get("gps_lon"),
-        "src": saved.get("location_source") or "manual",
-        "crop": saved.get("primary_crop") or "",
-        "area": saved.get("farm_size_feddan") or 1.0,
-        "irrig": saved.get("irrigation_type") or "تنقيط",
-    }, ensure_ascii=False))
+    resp = JSONResponse(
+        content={
+            "status": "ok",
+            "visitor_id": client_info["visitor_hash"],
+            "preferences": saved,
+        }
+    )
+    cookie_json = urllib.parse.quote(
+        json.dumps(
+            {
+                "gov": saved.get("governorate") or "القاهرة",
+                "lat": saved.get("gps_lat"),
+                "lon": saved.get("gps_lon"),
+                "src": saved.get("location_source") or "manual",
+                "crop": saved.get("primary_crop") or "",
+                "area": saved.get("farm_size_feddan") or 1.0,
+                "irrig": saved.get("irrigation_type") or "تنقيط",
+            },
+            ensure_ascii=False,
+        )
+    )
     resp.set_cookie(
         key="agri_prefs",
         value=cookie_json,
@@ -456,7 +553,9 @@ async def auth_my_history_endpoint(http_request: Request):
     """Return the logged-in farmer's personal diagnosis and chat history."""
     token_user = extract_user_from_request(http_request)
     if not token_user or not token_user.get("uid"):
-        raise HTTPException(status_code=401, detail="يجب تسجيل الدخول لعرض سجلك الشخصي.")
+        raise HTTPException(
+            status_code=401, detail="يجب تسجيل الدخول لعرض سجلك الشخصي."
+        )
     u_id = int(token_user["uid"])
     history = await asyncio.to_thread(get_user_history, u_id, 30)
     user_info = await asyncio.to_thread(get_user_by_id, u_id)

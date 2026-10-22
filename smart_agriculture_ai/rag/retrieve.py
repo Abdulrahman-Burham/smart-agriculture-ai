@@ -14,7 +14,11 @@ def _rrf_score(documents: list[dict[str, Any]], k: int = 60) -> list[dict[str, A
 
     for ranked_list in documents:
         for rank, item in enumerate(ranked_list, start=1):
-            doc_id = str(item.get("id") or item.get("doc_id") or item.get("metadata", {}).get("source_doc", f"doc-{rank}"))
+            doc_id = str(
+                item.get("id")
+                or item.get("doc_id")
+                or item.get("metadata", {}).get("source_doc", f"doc-{rank}")
+            )
             rank_map[doc_id] = rank_map.get(doc_id, 0.0) + (1.0 / (k + rank))
 
     fused = []
@@ -25,7 +29,9 @@ def _rrf_score(documents: list[dict[str, Any]], k: int = 60) -> list[dict[str, A
     return fused
 
 
-def _apply_vision_boost(candidates: list[dict[str, Any]], vision_context: dict[str, Any] | None) -> list[dict[str, Any]]:
+def _apply_vision_boost(
+    candidates: list[dict[str, Any]], vision_context: dict[str, Any] | None
+) -> list[dict[str, Any]]:
     """Boost candidate chunks matching crop/disease metadata when available."""
 
     if not vision_context:
@@ -54,7 +60,19 @@ def _detect_product_code_pattern(query: str) -> bool:
     """Flag NPK-style product names and similar code-switched dosage terms."""
 
     q = (query or "").lower()
-    return any(token in q for token in ["npk", "n-p-k", "urea", "super phosphate", "fertilizer", "سماد", "مبيد", "يوريا"])
+    return any(
+        token in q
+        for token in [
+            "npk",
+            "n-p-k",
+            "urea",
+            "super phosphate",
+            "fertilizer",
+            "سماد",
+            "مبيد",
+            "يوريا",
+        ]
+    )
 
 
 def hybrid_retrieval(
@@ -80,8 +98,24 @@ def hybrid_retrieval(
     if bm25_index is not None:
         bm25_results = bm25_index.search(query, k=20)
 
-    vector_results = [{"id": item.get("id", "vector-doc"), "content": item.get("content", ""), "metadata": item.get("metadata", {}), "score": 1.0} for item in vector_results]
-    bm25_results = [{"id": item.get("doc_id", f"bm25-{idx}"), "content": item.get("text", ""), "metadata": {}, "score": item.get("score", 0.0)} for idx, item in enumerate(bm25_results)]
+    vector_results = [
+        {
+            "id": item.get("id", "vector-doc"),
+            "content": item.get("content", ""),
+            "metadata": item.get("metadata", {}),
+            "score": 1.0,
+        }
+        for item in vector_results
+    ]
+    bm25_results = [
+        {
+            "id": item.get("doc_id", f"bm25-{idx}"),
+            "content": item.get("text", ""),
+            "metadata": {},
+            "score": item.get("score", 0.0),
+        }
+        for idx, item in enumerate(bm25_results)
+    ]
 
     if intent == "dosage_lookup" or _detect_product_code_pattern(query):
         weights = {"vector": 0.4, "bm25": 0.6}
@@ -95,7 +129,9 @@ def hybrid_retrieval(
 
     for item in merged:
         item["score"] *= max(0.1, weights.get("vector", 0.5))
-        if item.get("id", "").startswith("bm25") or any("bm25" in str(item.get("id")) for _ in [0]):
+        if item.get("id", "").startswith("bm25") or any(
+            "bm25" in str(item.get("id")) for _ in [0]
+        ):
             item["score"] *= max(0.1, weights.get("bm25", 0.5))
 
     merged.sort(key=lambda item: item["score"], reverse=True)

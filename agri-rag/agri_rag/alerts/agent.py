@@ -1,4 +1,5 @@
 """Alert agent: rules decide, RAG explains, notifier delivers, scheduler repeats."""
+
 from __future__ import annotations
 
 import asyncio
@@ -24,7 +25,13 @@ class LogNotifier:
     """Default notifier. Replace with SMS / WhatsApp / push in production."""
 
     async def notify(self, alert: Alert) -> None:
-        log.info("ALERT farm=%s [%s] %s — %s", alert.farm_id, alert.severity.value, alert.title, alert.message)
+        log.info(
+            "ALERT farm=%s [%s] %s — %s",
+            alert.farm_id,
+            alert.severity.value,
+            alert.title,
+            alert.message,
+        )
 
 
 class FarmRepository(Protocol):
@@ -32,8 +39,13 @@ class FarmRepository(Protocol):
 
 
 class AlertAgent:
-    def __init__(self, pipeline: RagPipeline, profiles: CropProfiles, max_concurrency: int = 3,
-                 weather: WeatherService | None = None):
+    def __init__(
+        self,
+        pipeline: RagPipeline,
+        profiles: CropProfiles,
+        max_concurrency: int = 3,
+        weather: WeatherService | None = None,
+    ):
         self.pipeline, self.profiles, self.weather = pipeline, profiles, weather
         self._sem = asyncio.Semaphore(max_concurrency)
 
@@ -44,21 +56,31 @@ class AlertAgent:
         if res.grounded:
             alert.guidance, alert.sources = res.answer, res.sources
 
-    async def run(self, ctx: FarmContext, enrich: bool = True, today: date | None = None) -> list[Alert]:
+    async def run(
+        self, ctx: FarmContext, enrich: bool = True, today: date | None = None
+    ) -> list[Alert]:
         if self.weather:
             ctx = await self.weather.enrich(ctx) or ctx
         alerts = evaluate(ctx, self.profiles, today)
         if enrich:
             targets = [a for a in alerts if a.severity != Severity.info]
-            await asyncio.gather(*(self._enrich(a, ctx) for a in targets), return_exceptions=True)
+            await asyncio.gather(
+                *(self._enrich(a, ctx) for a in targets), return_exceptions=True
+            )
         return alerts
 
 
 class AlertScheduler:
     """Periodically evaluates every farm and notifies, with per-(farm, rule) cooldown de-duplication."""
 
-    def __init__(self, repo: FarmRepository, agent: AlertAgent, notifier: Notifier,
-                 interval_s: int = 6 * 3600, cooldown_s: int = 24 * 3600):
+    def __init__(
+        self,
+        repo: FarmRepository,
+        agent: AlertAgent,
+        notifier: Notifier,
+        interval_s: int = 6 * 3600,
+        cooldown_s: int = 24 * 3600,
+    ):
         self.repo, self.agent, self.notifier = repo, agent, notifier
         self.interval_s, self.cooldown_s = interval_s, cooldown_s
         self._last_sent: dict[tuple[str, str], float] = {}

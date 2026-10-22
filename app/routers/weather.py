@@ -68,7 +68,12 @@ async def get_weather_endpoint(
     u_id = int(token_user["uid"]) if token_user and token_user.get("uid") else None
 
     explicit_gov = (gov or governorate or "").strip()
-    is_gps = lat is not None and lon is not None and (-90 <= lat <= 90) and (-180 <= lon <= 180)
+    is_gps = (
+        lat is not None
+        and lon is not None
+        and (-90 <= lat <= 90)
+        and (-180 <= lon <= 180)
+    )
     loc_source = "manual"
 
     if is_gps:
@@ -87,7 +92,9 @@ async def get_weather_endpoint(
                 client_ip=client_info["client_ip"],
                 device_type=client_info["device_type"],
             )
-        return await fetch_weather_forecast(governorate=gov_key, lat=q_lat, lon=q_lon, location_source=loc_source)
+        return await fetch_weather_forecast(
+            governorate=gov_key, lat=q_lat, lon=q_lon, location_source=loc_source
+        )
 
     elif explicit_gov:
         gov_key = explicit_gov
@@ -102,25 +109,36 @@ async def get_weather_endpoint(
                 client_ip=client_info["client_ip"],
                 device_type=client_info["device_type"],
             )
-        return await fetch_weather_forecast(governorate=gov_key, location_source=loc_source)
+        return await fetch_weather_forecast(
+            governorate=gov_key, location_source=loc_source
+        )
 
     else:
         # Restore from cookie/DB pinned location so IP never overrides the farmer's real governorate
-        pinned = await asyncio.to_thread(get_pinned_visitor_profile, client_info["visitor_hash"], u_id)
+        pinned = await asyncio.to_thread(
+            get_pinned_visitor_profile, client_info["visitor_hash"], u_id
+        )
         if pinned.get("gps_lat") is not None and pinned.get("gps_lon") is not None:
-            q_lat, q_lon = round(float(pinned["gps_lat"]), 4), round(float(pinned["gps_lon"]), 4)
+            q_lat, q_lon = (
+                round(float(pinned["gps_lat"]), 4),
+                round(float(pinned["gps_lon"]), 4),
+            )
             gov_key = pinned.get("governorate") or nearest_governorate(q_lat, q_lon)
             loc_source = pinned.get("location_source") or "gps"
-            return await fetch_weather_forecast(governorate=gov_key, lat=q_lat, lon=q_lon, location_source=loc_source)
+            return await fetch_weather_forecast(
+                governorate=gov_key, lat=q_lat, lon=q_lon, location_source=loc_source
+            )
         else:
             gov_key = pinned.get("governorate") or "القاهرة"
             loc_source = pinned.get("location_source") or "pinned"
-            return await fetch_weather_forecast(governorate=gov_key, location_source=loc_source)
+            return await fetch_weather_forecast(
+                governorate=gov_key, location_source=loc_source
+            )
 
 
 @router.get("/api/weather/epidemic-map", tags=["Tools"])
 async def get_epidemic_map_endpoint() -> Dict[str, Any]:
     """Return live epidemic risk matrix across all 27 Egyptian governorates for interactive heatmap."""
     from app.services.weather_service import get_all_governorates_epidemic_status
-    return await get_all_governorates_epidemic_status()
 
+    return await get_all_governorates_epidemic_status()

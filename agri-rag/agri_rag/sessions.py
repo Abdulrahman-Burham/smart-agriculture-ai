@@ -1,4 +1,5 @@
 """Persistent Conversation & Farm Context Memory with disk backup, TTL + LRU eviction."""
+
 from __future__ import annotations
 
 import json
@@ -8,7 +9,9 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-_DEFAULT_PERSIST_PATH = Path(__file__).resolve().parent.parent / "storage" / "sessions_memory.json"
+_DEFAULT_PERSIST_PATH = (
+    Path(__file__).resolve().parent.parent / "storage" / "sessions_memory.json"
+)
 
 
 class InMemorySessionStore:
@@ -58,7 +61,9 @@ class InMemorySessionStore:
                     if sid in self._data
                 },
             }
-            self.persist_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            self.persist_path.write_text(
+                json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+            )
         except Exception:
             pass
 
@@ -74,8 +79,11 @@ class InMemorySessionStore:
     def append(self, session_id: str, question: str, answer: str) -> None:
         with self._lock:
             history = self._data.get(session_id, (0.0, []))[1]
-            history += [{"role": "user", "content": question}, {"role": "assistant", "content": answer}]
-            self._data[session_id] = (time.time(), history[-2 * self.max_turns:])
+            history += [
+                {"role": "user", "content": question},
+                {"role": "assistant", "content": answer},
+            ]
+            self._data[session_id] = (time.time(), history[-2 * self.max_turns :])
             self._data.move_to_end(session_id)
             while len(self._data) > self.max_sessions:
                 old_sid, _ = self._data.popitem(last=False)
@@ -116,4 +124,3 @@ class InMemorySessionStore:
     def get_context(self, session_id: str) -> dict[str, Any]:
         with self._lock:
             return dict(self._context.get(session_id) or {})
-

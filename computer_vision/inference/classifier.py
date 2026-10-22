@@ -5,6 +5,7 @@ import numpy as np
 
 try:
     import cv2
+
     HAS_CV2 = True
 except Exception:
     cv2 = None
@@ -12,6 +13,7 @@ except Exception:
 
 try:
     import tensorflow as tf
+
     HAS_TF = True
 except Exception:
     tf = None
@@ -110,11 +112,15 @@ class PlantDiseaseClassifier:
     def _load_model(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         json_path = os.path.join(base_dir, "..", "models", "class_names.json")
-        model_path = os.path.join(base_dir, "..", "models", "EfficientNetV2B2_best.keras")
+        model_path = os.path.join(
+            base_dir, "..", "models", "EfficientNetV2B2_best.keras"
+        )
 
         if HAS_CV2:
             try:
-                cascade_path = os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml")
+                cascade_path = os.path.join(
+                    cv2.data.haarcascades, "haarcascade_frontalface_default.xml"
+                )
                 if os.path.exists(cascade_path):
                     self.face_cascade = cv2.CascadeClassifier(cascade_path)
             except Exception:
@@ -128,17 +134,21 @@ class PlantDiseaseClassifier:
 
         if HAS_TF_CV2 and os.path.exists(model_path):
             original_from_config = tf.keras.layers.Dense.from_config
+
             @classmethod
             def patched_from_config(cls, config):
                 if isinstance(config, dict):
                     config.pop("quantization_config", None)
                 return original_from_config(config)
+
             tf.keras.layers.Dense.from_config = patched_from_config
 
             self.best_model = tf.keras.models.load_model(model_path)
             self.use_keras_model = True
             try:
-                self.best_model.predict(np.zeros((1, 224, 224, 3), dtype=np.float32), verbose=0)
+                self.best_model.predict(
+                    np.zeros((1, 224, 224, 3), dtype=np.float32), verbose=0
+                )
             except Exception:
                 pass
 
@@ -150,6 +160,7 @@ class PlantDiseaseClassifier:
                 import torch
                 import torch.nn as nn
                 from torchvision import models, transforms
+
                 with open(resnet_json, encoding="utf-8") as rf:
                     self.resnet_classes = json.load(rf)["class_names"]
                 _rm = models.resnet18(weights=None)
@@ -157,15 +168,21 @@ class PlantDiseaseClassifier:
                 _rm.load_state_dict(torch.load(resnet_path, map_location="cpu"))
                 _rm.eval()
                 self.resnet_model = _rm
-                self.resnet_tfm = transforms.Compose([
-                    transforms.Resize((224, 224)),
-                    transforms.ToTensor(),
-                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-                ])
+                self.resnet_tfm = transforms.Compose(
+                    [
+                        transforms.Resize((224, 224)),
+                        transforms.ToTensor(),
+                        transforms.Normalize(
+                            [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+                        ),
+                    ]
+                )
         except Exception:
             pass
 
-    def validate_plant_image_opencv(self, contents: bytes, top_conf: float = 1.0, norm_entropy: float = 0.0) -> dict:
+    def validate_plant_image_opencv(
+        self, contents: bytes, top_conf: float = 1.0, norm_entropy: float = 0.0
+    ) -> dict:
         """Multi-signal visual gatekeeper to verify that the image contains a real plant/leaf and reject non-plant images."""
         res = {
             "is_plant": True,
@@ -202,10 +219,14 @@ class PlantDiseaseClassifier:
             total_px = float(256 * 256)
 
             # 1. Strict green foliage (Hue 25..92 in OpenCV [0..179], Sat >= 26, Val >= 22, and G > R, G >= B)
-            hsv_green = cv2.inRange(hsv, np.array([25, 26, 22]), np.array([92, 255, 255])) > 0
+            hsv_green = (
+                cv2.inRange(hsv, np.array([25, 26, 22]), np.array([92, 255, 255])) > 0
+            )
             rgb_green_dom = (g_ch > (r_ch + 3.0)) & (g_ch >= (b_ch + 2.0))
             strict_green_mask = hsv_green & rgb_green_dom
-            green_foliage_pct = round(float(np.count_nonzero(strict_green_mask)) / total_px * 100.0, 2)
+            green_foliage_pct = round(
+                float(np.count_nonzero(strict_green_mask)) / total_px * 100.0, 2
+            )
 
             # 2. ExG (Excess Green Index = 2G - R - B > 16)
             exg = (2.0 * g_ch) - r_ch - b_ch
@@ -214,56 +235,87 @@ class PlantDiseaseClassifier:
 
             # 3. Chlorotic / Yellow / Rust leaf tissue (Hue 24..38, Sat >= 40, Val >= 40, G > B + 15)
             # Rejects wood, brown furniture, soil, and skin (Hue 10..22) while capturing authentic foliar chlorosis/rust
-            yellow_mask = (cv2.inRange(hsv, np.array([24, 40, 40]), np.array([38, 255, 255])) > 0) & (g_ch > (b_ch + 15.0))
-            yellow_leaf_pct = round(float(np.count_nonzero(yellow_mask)) / total_px * 100.0, 2)
+            yellow_mask = (
+                cv2.inRange(hsv, np.array([24, 40, 40]), np.array([38, 255, 255])) > 0
+            ) & (g_ch > (b_ch + 15.0))
+            yellow_leaf_pct = round(
+                float(np.count_nonzero(yellow_mask)) / total_px * 100.0, 2
+            )
 
             # 4. Flat UI / Screenshot / Document check (identical adjacent pixels + desaturated background)
             adj_same = np.all(img256[:, 1:, :] == img256[:, :-1, :], axis=-1)
-            flat_ui_pct = round(float(np.count_nonzero(adj_same)) / float(256 * 255) * 100.0, 2)
-            desat_mask = (hsv[:, :, 1] < 18) | (hsv[:, :, 2] > 244) | (hsv[:, :, 2] < 18)
+            flat_ui_pct = round(
+                float(np.count_nonzero(adj_same)) / float(256 * 255) * 100.0, 2
+            )
+            desat_mask = (
+                (hsv[:, :, 1] < 18) | (hsv[:, :, 2] > 244) | (hsv[:, :, 2] < 18)
+            )
             desat_pct = round(float(np.count_nonzero(desat_mask)) / total_px * 100.0, 2)
 
             # 5. Human Face Detection
             face_area_pct = 0.0
             if self.face_cascade is not None:
-                faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.12, minNeighbors=5, minSize=(36, 36))
+                faces = self.face_cascade.detectMultiScale(
+                    gray, scaleFactor=1.12, minNeighbors=5, minSize=(36, 36)
+                )
                 if len(faces) > 0:
-                    face_area_pct = round(sum(int(fw) * int(fh) for (_, _, fw, fh) in faces) / total_px * 100.0, 2)
+                    face_area_pct = round(
+                        sum(int(fw) * int(fh) for (_, _, fw, fh) in faces)
+                        / total_px
+                        * 100.0,
+                        2,
+                    )
 
             total_plant_pct = round(green_foliage_pct + yellow_leaf_pct, 2)
 
-            res.update({
-                "green_foliage_pct": green_foliage_pct,
-                "exg_pct": exg_pct,
-                "yellow_leaf_pct": yellow_leaf_pct,
-                "total_plant_pct": total_plant_pct,
-                "face_area_pct": face_area_pct,
-                "flat_ui_pct": flat_ui_pct,
-            })
+            res.update(
+                {
+                    "green_foliage_pct": green_foliage_pct,
+                    "exg_pct": exg_pct,
+                    "yellow_leaf_pct": yellow_leaf_pct,
+                    "total_plant_pct": total_plant_pct,
+                    "face_area_pct": face_area_pct,
+                    "flat_ui_pct": flat_ui_pct,
+                }
+            )
 
             # Decision Rule A: Human Face / Selfie
             if face_area_pct >= 2.5 and green_foliage_pct < 25.0:
                 res["is_plant"] = False
                 res["detected_ar"] = "صورة شخصية / وجه إنسان"
-                res["reason_ar"] = "الصورة المرفوعة تحتوي على شخص وليست ورقة نبات! هذا النظام مخصص فقط لفحص النباتات والمحاصيل الزراعية."
+                res["reason_ar"] = (
+                    "الصورة المرفوعة تحتوي على شخص وليست ورقة نبات! هذا النظام مخصص فقط لفحص النباتات والمحاصيل الزراعية."
+                )
                 return res
 
             # Decision Rule B: Screenshot / Text Document / Blank Screen / Digital Graphic
             # Flat UI or graphic with low plant foliage or high desaturation
-            if (flat_ui_pct > 55.0 and green_foliage_pct < 15.0) or ((flat_ui_pct > 30.0 or desat_pct > 72.0) and green_foliage_pct < 8.0 and exg_pct < 6.0):
+            if (flat_ui_pct > 55.0 and green_foliage_pct < 15.0) or (
+                (flat_ui_pct > 30.0 or desat_pct > 72.0)
+                and green_foliage_pct < 8.0
+                and exg_pct < 6.0
+            ):
                 res["is_plant"] = False
                 res["detected_ar"] = "لقطة شاشة (Screenshot) أو تصميم رقمي أو مستند"
-                res["reason_ar"] = "الصورة المرفوعة تبدو لقطة شاشة أو تصميماً رقمياً وليست صورة حقيقية لنبات! يرجى تصوير ورقة النبات الحقيقية بالكاميرا."
+                res["reason_ar"] = (
+                    "الصورة المرفوعة تبدو لقطة شاشة أو تصميماً رقمياً وليست صورة حقيقية لنبات! يرجى تصوير ورقة النبات الحقيقية بالكاميرا."
+                )
                 return res
 
             # Decision Rule C: Insufficient Plant Foliage (< 18.0% of frame is plant tissue)
             # Diagnosing leaf diseases requires close-up framing; scenes with < 18% plant tissue are non-plant scenes or background noise.
             if total_plant_pct < 18.0:
                 # Exception only for heavily chlorotic/yellow diseased leaf that still has recognizable leaf structure and high CV confidence
-                is_yellow_diseased_leaf = (yellow_leaf_pct >= 24.0 and (green_foliage_pct >= 0.55 or exg_pct >= 0.75) and top_conf >= 0.78)
+                is_yellow_diseased_leaf = (
+                    yellow_leaf_pct >= 24.0
+                    and (green_foliage_pct >= 0.55 or exg_pct >= 0.75)
+                    and top_conf >= 0.78
+                )
                 if not is_yellow_diseased_leaf:
                     res["is_plant"] = False
-                    res["detected_ar"] = f"صورة غير نباتية (نسبة النبات {green_foliage_pct}% فقط)"
+                    res["detected_ar"] = (
+                        f"صورة غير نباتية (نسبة النبات {green_foliage_pct}% فقط)"
+                    )
                     res["reason_ar"] = (
                         f"الصورة لا تظهر ورقة محصول واضحة أو كافية للتشخيص (نسبة النبات {green_foliage_pct}% فقط، والحد الأدنى للتشخيص هو 18%). "
                         "يرجى تصوير ورقة النبات المصابة عن قرب وبوضوح بحيث تملأ معظم الكادر."
@@ -271,9 +323,16 @@ class PlantDiseaseClassifier:
                     return res
 
             # Decision Rule D: Weak Foliage (< 25.0%) + Low Confidence / High Uncertainty / Borderline non-leaf
-            if total_plant_pct < 25.0 and (top_conf < 0.65 or norm_entropy > 0.50 or exg_pct < 6.0 or flat_ui_pct > 15.0):
+            if total_plant_pct < 25.0 and (
+                top_conf < 0.65
+                or norm_entropy > 0.50
+                or exg_pct < 6.0
+                or flat_ui_pct > 15.0
+            ):
                 res["is_plant"] = False
-                res["detected_ar"] = f"كادر غير واضح أو جسم غير زراعي ({green_foliage_pct}% نبات)"
+                res["detected_ar"] = (
+                    f"كادر غير واضح أو جسم غير زراعي ({green_foliage_pct}% نبات)"
+                )
                 res["reason_ar"] = (
                     f"نسبة النبات في الصورة ({green_foliage_pct}%) غير كافية لتقديم تشخيص موثوق. "
                     "يرجى تصوير ورقة المحصول المصابة عن قرب وبإضاءة واضحة."
@@ -281,7 +340,12 @@ class PlantDiseaseClassifier:
                 return res
 
             # Flag images that should be double-checked by Gemini Vision if available
-            if total_plant_pct < 35.0 or top_conf < 0.85 or flat_ui_pct > 15.0 or face_area_pct > 0.0:
+            if (
+                total_plant_pct < 35.0
+                or top_conf < 0.85
+                or flat_ui_pct > 15.0
+                or face_area_pct > 0.0
+            ):
                 res["needs_gemini_check"] = True
 
         except Exception:
@@ -290,7 +354,10 @@ class PlantDiseaseClassifier:
 
     def _build_rejected_result(self, model_name: str, plant_check: dict) -> dict:
         detected = plant_check.get("detected_ar") or "صورة غير نباتية"
-        reason = plant_check.get("reason_ar") or "هذا النظام يقبل فقط صور النباتات وأوراق المحاصيل الزراعية."
+        reason = (
+            plant_check.get("reason_ar")
+            or "هذا النظام يقبل فقط صور النباتات وأوراق المحاصيل الزراعية."
+        )
         return {
             "is_plant": False,
             "rejected": True,
@@ -310,7 +377,13 @@ class PlantDiseaseClassifier:
             "model_used": model_name,
         }
 
-    def predict(self, image_path_or_bytes, top_k=3, model_choice="EfficientNetV2B2", crop_hint=None):
+    def predict(
+        self,
+        image_path_or_bytes,
+        top_k=3,
+        model_choice="EfficientNetV2B2",
+        crop_hint=None,
+    ):
         if isinstance(image_path_or_bytes, str):
             with open(image_path_or_bytes, "rb") as f:
                 contents = f.read()
@@ -336,7 +409,9 @@ class PlantDiseaseClassifier:
         if crop_canonical and is_expanded_crop(crop_canonical):
             plant_check = self.validate_plant_image_opencv(contents)
             if not plant_check.get("is_plant", True):
-                return self._build_rejected_result(f"Specialist_{crop_canonical}", plant_check)
+                return self._build_rejected_result(
+                    f"Specialist_{crop_canonical}", plant_check
+                )
             result = diagnose_expanded_crop(crop_canonical, plant_check)
             result["plant_check"] = plant_check
             return result
@@ -344,12 +419,17 @@ class PlantDiseaseClassifier:
         if model_choice == "ResNet18" and self.resnet_model is not None:
             import torch
             from PIL import Image
+
             img = Image.open(io.BytesIO(contents)).convert("RGB")
             with torch.inference_mode():
-                probs = torch.softmax(self.resnet_model(self.resnet_tfm(img).unsqueeze(0)), dim=1)[0]
+                probs = torch.softmax(
+                    self.resnet_model(self.resnet_tfm(img).unsqueeze(0)), dim=1
+                )[0]
             probs_np = probs.cpu().numpy()
             eps = 1e-9
-            norm_entropy = float(-np.sum(probs_np * np.log(probs_np + eps)) / np.log(len(probs_np)))
+            norm_entropy = float(
+                -np.sum(probs_np * np.log(probs_np + eps)) / np.log(len(probs_np))
+            )
 
             detailed_predictions = []
             for i, p_val in enumerate(probs_np):
@@ -357,15 +437,17 @@ class PlantDiseaseClassifier:
                 label_ar = self.class_names_ar.get(raw_label, raw_label)
                 prob_val = float(p_val)
                 conf_val = float(prob_val * 100.0)
-                detailed_predictions.append({
-                    "class": raw_label,
-                    "label": raw_label,
-                    "label_ar": label_ar,
-                    "name": f"{raw_label} ({label_ar})",
-                    "confidence": round(prob_val, 4),
-                    "confidence_percent": round(conf_val, 2),
-                    "confidence_str": f"{conf_val:.2f}%"
-                })
+                detailed_predictions.append(
+                    {
+                        "class": raw_label,
+                        "label": raw_label,
+                        "label_ar": label_ar,
+                        "name": f"{raw_label} ({label_ar})",
+                        "confidence": round(prob_val, 4),
+                        "confidence_percent": round(conf_val, 2),
+                        "confidence_str": f"{conf_val:.2f}%",
+                    }
+                )
 
             detailed_predictions.sort(key=lambda x: x["confidence"], reverse=True)
             top_3_results = [
@@ -379,7 +461,9 @@ class PlantDiseaseClassifier:
                 )
 
             top_pred = detailed_predictions[0]
-            plant_check = self.validate_plant_image_opencv(contents, top_conf=top_pred["confidence"], norm_entropy=norm_entropy)
+            plant_check = self.validate_plant_image_opencv(
+                contents, top_conf=top_pred["confidence"], norm_entropy=norm_entropy
+            )
             if not plant_check.get("is_plant", True):
                 return self._build_rejected_result("ResNet18", plant_check)
 
@@ -413,10 +497,16 @@ class PlantDiseaseClassifier:
             img_array = np.expand_dims(image_rgb, axis=0).astype(np.float32)
             predictions = self.best_model.predict(img_array, verbose=0)
 
-            score = tf.nn.softmax(predictions[0]) if np.max(predictions[0]) > 1.0 else predictions[0]
+            score = (
+                tf.nn.softmax(predictions[0])
+                if np.max(predictions[0]) > 1.0
+                else predictions[0]
+            )
             score_np = score.numpy() if hasattr(score, "numpy") else np.array(score)
             eps = 1e-9
-            norm_entropy = float(-np.sum(score_np * np.log(score_np + eps)) / np.log(len(score_np)))
+            norm_entropy = float(
+                -np.sum(score_np * np.log(score_np + eps)) / np.log(len(score_np))
+            )
 
             detailed_predictions = []
             for idx in range(len(score_np)):
@@ -424,15 +514,17 @@ class PlantDiseaseClassifier:
                 label_ar = self.class_names_ar.get(raw_label, raw_label)
                 prob_val = float(score_np[idx])
                 confidence_val = float(score_np[idx] * 100)
-                detailed_predictions.append({
-                    "class": raw_label,
-                    "label": raw_label,
-                    "label_ar": label_ar,
-                    "name": f"{raw_label} ({label_ar})",
-                    "confidence": round(prob_val, 4),
-                    "confidence_percent": round(confidence_val, 2),
-                    "confidence_str": f"{confidence_val:.2f}%"
-                })
+                detailed_predictions.append(
+                    {
+                        "class": raw_label,
+                        "label": raw_label,
+                        "label_ar": label_ar,
+                        "name": f"{raw_label} ({label_ar})",
+                        "confidence": round(prob_val, 4),
+                        "confidence_percent": round(confidence_val, 2),
+                        "confidence_str": f"{confidence_val:.2f}%",
+                    }
+                )
 
             detailed_predictions.sort(key=lambda x: x["confidence"], reverse=True)
             top_3_results = [
@@ -446,8 +538,13 @@ class PlantDiseaseClassifier:
                 )
         else:
             import requests
+
             try:
-                r = requests.post(self.HF_SPACE_API, files={"file": ("image.jpg", contents, "image/jpeg")}, timeout=10)
+                r = requests.post(
+                    self.HF_SPACE_API,
+                    files={"file": ("image.jpg", contents, "image/jpeg")},
+                    timeout=10,
+                )
                 r.raise_for_status()
                 top_3_results = r.json().get("top_predictions", [])
             except Exception:
@@ -462,24 +559,30 @@ class PlantDiseaseClassifier:
                 conf_str = item["confidence"]
                 conf_pct = float(conf_str.replace("%", ""))
                 label_ar = self.class_names_ar.get(raw_label, raw_label)
-                detailed_predictions.append({
-                    "class": raw_label,
-                    "label": raw_label,
-                    "label_ar": label_ar,
-                    "name": f"{raw_label} ({label_ar})",
-                    "confidence": round(conf_pct / 100.0, 4),
-                    "confidence_percent": round(conf_pct, 2),
-                    "confidence_str": conf_str
-                })
+                detailed_predictions.append(
+                    {
+                        "class": raw_label,
+                        "label": raw_label,
+                        "label_ar": label_ar,
+                        "name": f"{raw_label} ({label_ar})",
+                        "confidence": round(conf_pct / 100.0, 4),
+                        "confidence_percent": round(conf_pct, 2),
+                        "confidence_str": conf_str,
+                    }
+                )
             if crop_canonical:
                 top_3_results, detailed_predictions = filter_predictions_by_crop(
                     detailed_predictions, crop_canonical
                 )
 
         top_pred = detailed_predictions[0]
-        plant_check = self.validate_plant_image_opencv(contents, top_conf=top_pred["confidence"], norm_entropy=norm_entropy)
+        plant_check = self.validate_plant_image_opencv(
+            contents, top_conf=top_pred["confidence"], norm_entropy=norm_entropy
+        )
         if not plant_check.get("is_plant", True):
-            return self._build_rejected_result("EfficientNetV2B2_best.keras", plant_check)
+            return self._build_rejected_result(
+                "EfficientNetV2B2_best.keras", plant_check
+            )
 
         crop_type, _ = self._parse_label(top_pred["label"])
         crop_ar, disease_ar = self._parse_label(top_pred["label_ar"])

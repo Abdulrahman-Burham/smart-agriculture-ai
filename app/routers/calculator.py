@@ -38,4 +38,6 @@ async def water_salinity_advisor_endpoint(payload: SalinityRequest) -> SalinityR
         return evaluate_water_salinity(payload)
     except Exception as e:
         logger.error(f"Salinity evaluation error: {e}")
-        raise HTTPException(status_code=400, detail=f"خطأ في تقييم ملوحة المياه: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"خطأ في تقييم ملوحة المياه: {str(e)}"
+        )

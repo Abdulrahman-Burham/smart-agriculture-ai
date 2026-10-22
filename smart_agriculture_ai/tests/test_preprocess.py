@@ -1,6 +1,11 @@
 """Tests for the preprocessing module."""
 
-from rag.preprocess import canonicalize_terms, detect_query_intent, normalize_arabic_text, preprocess_query
+from rag.preprocess import (
+    canonicalize_terms,
+    detect_query_intent,
+    normalize_arabic_text,
+    preprocess_query,
+)
 
 
 def test_normalize_arabic_text():
@@ -25,6 +30,8 @@ def test_detect_query_intent():
 
 
 def test_preprocess_query():
-    result = preprocess_query("مرض طماطم واسماد", {"dialect_aliases": {"مرض": ["مرض"]}, "product_aliases": {}})
+    result = preprocess_query(
+        "مرض طماطم واسماد", {"dialect_aliases": {"مرض": ["مرض"]}, "product_aliases": {}}
+    )
     assert result["intent"] in {"disease_query", "general_advice"}
     assert result["original_query"] == "مرض طماطم واسماد"

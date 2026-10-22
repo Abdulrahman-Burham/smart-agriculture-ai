@@ -39,7 +39,9 @@ def link_visitor_to_user(visitor_id: str, user_dict: Dict[str, Any]) -> None:
 
     try:
         with sqlite3.connect(str(DB_PATH), timeout=10.0) as conn:
-            conn.execute("UPDATE users SET last_visitor_id = ? WHERE id = ?", (visitor_id, uid))
+            conn.execute(
+                "UPDATE users SET last_visitor_id = ? WHERE id = ?", (visitor_id, uid)
+            )
             existing = conn.execute(
                 "SELECT visitor_id, pinned_governorate, location_source FROM visitor_profiles WHERE visitor_id = ?",
                 (visitor_id,),
@@ -59,7 +61,18 @@ def link_visitor_to_user(visitor_id: str, user_dict: Dict[str, Any]) -> None:
                         irrigation_type = COALESCE(NULLIF(irrigation_type, ''), ?)
                     WHERE visitor_id = ?
                     """,
-                    (now_str, uid, uname, uident, ugov, ugov, ucrop, uarea, uirrig, visitor_id),
+                    (
+                        now_str,
+                        uid,
+                        uname,
+                        uident,
+                        ugov,
+                        ugov,
+                        ucrop,
+                        uarea,
+                        uirrig,
+                        visitor_id,
+                    ),
                 )
             else:
                 conn.execute(
@@ -69,7 +82,18 @@ def link_visitor_to_user(visitor_id: str, user_dict: Dict[str, Any]) -> None:
                         pinned_governorate, location_source, primary_crop, farm_size_feddan, irrigation_type
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, 'user_profile', ?, ?, ?)
                     """,
-                    (visitor_id, now_str, now_str, uid, uname, uident, ugov, ucrop, uarea, uirrig),
+                    (
+                        visitor_id,
+                        now_str,
+                        now_str,
+                        uid,
+                        uname,
+                        uident,
+                        ugov,
+                        ucrop,
+                        uarea,
+                        uirrig,
+                    ),
                 )
             # Retroactively link anonymous logs from this cookie to the user account so Developer Dashboard correlates them
             conn.execute(
@@ -118,15 +142,33 @@ def save_pinned_location_and_prefs(
     with sqlite3.connect(str(DB_PATH), timeout=10.0) as conn:
         conn.row_factory = sqlite3.Row
         if user_id:
-            u_row = conn.execute("SELECT * FROM users WHERE id = ?", (int(user_id),)).fetchone()
+            u_row = conn.execute(
+                "SELECT * FROM users WHERE id = ?", (int(user_id),)
+            ).fetchone()
             if u_row:
                 new_gov = gov_clean or u_row["governorate"] or "القاهرة"
                 new_lat = gps_lat if gps_lat is not None else u_row["gps_lat"]
                 new_lon = gps_lon if gps_lon is not None else u_row["gps_lon"]
-                new_src = location_source if (gov_clean or gps_lat is not None) else (u_row["location_source"] or "manual")
-                new_crop = primary_crop if primary_crop is not None else (u_row["primary_crop"] or "")
-                new_area = float(farm_size_feddan) if farm_size_feddan is not None else float(u_row["farm_size_feddan"] or 1.0)
-                new_irrig = irrigation_type if irrigation_type is not None else (u_row["irrigation_type"] or "غمر")
+                new_src = (
+                    location_source
+                    if (gov_clean or gps_lat is not None)
+                    else (u_row["location_source"] or "manual")
+                )
+                new_crop = (
+                    primary_crop
+                    if primary_crop is not None
+                    else (u_row["primary_crop"] or "")
+                )
+                new_area = (
+                    float(farm_size_feddan)
+                    if farm_size_feddan is not None
+                    else float(u_row["farm_size_feddan"] or 1.0)
+                )
+                new_irrig = (
+                    irrigation_type
+                    if irrigation_type is not None
+                    else (u_row["irrigation_type"] or "غمر")
+                )
                 conn.execute(
                     """
                     UPDATE users
@@ -135,19 +177,48 @@ def save_pinned_location_and_prefs(
                         last_visitor_id = CASE WHEN ? != '' THEN ? ELSE last_visitor_id END
                     WHERE id = ?
                     """,
-                    (new_gov, new_lat, new_lon, new_src, new_crop, new_area, new_irrig, visitor_id, visitor_id, int(user_id)),
+                    (
+                        new_gov,
+                        new_lat,
+                        new_lon,
+                        new_src,
+                        new_crop,
+                        new_area,
+                        new_irrig,
+                        visitor_id,
+                        visitor_id,
+                        int(user_id),
+                    ),
                 )
 
         if visitor_id:
-            v_row = conn.execute("SELECT * FROM visitor_profiles WHERE visitor_id = ?", (visitor_id,)).fetchone()
+            v_row = conn.execute(
+                "SELECT * FROM visitor_profiles WHERE visitor_id = ?", (visitor_id,)
+            ).fetchone()
             if v_row:
                 new_gov = gov_clean or v_row["pinned_governorate"] or "القاهرة"
                 new_lat = gps_lat if gps_lat is not None else v_row["gps_lat"]
                 new_lon = gps_lon if gps_lon is not None else v_row["gps_lon"]
-                new_src = location_source if (gov_clean or gps_lat is not None) else (v_row["location_source"] or "manual")
-                new_crop = primary_crop if primary_crop is not None else (v_row["primary_crop"] or "")
-                new_area = float(farm_size_feddan) if farm_size_feddan is not None else float(v_row["farm_size_feddan"] or 1.0)
-                new_irrig = irrigation_type if irrigation_type is not None else (v_row["irrigation_type"] or "غمر")
+                new_src = (
+                    location_source
+                    if (gov_clean or gps_lat is not None)
+                    else (v_row["location_source"] or "manual")
+                )
+                new_crop = (
+                    primary_crop
+                    if primary_crop is not None
+                    else (v_row["primary_crop"] or "")
+                )
+                new_area = (
+                    float(farm_size_feddan)
+                    if farm_size_feddan is not None
+                    else float(v_row["farm_size_feddan"] or 1.0)
+                )
+                new_irrig = (
+                    irrigation_type
+                    if irrigation_type is not None
+                    else (v_row["irrigation_type"] or "غمر")
+                )
                 conn.execute(
                     """
                     UPDATE visitor_profiles
@@ -165,9 +236,21 @@ def save_pinned_location_and_prefs(
                     WHERE visitor_id = ?
                     """,
                     (
-                        now_str, new_gov, new_lat, new_lon, new_src, new_crop, new_area, new_irrig,
-                        client_ip, client_ip, geo.get("city", ""), geo.get("city", ""),
-                        geo.get("isp", ""), geo.get("isp", ""), visitor_id,
+                        now_str,
+                        new_gov,
+                        new_lat,
+                        new_lon,
+                        new_src,
+                        new_crop,
+                        new_area,
+                        new_irrig,
+                        client_ip,
+                        client_ip,
+                        geo.get("city", ""),
+                        geo.get("city", ""),
+                        geo.get("isp", ""),
+                        geo.get("isp", ""),
+                        visitor_id,
                     ),
                 )
             else:
@@ -181,17 +264,31 @@ def save_pinned_location_and_prefs(
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
                     """,
                     (
-                        visitor_id, now_str, now_str, user_id,
-                        gov_clean or "القاهرة", gps_lat, gps_lon, location_source,
-                        primary_crop or "", float(farm_size_feddan or 1.0), irrigation_type or "غمر",
-                        client_ip, geo.get("city", ""), geo.get("isp", ""), device_type, browser_os,
+                        visitor_id,
+                        now_str,
+                        now_str,
+                        user_id,
+                        gov_clean or "القاهرة",
+                        gps_lat,
+                        gps_lon,
+                        location_source,
+                        primary_crop or "",
+                        float(farm_size_feddan or 1.0),
+                        irrigation_type or "غمر",
+                        client_ip,
+                        geo.get("city", ""),
+                        geo.get("isp", ""),
+                        device_type,
+                        browser_os,
                     ),
                 )
         conn.commit()
     return get_pinned_visitor_profile(visitor_id=visitor_id, user_id=user_id)
 
 
-def get_pinned_visitor_profile(visitor_id: str = "", user_id: Optional[int] = None) -> Dict[str, Any]:
+def get_pinned_visitor_profile(
+    visitor_id: str = "", user_id: Optional[int] = None
+) -> Dict[str, Any]:
     """Retrieve the saved/pinned location & farm preferences for a visitor cookie or logged-in user."""
     init_db()
     out: Dict[str, Any] = {
@@ -210,7 +307,9 @@ def get_pinned_visitor_profile(visitor_id: str = "", user_id: Optional[int] = No
         with sqlite3.connect(str(DB_PATH), timeout=10.0) as conn:
             conn.row_factory = sqlite3.Row
             if visitor_id:
-                v_row = conn.execute("SELECT * FROM visitor_profiles WHERE visitor_id = ?", (visitor_id,)).fetchone()
+                v_row = conn.execute(
+                    "SELECT * FROM visitor_profiles WHERE visitor_id = ?", (visitor_id,)
+                ).fetchone()
                 if v_row:
                     out["user_id"] = user_id or v_row["user_id"]
                     out["user_name"] = v_row["user_name"] or ""
@@ -230,12 +329,19 @@ def get_pinned_visitor_profile(visitor_id: str = "", user_id: Optional[int] = No
 
             effective_uid = out["user_id"]
             if effective_uid:
-                u_row = conn.execute("SELECT * FROM users WHERE id = ?", (int(effective_uid),)).fetchone()
+                u_row = conn.execute(
+                    "SELECT * FROM users WHERE id = ?", (int(effective_uid),)
+                ).fetchone()
                 if u_row:
                     out["user_name"] = u_row["full_name"] or out["user_name"]
-                    if out["location_source"] in ("default", "ip") and u_row["governorate"]:
+                    if (
+                        out["location_source"] in ("default", "ip")
+                        and u_row["governorate"]
+                    ):
                         out["governorate"] = u_row["governorate"]
-                        out["location_source"] = u_row["location_source"] or "user_profile"
+                        out["location_source"] = (
+                            u_row["location_source"] or "user_profile"
+                        )
                     if out["gps_lat"] is None and u_row["gps_lat"] is not None:
                         out["gps_lat"] = float(u_row["gps_lat"])
                         out["gps_lon"] = float(u_row["gps_lon"])
@@ -301,7 +407,10 @@ def register_user(
             (identifier, phone or "__none__", email or "__none__"),
         ).fetchone()
         if existing:
-            return None, "هذا الحساب (رقم الموبايل أو البريد الإلكتروني) مسجل بالفعل. يمكنك تسجيل الدخول مباشرة."
+            return (
+                None,
+                "هذا الحساب (رقم الموبايل أو البريد الإلكتروني) مسجل بالفعل. يمكنك تسجيل الدخول مباشرة.",
+            )
 
         cur = conn.cursor()
         cur.execute(
@@ -355,7 +464,9 @@ def authenticate_user(
     with sqlite3.connect(str(DB_PATH)) as conn:
         conn.row_factory = sqlite3.Row
         if raw_clean in ("abdo", "admin", "developer"):
-            row = conn.execute("SELECT * FROM users WHERE role = 'admin' LIMIT 1").fetchone()
+            row = conn.execute(
+                "SELECT * FROM users WHERE role = 'admin' LIMIT 1"
+            ).fetchone()
         else:
             row = conn.execute(
                 """
@@ -391,9 +502,12 @@ def authenticate_user(
             """,
             (
                 now_str,
-                client_ip, client_ip,
-                device_type, device_type,
-                geo.get("city", ""), geo.get("city", ""),
+                client_ip,
+                client_ip,
+                device_type,
+                device_type,
+                geo.get("city", ""),
+                geo.get("city", ""),
                 row["id"],
             ),
         )
@@ -420,7 +534,15 @@ def social_or_quick_authenticate(
     """Sign in or auto-register a user via Google, Microsoft, Apple, One-Tap Phone, or Passkey without password friction."""
     init_db()
     prov = (provider or "google").strip().lower()
-    if prov not in ("google", "facebook", "yahoo", "microsoft", "apple", "quick_phone", "passkey"):
+    if prov not in (
+        "google",
+        "facebook",
+        "yahoo",
+        "microsoft",
+        "apple",
+        "quick_phone",
+        "passkey",
+    ):
         prov = "google"
 
     identifier, phone, email = normalize_identifier(identifier_raw)
@@ -428,7 +550,10 @@ def social_or_quick_authenticate(
         return None, "يرجى إدخال البريد الإلكتروني أو رقم الموبايل الصحيح للمتابعة."
 
     if prov == "quick_phone" and not phone:
-        return None, "يرجى إدخال رقم موبايل مصري صحيح مكون من 11 رقماً (يبدأ بـ 010 أو 011 أو 012 أو 015)."
+        return (
+            None,
+            "يرجى إدخال رقم موبايل مصري صحيح مكون من 11 رقماً (يبدأ بـ 010 أو 011 أو 012 أو 015).",
+        )
 
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     geo = resolve_ip_geo(client_ip)
@@ -474,10 +599,14 @@ def social_or_quick_authenticate(
                     new_gov,
                     new_crop,
                     prov,
-                    new_avatar, new_avatar,
-                    client_ip, client_ip,
-                    device_type, device_type,
-                    geo.get("city", ""), geo.get("city", ""),
+                    new_avatar,
+                    new_avatar,
+                    client_ip,
+                    client_ip,
+                    device_type,
+                    device_type,
+                    geo.get("city", ""),
+                    geo.get("city", ""),
                     row["id"],
                 ),
             )
@@ -492,7 +621,13 @@ def social_or_quick_authenticate(
         clean_name = re.sub(r"\s+", " ", (full_name or "").strip())
         if len(clean_name) < 2:
             if email:
-                clean_name = email.split("@")[0].replace(".", " ").replace("_", " ").strip().title()
+                clean_name = (
+                    email.split("@")[0]
+                    .replace(".", " ")
+                    .replace("_", " ")
+                    .strip()
+                    .title()
+                )
             else:
                 clean_name = f"مزارع ({phone[-4:]})" if phone else "مزارع ذكي"
 

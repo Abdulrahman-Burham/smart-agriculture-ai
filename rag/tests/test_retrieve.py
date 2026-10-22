@@ -28,7 +28,9 @@ def test_rrf_fusion_math():
     w_dense = 0.5
     w_sparse = 0.5
 
-    fused = calculate_rrf_score(dense_results, sparse_results, k=k, w_dense=w_dense, w_sparse=w_sparse)
+    fused = calculate_rrf_score(
+        dense_results, sparse_results, k=k, w_dense=w_dense, w_sparse=w_sparse
+    )
 
     # doc_B appears in rank 2 of dense and rank 1 of sparse
     # doc_B RRF score = 0.5 / (60 + 2) + 0.5 / (60 + 1) = (0.5/62) + (0.5/61)
@@ -55,7 +57,9 @@ def test_intent_weights_bias():
     assert w_dense == 0.3
 
     # General advice -> Vector weight biased higher
-    w_dense_gen, w_sparse_gen = get_intent_weights("general_advice", "كيف أحافظ على محصوبي")
+    w_dense_gen, w_sparse_gen = get_intent_weights(
+        "general_advice", "كيف أحافظ على محصوبي"
+    )
     assert w_dense_gen > w_sparse_gen
     assert w_dense_gen == 0.7
     assert w_sparse_gen == 0.3
@@ -63,8 +67,16 @@ def test_intent_weights_bias():
 
 def test_vision_metadata_boost():
     candidates = [
-        {"chunk_id": "chunk_1", "metadata": {"crop_type": "tomato", "disease_name": "late_blight"}, "rrf_score": 0.02},
-        {"chunk_id": "chunk_2", "metadata": {"crop_type": "wheat", "disease_name": "rust"}, "rrf_score": 0.02},
+        {
+            "chunk_id": "chunk_1",
+            "metadata": {"crop_type": "tomato", "disease_name": "late_blight"},
+            "rrf_score": 0.02,
+        },
+        {
+            "chunk_id": "chunk_2",
+            "metadata": {"crop_type": "wheat", "disease_name": "rust"},
+            "rrf_score": 0.02,
+        },
     ]
 
     vision_context = {
@@ -82,19 +94,23 @@ def test_vision_metadata_boost():
 
 def test_hybrid_retrieval_end_to_end():
     vector_store = ChromaVectorStore()
-    vector_store.add_documents([
-        {
-            "chunk_id": "c1",
-            "content": "علاج اللفحة المتأخرة في الطماطم باستخدام المبيد النحاسي",
-            "metadata": {"crop_type": "tomato", "disease_name": "late_blight"},
-        }
-    ])
+    vector_store.add_documents(
+        [
+            {
+                "chunk_id": "c1",
+                "content": "علاج اللفحة المتأخرة في الطماطم باستخدام المبيد النحاسي",
+                "metadata": {"crop_type": "tomato", "disease_name": "late_blight"},
+            }
+        ]
+    )
 
     bm25_data = {
         "bm25_index": None,
         "corpus_chunks": [],
     }
 
-    results = hybrid_retrieval("اللفحة المتأخرة الطماطم", vector_store, bm25_data, intent="disease_query")
+    results = hybrid_retrieval(
+        "اللفحة المتأخرة الطماطم", vector_store, bm25_data, intent="disease_query"
+    )
     assert len(results) > 0
     assert results[0]["chunk_id"] == "c1"

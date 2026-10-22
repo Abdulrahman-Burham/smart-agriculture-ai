@@ -11,7 +11,9 @@ def main():
     print("🌱 Initializing Egyptian Agricultural RAG Pipeline...")
     print("=" * 70)
 
-    pipeline = RAGPipeline(config_path="rag/config.yaml", lexicon_path="rag/lexicon.json")
+    pipeline = RAGPipeline(
+        config_path="rag/config.yaml", lexicon_path="rag/lexicon.json"
+    )
 
     # 1. Sample Knowledge Base Ingestion (Guides & Treatment Protocols)
     sample_documents = [
@@ -55,7 +57,9 @@ def main():
 
     print("\n📦 Ingesting sample text knowledge base...")
     ingest_summary = pipeline.ingest_documents(sample_documents)
-    print(f"✅ Ingested {ingest_summary['num_documents']} documents into {ingest_summary['num_chunks']} chunks.")
+    print(
+        f"✅ Ingested {ingest_summary['num_documents']} documents into {ingest_summary['num_chunks']} chunks."
+    )
 
     # 2. Sample User Query with Vision Model Input
     user_query = "عندي ندوة متاخرة في البطاطس، ايه علاجها وايه جرعة الرشاش؟"

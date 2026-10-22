@@ -1,4 +1,5 @@
 """LLM provider abstraction. All providers expose the same async streaming interface."""
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
@@ -8,13 +9,19 @@ from ..config import Settings
 
 
 class LLMClient(Protocol):
-    def stream(self, system: str, messages: list[dict], max_tokens: int | None = None) -> AsyncIterator[str]: ...
+    def stream(
+        self, system: str, messages: list[dict], max_tokens: int | None = None
+    ) -> AsyncIterator[str]: ...
 
-    async def complete(self, system: str, messages: list[dict], max_tokens: int | None = None) -> str: ...
+    async def complete(
+        self, system: str, messages: list[dict], max_tokens: int | None = None
+    ) -> str: ...
 
 
 class _BaseLLM:
-    async def complete(self, system: str, messages: list[dict], max_tokens: int | None = None) -> str:
+    async def complete(
+        self, system: str, messages: list[dict], max_tokens: int | None = None
+    ) -> str:
         return "".join([t async for t in self.stream(system, messages, max_tokens)])
 
 
@@ -22,13 +29,18 @@ class AnthropicLLM(_BaseLLM):
     def __init__(self, s: Settings):
         from anthropic import AsyncAnthropic
 
-        self._client = AsyncAnthropic(api_key=s.llm_api_key, timeout=s.llm_timeout_s, max_retries=1)
+        self._client = AsyncAnthropic(
+            api_key=s.llm_api_key, timeout=s.llm_timeout_s, max_retries=1
+        )
         self._s = s
 
     async def stream(self, system, messages, max_tokens=None):
         async with self._client.messages.stream(
-            model=self._s.llm_model, max_tokens=max_tokens or self._s.llm_max_tokens,
-            temperature=self._s.llm_temperature, system=system, messages=messages,
+            model=self._s.llm_model,
+            max_tokens=max_tokens or self._s.llm_max_tokens,
+            temperature=self._s.llm_temperature,
+            system=system,
+            messages=messages,
         ) as stream:
             async for text in stream.text_stream:
                 yield text
@@ -64,7 +76,9 @@ class OpenAICompatLLM(_BaseLLM):
         # Also check runtime key pool file managed via /dev-panel
         for candidate in [
             Path("/home/azureuser/smart-agriculture-ai/data/gemini_keys.json"),
-            Path(__file__).resolve().parent.parent.parent.parent / "data" / "gemini_keys.json",
+            Path(__file__).resolve().parent.parent.parent.parent
+            / "data"
+            / "gemini_keys.json",
         ]:
             try:
                 if candidate.exists():

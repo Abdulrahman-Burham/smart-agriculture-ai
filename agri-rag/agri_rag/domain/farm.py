@@ -4,6 +4,7 @@ These models are the integration contract between the three AI components. The V
 engineer emits `VisionDiagnosis`, the OCR engineer emits `SoilReport`, the backend adds
 weather/operations data, and the assistant turns all of it into grounded advice.
 """
+
 from __future__ import annotations
 
 from datetime import date
@@ -25,7 +26,9 @@ _METHOD_AR = {"drip": "تنقيط", "surface": "غمر", "sprinkler": "رش"}
 
 class SoilReport(BaseModel):
     ph: float | None = Field(None, ge=0, le=14)
-    ec_ds_m: float | None = Field(None, ge=0, description="Electrical conductivity, dS/m")
+    ec_ds_m: float | None = Field(
+        None, ge=0, description="Electrical conductivity, dS/m"
+    )
     nitrogen_ppm: float | None = Field(None, ge=0)
     phosphorus_ppm: float | None = Field(None, ge=0)
     potassium_ppm: float | None = Field(None, ge=0)
@@ -35,7 +38,9 @@ class SoilReport(BaseModel):
 
 
 class VisionDiagnosis(BaseModel):
-    label: str = Field(description="Class name from the vision model, e.g. 'اللفحة المتأخرة'")
+    label: str = Field(
+        description="Class name from the vision model, e.g. 'اللفحة المتأخرة'"
+    )
     confidence: float = Field(ge=0, le=1)
     crop: str | None = None
     severity: str | None = None
@@ -54,7 +59,9 @@ class FarmContext(BaseModel):
     farm_id: str = "unknown"
     farmer_name: str | None = None
     governorate: str | None = None
-    latitude: float | None = Field(None, ge=-90, le=90, description="Farm location; enables automatic weather")
+    latitude: float | None = Field(
+        None, ge=-90, le=90, description="Farm location; enables automatic weather"
+    )
     longitude: float | None = Field(None, ge=-180, le=180)
     crop: str | None = None
     growth_stage: str | None = None
@@ -70,27 +77,59 @@ class FarmContext(BaseModel):
     def render_arabic(self) -> str:
         """Compact Arabic rendering injected into the prompt (kept short to protect latency)."""
         lines: list[str] = []
-        head = [("اسم المزارع", self.farmer_name), ("المحافظة", self.governorate), ("المحصول", self.crop),
-                ("مرحلة النمو", self.growth_stage), ("المساحة (فدان)", self.area_feddan),
-                ("طريقة الري", _METHOD_AR.get(self.irrigation_method.value) if self.irrigation_method else None),
-                ("آخر ري", self.last_irrigation_date), ("آخر تسميد", self.last_fertilization_date)]
+        head = [
+            ("اسم المزارع", self.farmer_name),
+            ("المحافظة", self.governorate),
+            ("المحصول", self.crop),
+            ("مرحلة النمو", self.growth_stage),
+            ("المساحة (فدان)", self.area_feddan),
+            (
+                "طريقة الري",
+                _METHOD_AR.get(self.irrigation_method.value)
+                if self.irrigation_method
+                else None,
+            ),
+            ("آخر ري", self.last_irrigation_date),
+            ("آخر تسميد", self.last_fertilization_date),
+        ]
         lines += [f"- {k}: {v}" for k, v in head if v is not None]
         if self.soil:
             s = self.soil
-            parts = [("pH", s.ph), ("الملوحة EC (dS/m)", s.ec_ds_m), ("نيتروجين ppm", s.nitrogen_ppm),
-                     ("فوسفور ppm", s.phosphorus_ppm), ("بوتاسيوم ppm", s.potassium_ppm),
-                     ("مادة عضوية %", s.organic_matter_pct), ("القوام", s.texture), ("تاريخ العينة", s.sampled_at)]
-            lines.append("- تحليل التربة: " + "، ".join(f"{k}={v}" for k, v in parts if v is not None))
+            parts = [
+                ("pH", s.ph),
+                ("الملوحة EC (dS/m)", s.ec_ds_m),
+                ("نيتروجين ppm", s.nitrogen_ppm),
+                ("فوسفور ppm", s.phosphorus_ppm),
+                ("بوتاسيوم ppm", s.potassium_ppm),
+                ("مادة عضوية %", s.organic_matter_pct),
+                ("القوام", s.texture),
+                ("تاريخ العينة", s.sampled_at),
+            ]
+            lines.append(
+                "- تحليل التربة: "
+                + "، ".join(f"{k}={v}" for k, v in parts if v is not None)
+            )
         for d in self.diagnoses:
             flag = " (ثقة منخفضة - غير مؤكد)" if d.confidence < LOW_CONFIDENCE else ""
             sev = f"، الشدة: {d.severity}" if d.severity else ""
-            lines.append(f"- تشخيص الصورة: {d.label} بثقة {d.confidence:.0%}{sev}{flag}")
+            lines.append(
+                f"- تشخيص الصورة: {d.label} بثقة {d.confidence:.0%}{sev}{flag}"
+            )
         if self.weather:
             w = self.weather
-            parts = [("حرارة °م", w.temp_c), ("رطوبة %", w.humidity_pct), ("أمطار 24س (مم)", w.rain_mm_24h),
-                     ("متوقع أمطار 48س (مم)", w.forecast_rain_mm_48h),
-                     ("مصدر القراءة", {"open-meteo": "خدمة طقس تلقائية"}.get(w.source or "", w.source))]
-            lines.append("- الطقس: " + "، ".join(f"{k}={v}" for k, v in parts if v is not None))
+            parts = [
+                ("حرارة °م", w.temp_c),
+                ("رطوبة %", w.humidity_pct),
+                ("أمطار 24س (مم)", w.rain_mm_24h),
+                ("متوقع أمطار 48س (مم)", w.forecast_rain_mm_48h),
+                (
+                    "مصدر القراءة",
+                    {"open-meteo": "خدمة طقس تلقائية"}.get(w.source or "", w.source),
+                ),
+            ]
+            lines.append(
+                "- الطقس: " + "، ".join(f"{k}={v}" for k, v in parts if v is not None)
+            )
         if self.memory_notes:
             lines.append(f"- سجل وذاكرة المزارع السابقة:\n{self.memory_notes}")
         return "\n".join(lines)

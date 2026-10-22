@@ -23,15 +23,17 @@ def test_health_check_endpoint():
 def test_standalone_cv_prediction():
     """Verify Computer Vision disease classification endpoint."""
     from computer_vision.standalone_cv_api import app as cv_app
+
     cv_client = TestClient(cv_app)
-    
+
     # Create fake image with 3 channels
     from PIL import Image
+
     img = Image.new("RGB", (224, 224), color="green")
     buf = io.BytesIO()
     img.save(buf, format="JPEG")
     buf.seek(0)
-    
+
     files = {"file": ("tomato_leaf.jpg", buf, "image/jpeg")}
     response = cv_client.post("/predict", files=files)
     assert response.status_code == 200
@@ -44,6 +46,7 @@ def test_standalone_cv_prediction():
 def test_end_to_end_diagnose_and_advise_with_image():
     """Verify full integration flow: Image + Query -> CV -> RAG -> Grounded Advice Payload."""
     from PIL import Image
+
     img = Image.new("RGB", (224, 224), color="green")
     buf = io.BytesIO()
     img.save(buf, format="JPEG")

@@ -42,11 +42,15 @@ def save_guest_policy(enforce_login: bool, max_free_uses: int) -> Dict[str, Any]
     """Persist Guest Login Gate policy to data/guest_policy.json."""
     policy = {
         "enforce_login": bool(enforce_login),
-        "max_free_uses": max(0, min(100, int(3 if max_free_uses is None else max_free_uses))),
+        "max_free_uses": max(
+            0, min(100, int(3 if max_free_uses is None else max_free_uses))
+        ),
     }
     try:
         _GUEST_POLICY_FILE.parent.mkdir(parents=True, exist_ok=True)
-        _GUEST_POLICY_FILE.write_text(json.dumps(policy, ensure_ascii=False, indent=2), encoding="utf-8")
+        _GUEST_POLICY_FILE.write_text(
+            json.dumps(policy, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
     except Exception:
         pass
     return policy

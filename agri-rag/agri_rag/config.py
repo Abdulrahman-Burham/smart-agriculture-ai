@@ -1,4 +1,5 @@
 """Central configuration. Every value can be overridden with an AGRI_* env var or .env file."""
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -10,14 +11,18 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="AGRI_", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_prefix="AGRI_", extra="ignore"
+    )
 
     env: str = "dev"
     api_key: str | None = None  # when set, every /v1 call requires X-API-Key
 
     # --- LLM -------------------------------------------------------------
     llm_provider: str = "anthropic"  # anthropic | openai_compat | fake
-    llm_model: str = "claude-haiku-4-5-20251001"  # small model => low time-to-first-token
+    llm_model: str = (
+        "claude-haiku-4-5-20251001"  # small model => low time-to-first-token
+    )
     llm_api_key: str | None = None  # falls back to ANTHROPIC_API_KEY / OPENAI_API_KEY
     llm_base_url: str | None = None  # for Ollama / vLLM / any OpenAI-compatible server
     llm_max_tokens: int = 700

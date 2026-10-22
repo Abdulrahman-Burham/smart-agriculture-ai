@@ -106,7 +106,12 @@ def collect_server_system_metrics() -> Dict[str, Any]:
                         if parts and parts[0].isdigit():
                             mem_map[k.strip()] = int(parts[0])
             tot_kb = mem_map.get("MemTotal", 0)
-            avail_kb = mem_map.get("MemAvailable", mem_map.get("MemFree", 0) + mem_map.get("Buffers", 0) + mem_map.get("Cached", 0))
+            avail_kb = mem_map.get(
+                "MemAvailable",
+                mem_map.get("MemFree", 0)
+                + mem_map.get("Buffers", 0)
+                + mem_map.get("Cached", 0),
+            )
             used_kb = max(0, tot_kb - avail_kb)
             if tot_kb > 0:
                 ram_total_gb = round(tot_kb / (1024 * 1024), 2)
@@ -138,15 +143,17 @@ def collect_server_system_metrics() -> Dict[str, Any]:
     disk_total_gb, disk_used_gb, disk_free_gb, disk_pct = 0.0, 0.0, 0.0, 0.0
     try:
         du = shutil.disk_usage("/")
-        disk_total_gb = round(du.total / (1024 ** 3), 2)
-        disk_used_gb = round(du.used / (1024 ** 3), 2)
-        disk_free_gb = round(du.free / (1024 ** 3), 2)
+        disk_total_gb = round(du.total / (1024**3), 2)
+        disk_used_gb = round(du.used / (1024**3), 2)
+        disk_free_gb = round(du.free / (1024**3), 2)
         disk_pct = round((du.used * 100.0) / du.total, 1) if du.total > 0 else 0.0
     except Exception:
         pass
 
     db_file = DATA_DIR / "predictions_history.db"
-    db_size_mb = round(db_file.stat().st_size / (1024 * 1024), 2) if db_file.exists() else 0.0
+    db_size_mb = (
+        round(db_file.stat().st_size / (1024 * 1024), 2) if db_file.exists() else 0.0
+    )
 
     # 4. Network Interface RX / TX Traffic
     net_rx_mb, net_tx_mb, net_rx_gb, net_tx_gb = 0.0, 0.0, 0.0, 0.0
@@ -169,8 +176,8 @@ def collect_server_system_metrics() -> Dict[str, Any]:
                         net_tx_packets += int(fields[9])
             net_rx_mb = round(rx_bytes / (1024 * 1024), 1)
             net_tx_mb = round(tx_bytes / (1024 * 1024), 1)
-            net_rx_gb = round(rx_bytes / (1024 ** 3), 2)
-            net_tx_gb = round(tx_bytes / (1024 ** 3), 2)
+            net_rx_gb = round(rx_bytes / (1024**3), 2)
+            net_tx_gb = round(tx_bytes / (1024**3), 2)
     except Exception:
         pass
 

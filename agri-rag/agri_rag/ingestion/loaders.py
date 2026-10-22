@@ -1,4 +1,5 @@
 """Document loaders: Markdown / text (with optional YAML front matter) and PDF."""
+
 from __future__ import annotations
 
 import logging
@@ -26,7 +27,7 @@ def _parse_front_matter(raw: str) -> tuple[dict, str]:
     match = _FRONT_MATTER.match(raw)
     if not match:
         return {}, raw
-    return (yaml.safe_load(match.group(1)) or {}), raw[match.end():]
+    return (yaml.safe_load(match.group(1)) or {}), raw[match.end() :]
 
 
 def _first_heading(text: str) -> str | None:
@@ -49,7 +50,10 @@ def _load_pdf(path: Path) -> Document:
     pages = [(p.extract_text() or "").strip() for p in reader.pages]
     text = "\n\n".join(p for p in pages if p)
     if not text:
-        log.warning("%s has no extractable text (scanned?). Run it through the OCR engine first.", path.name)
+        log.warning(
+            "%s has no extractable text (scanned?). Run it through the OCR engine first.",
+            path.name,
+        )
     else:
         log.warning(
             "%s: Arabic PDF text extraction can reverse/disconnect letters. "

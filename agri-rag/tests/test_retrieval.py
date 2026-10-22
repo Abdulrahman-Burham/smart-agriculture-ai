@@ -1,13 +1,20 @@
 import pytest
 
 
-@pytest.mark.parametrize("question,crop,expected", [
-    ("الورق بتاع القوطة عليه بقع مايه غامقة وتحت الورقة زغب أبيض", "قوطة", "tomato_late_blight.md"),
-    ("القمح طلع عليه خطوط صفرا زي البودرة", "قمح", "wheat_rust.md"),
-    ("الأرض عندي مالحة أعمل إيه؟", None, "soil_ph_salinity.md"),
-    ("في دبانة بيضا على الفلفل", None, "aphids_whitefly.md"),
-    ("هل أروي لو متوقع مطر بكرة؟", None, "irrigation_scheduling.md"),
-])
+@pytest.mark.parametrize(
+    "question,crop,expected",
+    [
+        (
+            "الورق بتاع القوطة عليه بقع مايه غامقة وتحت الورقة زغب أبيض",
+            "قوطة",
+            "tomato_late_blight.md",
+        ),
+        ("القمح طلع عليه خطوط صفرا زي البودرة", "قمح", "wheat_rust.md"),
+        ("الأرض عندي مالحة أعمل إيه؟", None, "soil_ph_salinity.md"),
+        ("في دبانة بيضا على الفلفل", None, "aphids_whitefly.md"),
+        ("هل أروي لو متوقع مطر بكرة؟", None, "irrigation_scheduling.md"),
+    ],
+)
 def test_dialect_questions_find_right_source(container, question, crop, expected):
     res = container.retriever.retrieve(question, crop, top_k=3)
     assert len(res.chunks) > 0

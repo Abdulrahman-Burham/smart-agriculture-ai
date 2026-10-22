@@ -10,7 +10,10 @@ import pytest
 from app.main import app
 from app.core.config import DEV_SECRET_KEY
 from app.schemas.calculator import TankMixRequest, SalinityRequest
-from app.services.agri_calculator_service import calculate_tank_mix, evaluate_water_salinity
+from app.services.agri_calculator_service import (
+    calculate_tank_mix,
+    evaluate_water_salinity,
+)
 
 from computer_vision.storage.image_repository import save_image_record
 
@@ -37,7 +40,10 @@ def test_calculate_tank_mix_single_pesticide():
     assert res.total_chemical_amount == 200.0
     assert res.amount_per_tank == 28.57
     assert res.tanks_count_practical == 7
-    assert any(w in res.amount_per_tank_practical for w in ("ملعقة", "ملعقتين", "ملاعق", "كوب", "جم", "جرام"))
+    assert any(
+        w in res.amount_per_tank_practical
+        for w in ("ملعقة", "ملعقتين", "ملاعق", "كوب", "جم", "جرام")
+    )
 
 
 def test_calculate_tank_mix_direct_single_tank():
@@ -57,7 +63,10 @@ def test_calculate_tank_mix_direct_single_tank():
     assert res.total_water_liters == 20.0
     assert res.amount_per_tank == 10.0
     assert res.total_chemical_amount == 10.0
-    assert "سرنجة" in res.amount_per_tank_practical or "سم³" in res.amount_per_tank_practical
+    assert (
+        "سرنجة" in res.amount_per_tank_practical
+        or "سم³" in res.amount_per_tank_practical
+    )
 
 
 def test_calculate_tank_mix_barrel_200l():
@@ -77,7 +86,11 @@ def test_calculate_tank_mix_barrel_200l():
     assert res.total_water_liters == 200.0
     assert res.amount_per_tank == 500.0
     assert res.total_chemical_amount == 500.0
-    assert "500" in res.amount_per_tank_practical or "كوب" in res.amount_per_tank_practical or "كيس" in res.amount_per_tank_practical
+    assert (
+        "500" in res.amount_per_tank_practical
+        or "كوب" in res.amount_per_tank_practical
+        or "كيس" in res.amount_per_tank_practical
+    )
 
 
 def test_calculate_tank_mix_incompatible_copper_amino():
@@ -236,9 +249,10 @@ def test_telegram_config_endpoints_and_security():
     assert post_resp.json()["status"] == "success"
 
     # Test endpoint (mock token returns 200 if valid or 400 if mock credentials fail connection)
-    test_resp = client.post(f"/api/dev/telegram-test?key={DEV_SECRET_KEY}&message=unit_test")
+    test_resp = client.post(
+        f"/api/dev/telegram-test?key={DEV_SECRET_KEY}&message=unit_test"
+    )
     assert test_resp.status_code in (200, 400)
-
 
 
 def test_followup_recovery_evaluation_endpoint():
@@ -279,7 +293,13 @@ def test_followup_recovery_evaluation_endpoint():
     assert result["days_elapsed"] == 7
     assert 0.0 <= result["recovery_score"] <= 100.0
     assert result["status"] == "success"
-    assert result["recovery_status"] in ("healed", "recovering", "active", "degraded", "controlled")
+    assert result["recovery_status"] in (
+        "healed",
+        "recovering",
+        "active",
+        "degraded",
+        "controlled",
+    )
 
     assert "advice" in result
     assert isinstance(result["should_repeat_spray"], bool)

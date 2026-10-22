@@ -28,13 +28,21 @@ def build_prompt(query: str, context_chunks: list[dict[str, Any]]) -> str:
     return prompt.strip()
 
 
-def generate_answer(query: str, context_chunks: list[dict[str, Any]], llm_client) -> dict[str, Any]:
+def generate_answer(
+    query: str, context_chunks: list[dict[str, Any]], llm_client
+) -> dict[str, Any]:
     """Generate a grounded answer from the top retrieved chunks."""
 
     prompt = build_prompt(query, context_chunks)
-    answer_text = llm_client.generate_text(prompt) if llm_client is not None else "No LLM client configured."
+    answer_text = (
+        llm_client.generate_text(prompt)
+        if llm_client is not None
+        else "No LLM client configured."
+    )
     citations = [f"Chunk {idx + 1}" for idx in range(len(context_chunks))]
-    retrieval_confidence = sum(float(chunk.get("score", 0.0)) for chunk in context_chunks) / max(1, len(context_chunks))
+    retrieval_confidence = sum(
+        float(chunk.get("score", 0.0)) for chunk in context_chunks
+    ) / max(1, len(context_chunks))
     needs_agronomist_review = retrieval_confidence < 0.35
 
     return {

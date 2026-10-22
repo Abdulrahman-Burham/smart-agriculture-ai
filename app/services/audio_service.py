@@ -121,7 +121,9 @@ def to_spoken_egyptian_arabic(text: str) -> str:
     return t
 
 
-def wav_or_pcm_to_mp3(audio_bytes: bytes, sample_rate: int = 24000, channels: int = 1) -> Tuple[bytes, str]:
+def wav_or_pcm_to_mp3(
+    audio_bytes: bytes, sample_rate: int = 24000, channels: int = 1
+) -> Tuple[bytes, str]:
     """Convert raw PCM or WAV audio bytes to MP3 or return standard WAV."""
     if audio_bytes[:4] == b"RIFF":
         try:
@@ -136,6 +138,7 @@ def wav_or_pcm_to_mp3(audio_bytes: bytes, sample_rate: int = 24000, channels: in
 
     try:
         import lameenc
+
         encoder = lameenc.Encoder()
         encoder.set_bit_rate(64)
         encoder.set_in_sample_rate(sample_rate)
@@ -159,7 +162,11 @@ def wav_or_pcm_to_mp3(audio_bytes: bytes, sample_rate: int = 24000, channels: in
     return buf.getvalue(), "audio/wav"
 
 
-async def transcribe_speech(audio_bytes: Optional[bytes], content_type: str = "audio/webm", fallback_text: str = "") -> Dict[str, str]:
+async def transcribe_speech(
+    audio_bytes: Optional[bytes],
+    content_type: str = "audio/webm",
+    fallback_text: str = "",
+) -> Dict[str, str]:
     """Transcribe spoken Egyptian Arabic audio using Gemini rotation pool with WebSpeech fallback."""
     global _STT_KEY_RR_IDX
 
@@ -169,17 +176,32 @@ async def transcribe_speech(audio_bytes: Optional[bytes], content_type: str = "a
             n_keys = len(keys)
             start_idx = _STT_KEY_RR_IDX % n_keys
             _STT_KEY_RR_IDX += 1
-            ordered_pairs = [((start_idx + i) % n_keys + 1, keys[(start_idx + i) % n_keys]) for i in range(n_keys)]
+            ordered_pairs = [
+                ((start_idx + i) % n_keys + 1, keys[(start_idx + i) % n_keys])
+                for i in range(n_keys)
+            ]
 
             mime_type = (content_type or "audio/webm").split(";")[0].strip().lower()
             if mime_type in ("audio/x-m4a", "audio/m4a", "audio/aac"):
                 mime_type = "audio/mp4"
-            elif mime_type not in ("audio/webm", "audio/mp4", "audio/ogg", "audio/wav", "audio/mpeg", "audio/mp3"):
+            elif mime_type not in (
+                "audio/webm",
+                "audio/mp4",
+                "audio/ogg",
+                "audio/wav",
+                "audio/mpeg",
+                "audio/mp3",
+            ):
                 mime_type = "audio/webm"
             b64_audio = base64.b64encode(audio_bytes).decode("ascii")
 
             def _call_gemini_stt() -> str:
-                models = [cfg_model, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
+                models = [
+                    cfg_model,
+                    "gemini-3.8-flash",
+                    "gemini-3.5-flash-lite",
+                    "gemini-2.5-flash",
+                ]
                 for k_idx, api_key in ordered_pairs:
                     key_mask = mask_api_key(api_key, k_idx)
                     for m in models:
@@ -191,11 +213,19 @@ async def transcribe_speech(audio_bytes: Optional[bytes], content_type: str = "a
                                     {
                                         "parts": [
                                             {"text": EGYPTIAN_STT_PROMPT},
-                                            {"inlineData": {"mimeType": mime_type, "data": b64_audio}},
+                                            {
+                                                "inlineData": {
+                                                    "mimeType": mime_type,
+                                                    "data": b64_audio,
+                                                }
+                                            },
                                         ]
                                     }
                                 ],
-                                "generationConfig": {"temperature": 0.1, "maxOutputTokens": 250},
+                                "generationConfig": {
+                                    "temperature": 0.1,
+                                    "maxOutputTokens": 250,
+                                },
                             }
                             r = ext_requests.post(url, json=payload, timeout=15)
                             call_ms = round((time.time() - t0) * 1000, 1)
@@ -204,12 +234,24 @@ async def transcribe_speech(audio_bytes: Optional[bytes], content_type: str = "a
                                 usage = resp_json.get("usageMetadata") or {}
                                 candidates = resp_json.get("candidates", [])
                                 if candidates:
-                                    parts = candidates[0].get("content", {}).get("parts", [])
+                                    parts = (
+                                        candidates[0]
+                                        .get("content", {})
+                                        .get("parts", [])
+                                    )
                                     if parts and parts[0].get("text"):
                                         out_txt = parts[0]["text"].strip()
-                                        p_tok = int(usage.get("promptTokenCount") or 220)
-                                        c_tok = int(usage.get("candidatesTokenCount") or estimate_tokens(out_txt))
-                                        t_tok = int(usage.get("totalTokenCount") or (p_tok + c_tok))
+                                        p_tok = int(
+                                            usage.get("promptTokenCount") or 220
+                                        )
+                                        c_tok = int(
+                                            usage.get("candidatesTokenCount")
+                                            or estimate_tokens(out_txt)
+                                        )
+                                        t_tok = int(
+                                            usage.get("totalTokenCount")
+                                            or (p_tok + c_tok)
+                                        )
                                         save_token_usage_log(
                                             endpoint="/api/stt",
                                             service_type="stt_audio",
@@ -256,7 +298,9 @@ async def transcribe_speech(audio_bytes: Optional[bytes], content_type: str = "a
     }
 
 
-async def synthesize_speech(raw_text: str, voice: str = "ar-EG-ShakirNeural") -> Tuple[bytes, str]:
+async def synthesize_speech(
+    raw_text: str, voice: str = "ar-EG-ShakirNeural"
+) -> Tuple[bytes, str]:
     """Synthesize authentic Egyptian speech using Gemini Neural TTS with Microsoft Edge fallback."""
     global _TTS_KEY_RR_IDX
 
@@ -282,12 +326,19 @@ async def synthesize_speech(raw_text: str, voice: str = "ar-EG-ShakirNeural") ->
         n_keys = len(keys)
         start_idx = _TTS_KEY_RR_IDX % n_keys
         _TTS_KEY_RR_IDX += 1
-        ordered_pairs = [((start_idx + i) % n_keys + 1, keys[(start_idx + i) % n_keys]) for i in range(n_keys)]
+        ordered_pairs = [
+            ((start_idx + i) % n_keys + 1, keys[(start_idx + i) % n_keys])
+            for i in range(n_keys)
+        ]
 
         def _call_gemini_tts() -> Optional[Tuple[bytes, str]]:
             for k_idx, api_key in ordered_pairs:
                 key_mask = mask_api_key(api_key, k_idx)
-                for tts_model in ("gemini-3.8-flash-lite-tts", "gemini-3.8-flash-tts", "gemini-2.5-flash-preview-tts"):
+                for tts_model in (
+                    "gemini-3.8-flash-lite-tts",
+                    "gemini-3.8-flash-tts",
+                    "gemini-2.5-flash-preview-tts",
+                ):
                     t0 = time.time()
                     try:
                         url = f"https://generativelanguage.googleapis.com/v1beta/models/{tts_model}:generateContent?key={api_key}"
@@ -297,7 +348,9 @@ async def synthesize_speech(raw_text: str, voice: str = "ar-EG-ShakirNeural") ->
                                 "responseModalities": ["AUDIO"],
                                 "speechConfig": {
                                     "voiceConfig": {
-                                        "prebuiltVoiceConfig": {"voiceName": gemini_voice}
+                                        "prebuiltVoiceConfig": {
+                                            "voiceName": gemini_voice
+                                        }
                                     }
                                 },
                             },
@@ -311,11 +364,21 @@ async def synthesize_speech(raw_text: str, voice: str = "ar-EG-ShakirNeural") ->
                             if cands and "content" in cands[0]:
                                 parts = cands[0]["content"].get("parts", [])
                                 if parts and parts[0].get("inlineData", {}).get("data"):
-                                    raw_audio = base64.b64decode(parts[0]["inlineData"]["data"])
+                                    raw_audio = base64.b64decode(
+                                        parts[0]["inlineData"]["data"]
+                                    )
                                     if raw_audio and len(raw_audio) > 400:
-                                        p_tok = int(usage.get("promptTokenCount") or estimate_tokens(clipped_text))
-                                        c_tok = int(usage.get("candidatesTokenCount") or 220)
-                                        t_tok = int(usage.get("totalTokenCount") or (p_tok + c_tok))
+                                        p_tok = int(
+                                            usage.get("promptTokenCount")
+                                            or estimate_tokens(clipped_text)
+                                        )
+                                        c_tok = int(
+                                            usage.get("candidatesTokenCount") or 220
+                                        )
+                                        t_tok = int(
+                                            usage.get("totalTokenCount")
+                                            or (p_tok + c_tok)
+                                        )
                                         save_token_usage_log(
                                             endpoint="/api/tts",
                                             service_type="tts_audio",
@@ -370,7 +433,9 @@ async def synthesize_speech(raw_text: str, voice: str = "ar-EG-ShakirNeural") ->
             try:
                 if attempt > 0:
                     DRM.clock_skew_seconds = 0.0
-                communicate = edge_tts.Communicate(edge_text, selected_edge_voice, rate="+0%", pitch="-2Hz")
+                communicate = edge_tts.Communicate(
+                    edge_text, selected_edge_voice, rate="+0%", pitch="-2Hz"
+                )
                 audio_chunks = bytearray()
                 async for chunk in communicate.stream():
                     if chunk["type"] == "audio":

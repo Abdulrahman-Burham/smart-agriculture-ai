@@ -24,7 +24,9 @@ IMAGES_DIR = DATA_DIR / "uploaded_images"
 _DB_INITIALIZED = False
 
 
-def _ensure_column(conn: sqlite3.Connection, table: str, column: str, col_def: str) -> None:
+def _ensure_column(
+    conn: sqlite3.Connection, table: str, column: str, col_def: str
+) -> None:
     """Safely add a column to an existing SQLite table if it does not exist."""
     cur = conn.execute(f"PRAGMA table_info({table})")
     existing = {row[1] for row in cur.fetchall()}
@@ -33,7 +35,9 @@ def _ensure_column(conn: sqlite3.Connection, table: str, column: str, col_def: s
 
 
 @contextlib.contextmanager
-def get_db_connection(timeout: float = 15.0) -> Generator[sqlite3.Connection, None, None]:
+def get_db_connection(
+    timeout: float = 15.0,
+) -> Generator[sqlite3.Connection, None, None]:
     """Provide a thread-safe context manager for SQLite connections with Row factory."""
     init_db()
     conn = sqlite3.connect(str(DB_PATH), timeout=timeout)
@@ -349,25 +353,50 @@ def init_db(force: bool = False) -> None:
         )
 
         # 9. Performance B-Tree Indexes
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_user_id ON chat_logs(user_id);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_session_id ON chat_logs(session_id);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_visitor_hash ON chat_logs(visitor_hash);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_created_at ON chat_logs(created_at);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_uploaded_images_user_id ON uploaded_images(user_id);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_uploaded_images_visitor_hash ON uploaded_images(visitor_hash);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_uploaded_images_created_at ON uploaded_images(created_at);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_visitor_logs_visitor_hash ON visitor_logs(visitor_hash);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_visitor_logs_created_at ON visitor_logs(created_at);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_token_logs_user_id ON llm_token_logs(user_id);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_token_logs_created_at ON llm_token_logs(created_at);")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_chat_logs_user_id ON chat_logs(user_id);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_chat_logs_session_id ON chat_logs(session_id);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_chat_logs_visitor_hash ON chat_logs(visitor_hash);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_chat_logs_created_at ON chat_logs(created_at);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_uploaded_images_user_id ON uploaded_images(user_id);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_uploaded_images_visitor_hash ON uploaded_images(visitor_hash);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_uploaded_images_created_at ON uploaded_images(created_at);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_visitor_logs_visitor_hash ON visitor_logs(visitor_hash);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_visitor_logs_created_at ON visitor_logs(created_at);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_llm_token_logs_user_id ON llm_token_logs(user_id);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_llm_token_logs_created_at ON llm_token_logs(created_at);"
+        )
         conn.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
 
         # Seed default Admin Developer account if none exists
-        admin_exists = conn.execute("SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
+        admin_exists = conn.execute(
+            "SELECT id FROM users WHERE role = 'admin' LIMIT 1"
+        ).fetchone()
         if not admin_exists:
             from computer_vision.storage.utils import hash_password
+
             now_seed = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             default_admin_pw = os.environ.get("DEV_PANEL_KEY", "abdo-dev-2026")
             conn.execute(
@@ -407,6 +436,7 @@ def backfill_existing_records() -> None:
             "SELECT id, image_blob FROM uploaded_images WHERE width = 0 OR file_size_kb = 0.0"
         ).fetchall()
         from computer_vision.storage.utils import analyze_image_forensics
+
         for r in rows:
             blob = r["image_blob"]
             if not blob:

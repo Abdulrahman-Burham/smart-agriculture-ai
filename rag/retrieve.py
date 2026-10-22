@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import abc
 import logging
-import math
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -32,8 +31,13 @@ class VectorStoreInterface(abc.ABC):
 class ChromaVectorStore(VectorStoreInterface):
     """Local Chroma vector store implementation."""
 
-    def __init__(self, collection_name: str = "egyptian_agriculture", persist_directory: str = "./chroma_db"):
+    def __init__(
+        self,
+        collection_name: str = "egyptian_agriculture",
+        persist_directory: str = "./chroma_db",
+    ):
         import os
+
         self.collection_name = collection_name
         self.persist_directory = persist_directory
         self._store: Dict[str, Dict[str, Any]] = {}
@@ -48,8 +52,10 @@ class ChromaVectorStore(VectorStoreInterface):
 
             self.client = chromadb.PersistentClient(path=self.persist_directory)
             # Use a lightweight multilingual model that supports Arabic
-            self.embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-                model_name="paraphrase-multilingual-MiniLM-L12-v2"
+            self.embedding_fn = (
+                embedding_functions.SentenceTransformerEmbeddingFunction(
+                    model_name="paraphrase-multilingual-MiniLM-L12-v2"
+                )
             )
             self.collection = self.client.get_or_create_collection(
                 name=self.collection_name,
@@ -57,7 +63,9 @@ class ChromaVectorStore(VectorStoreInterface):
             )
             self.initialized = True
         except Exception:
-            logger.warning("chromadb or sentence-transformers not available. Using in-memory fallback.")
+            logger.warning(
+                "chromadb or sentence-transformers not available. Using in-memory fallback."
+            )
             self.initialized = False
 
     def add_documents(self, chunks: List[Dict[str, Any]]) -> List[str]:
@@ -66,7 +74,7 @@ class ChromaVectorStore(VectorStoreInterface):
             ids = []
             documents = []
             metadatas = []
-            
+
             for chunk in chunks:
                 cid = chunk.get("chunk_id") or chunk.get("id") or str(len(ids))
                 ids.append(cid)
@@ -76,21 +84,21 @@ class ChromaVectorStore(VectorStoreInterface):
                 clean_meta = {k: str(v) for k, v in meta.items() if v is not None}
                 metadatas.append(clean_meta)
                 added_ids.append(cid)
-                
+
             # Batch upsert to Chroma to avoid payload limits
             batch_size = 100
             for i in range(0, len(ids), batch_size):
                 self.collection.upsert(
-                    ids=ids[i:i+batch_size],
-                    documents=documents[i:i+batch_size],
-                    metadatas=metadatas[i:i+batch_size],
+                    ids=ids[i : i + batch_size],
+                    documents=documents[i : i + batch_size],
+                    metadatas=metadatas[i : i + batch_size],
                 )
         else:
             for chunk in chunks:
                 cid = chunk.get("chunk_id") or chunk.get("id")
                 self._store[cid] = chunk
                 added_ids.append(cid)
-                
+
         return added_ids
 
     def similarity_search(
@@ -100,40 +108,50 @@ class ChromaVectorStore(VectorStoreInterface):
         filter_metadata: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         results = []
-        
+
         if self.initialized:
             # Build where clause for metadata filtering
             where = None
             if filter_metadata:
-                where_clauses = [{"$eq": {k: str(v)}} for k, v in filter_metadata.items() if v]
+                where_clauses = [
+                    {"$eq": {k: str(v)}} for k, v in filter_metadata.items() if v
+                ]
                 if len(where_clauses) == 1:
-                    where = list(where_clauses[0].values())[0] # Chroma format
+                    where = list(where_clauses[0].values())[0]  # Chroma format
                 elif len(where_clauses) > 1:
                     # Not perfectly mapping all logic, keeping it simple for this implementation
-                    where = {"$and": [{k: str(v)} for k, v in filter_metadata.items() if v]}
-            
+                    where = {
+                        "$and": [{k: str(v)} for k, v in filter_metadata.items() if v]
+                    }
+
             # Catch case where filter logic is too complex for this simplified where clause
             if isinstance(where, dict) and "$and" in where:
-               where = None 
-               
+                where = None
+
             search_results = self.collection.query(
-                query_texts=[query],
-                n_results=k,
-                where=where
+                query_texts=[query], n_results=k, where=where
             )
-            
-            if search_results and search_results["ids"] and len(search_results["ids"][0]) > 0:
+
+            if (
+                search_results
+                and search_results["ids"]
+                and len(search_results["ids"][0]) > 0
+            ):
                 for idx, cid in enumerate(search_results["ids"][0]):
                     distance = search_results["distances"][0][idx]
                     # Convert L2 distance to similarity score
                     score = 1.0 / (1.0 + distance)
-                    
-                    results.append({
-                        "chunk_id": cid,
-                        "content": search_results["documents"][0][idx],
-                        "metadata": search_results["metadatas"][0][idx] if search_results["metadatas"] else {},
-                        "vector_score": score,
-                    })
+
+                    results.append(
+                        {
+                            "chunk_id": cid,
+                            "content": search_results["documents"][0][idx],
+                            "metadata": search_results["metadatas"][0][idx]
+                            if search_results["metadatas"]
+                            else {},
+                            "vector_score": score,
+                        }
+                    )
         else:
             query_words = set(query.lower().split())
             for cid, chunk in self._store.items():
@@ -153,12 +171,14 @@ class ChromaVectorStore(VectorStoreInterface):
                     if not match:
                         continue
 
-                results.append({
-                    "chunk_id": cid,
-                    "content": chunk.get("content", ""),
-                    "metadata": metadata,
-                    "vector_score": score,
-                })
+                results.append(
+                    {
+                        "chunk_id": cid,
+                        "content": chunk.get("content", ""),
+                        "metadata": metadata,
+                        "vector_score": score,
+                    }
+                )
 
         results.sort(key=lambda x: x["vector_score"], reverse=True)
         return results[:k]
@@ -167,17 +187,23 @@ class ChromaVectorStore(VectorStoreInterface):
 class QdrantVectorStore(VectorStoreInterface):
     """Qdrant Cloud vector store implementation using Cohere embeddings."""
 
-    def __init__(self, url: str, api_key: str, cohere_api_key: str, collection_name: str = "egyptian_agriculture"):
+    def __init__(
+        self,
+        url: str,
+        api_key: str,
+        cohere_api_key: str,
+        collection_name: str = "egyptian_agriculture",
+    ):
         self.collection_name = collection_name
         try:
             from qdrant_client import QdrantClient
-            from qdrant_client.http.models import Distance, VectorParams, PointStruct
+            from qdrant_client.http.models import Distance, VectorParams
             import cohere
 
             self.client = QdrantClient(url=url, api_key=api_key)
             self.co = cohere.Client(cohere_api_key)
             self.model_name = "embed-multilingual-v3.0"
-            
+
             # Check if collection exists, if not create it (Cohere v3 multilingual is 1024 dims)
             collections = self.client.get_collections().collections
             if not any(c.name == self.collection_name for c in collections):
@@ -199,39 +225,32 @@ class QdrantVectorStore(VectorStoreInterface):
 
         added_ids = []
         texts = [chunk.get("content", "") for chunk in chunks]
-        
+
         # Batch size for Cohere API limits
         batch_size = 90
         for i in range(0, len(texts), batch_size):
-            batch_texts = texts[i:i+batch_size]
-            batch_chunks = chunks[i:i+batch_size]
-            
+            batch_texts = texts[i : i + batch_size]
+            batch_chunks = chunks[i : i + batch_size]
+
             # Generate embeddings
             response = self.co.embed(
-                texts=batch_texts, 
-                model=self.model_name, 
-                input_type="search_document"
+                texts=batch_texts, model=self.model_name, input_type="search_document"
             )
             embeddings = response.embeddings
-            
+
             points = []
             for j, emb in enumerate(embeddings):
                 chunk = batch_chunks[j]
                 cid = chunk.get("chunk_id") or str(uuid.uuid4())
                 added_ids.append(cid)
-                
+
                 payload = chunk.get("metadata", {}).copy()
                 payload["content"] = chunk.get("content", "")
-                
-                points.append(
-                    PointStruct(id=cid, vector=emb, payload=payload)
-                )
-                
-            self.client.upsert(
-                collection_name=self.collection_name,
-                points=points
-            )
-            
+
+                points.append(PointStruct(id=cid, vector=emb, payload=payload))
+
+            self.client.upsert(collection_name=self.collection_name, points=points)
+
         logger.info(f"QdrantVectorStore: added {len(added_ids)} chunks")
         return added_ids
 
@@ -243,14 +262,12 @@ class QdrantVectorStore(VectorStoreInterface):
     ) -> List[Dict[str, Any]]:
         if not self.initialized:
             return []
-            
+
         from qdrant_client.http.models import Filter, FieldCondition, MatchValue
 
         # Embed query
         response = self.co.embed(
-            texts=[query], 
-            model=self.model_name, 
-            input_type="search_query"
+            texts=[query], model=self.model_name, input_type="search_query"
         )
         query_vector = response.embeddings[0]
 
@@ -277,12 +294,14 @@ class QdrantVectorStore(VectorStoreInterface):
         for hit in search_results.points:
             payload = hit.payload or {}
             content = payload.pop("content", "")
-            results.append({
-                "chunk_id": str(hit.id),
-                "content": content,
-                "metadata": payload,
-                "vector_score": hit.score,
-            })
+            results.append(
+                {
+                    "chunk_id": str(hit.id),
+                    "content": content,
+                    "metadata": payload,
+                    "vector_score": hit.score,
+                }
+            )
 
         return results
 
@@ -344,9 +363,17 @@ def apply_vision_metadata_boost(
     if not vision_context:
         return candidates
 
-    crop = str(vision_context.get("crop_type") or vision_context.get("crop") or "").lower()
-    disease = str(vision_context.get("disease_label") or vision_context.get("disease") or "").lower()
-    vision_conf = float(vision_context.get("confidence_score") or vision_context.get("confidence") or 1.0)
+    crop = str(
+        vision_context.get("crop_type") or vision_context.get("crop") or ""
+    ).lower()
+    disease = str(
+        vision_context.get("disease_label") or vision_context.get("disease") or ""
+    ).lower()
+    vision_conf = float(
+        vision_context.get("confidence_score")
+        or vision_context.get("confidence")
+        or 1.0
+    )
 
     if not crop and not disease:
         return candidates
@@ -364,7 +391,9 @@ def apply_vision_metadata_boost(
             match_bonus += 0.25 * vision_conf
 
         cand_copy = dict(cand)
-        cand_copy["rrf_score"] = cand_copy.get("rrf_score", 0.0) + (match_bonus * boost_factor)
+        cand_copy["rrf_score"] = cand_copy.get("rrf_score", 0.0) + (
+            match_bonus * boost_factor
+        )
         cand_copy["vision_boosted"] = match_bonus > 0
         boosted.append(cand_copy)
 
@@ -372,13 +401,17 @@ def apply_vision_metadata_boost(
     return boosted
 
 
-def get_intent_weights(intent: str, query: str, config: Optional[Dict[str, Any]] = None) -> tuple[float, float]:
+def get_intent_weights(
+    intent: str, query: str, config: Optional[Dict[str, Any]] = None
+) -> tuple[float, float]:
     """Determine (w_dense, w_sparse) weights based on intent and query product codes."""
     query_lower = (query or "").lower()
 
     # Product codes or chemical names -> strong BM25 bias
     product_code_tokens = ["npk", "urea", "يوريا", "سماد", "مبيد", "تركيز"]
-    if intent == "dosage_lookup" or any(tok in query_lower for tok in product_code_tokens):
+    if intent == "dosage_lookup" or any(
+        tok in query_lower for tok in product_code_tokens
+    ):
         return (0.3, 0.7)
 
     if intent == "general_advice":
@@ -388,7 +421,9 @@ def get_intent_weights(intent: str, query: str, config: Optional[Dict[str, Any]]
     return (0.5, 0.5)
 
 
-def search_bm25(bm25_data: Dict[str, Any], query: str, k: int = 20) -> List[Dict[str, Any]]:
+def search_bm25(
+    bm25_data: Dict[str, Any], query: str, k: int = 20
+) -> List[Dict[str, Any]]:
     """Execute BM25 search over corpus chunks."""
     if not bm25_data or not bm25_data.get("bm25_index"):
         return []
@@ -399,18 +434,22 @@ def search_bm25(bm25_data: Dict[str, Any], query: str, k: int = 20) -> List[Dict
     tokenized_query = query.lower().split()
     scores = bm25.get_scores(tokenized_query)
 
-    ranked_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:k]
+    ranked_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[
+        :k
+    ]
 
     results = []
     for idx in ranked_indices:
         if scores[idx] > 0 or len(results) < k:
             chunk = chunks[idx]
-            results.append({
-                "chunk_id": chunk["chunk_id"],
-                "content": chunk["content"],
-                "metadata": chunk.get("metadata", {}),
-                "bm25_score": float(scores[idx]),
-            })
+            results.append(
+                {
+                    "chunk_id": chunk["chunk_id"],
+                    "content": chunk["content"],
+                    "metadata": chunk.get("metadata", {}),
+                    "bm25_score": float(scores[idx]),
+                }
+            )
     return results
 
 
@@ -428,7 +467,9 @@ def hybrid_retrieval(
     rrf_k = config.get("retrieval", {}).get("rrf_k", 60) if config else 60
 
     # 1. Vector Search (top-20)
-    dense_results = vector_store.similarity_search(query, k=top_k) if vector_store else []
+    dense_results = (
+        vector_store.similarity_search(query, k=top_k) if vector_store else []
+    )
 
     # 2. BM25 Search (top-20)
     sparse_results = search_bm25(bm25_data, query, k=top_k) if bm25_data else []

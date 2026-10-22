@@ -90,11 +90,17 @@ def get_agent_memory_context(
                     conf_float = min(1.0, max(0.0, float(conf_raw) / 100.0))
                 except Exception:
                     conf_float = 0.9
-                diag_list.append({
-                    "label": f"{pred_ar} ({r['predicted_class']})" if r["predicted_class_ar"] else r["predicted_class"],
-                    "confidence": round(conf_float, 4),
-                })
-                diag_lines.append(f"  • صورة بتاريخ {r['created_at']}: التشخيص = {pred_ar} (ثقة {r['confidence']})")
+                diag_list.append(
+                    {
+                        "label": f"{pred_ar} ({r['predicted_class']})"
+                        if r["predicted_class_ar"]
+                        else r["predicted_class"],
+                        "confidence": round(conf_float, 4),
+                    }
+                )
+                diag_lines.append(
+                    f"  • صورة بتاريخ {r['created_at']}: التشخيص = {pred_ar} (ثقة {r['confidence']})"
+                )
             out["diagnoses"] = diag_list
 
             # 3. Recent conversation turns from chat_logs (Strictly isolated by user_id)
@@ -159,19 +165,23 @@ def get_agent_memory_context(
                     srcs = json.loads(r["sources_json"] or "[]")
                 except Exception:
                     srcs = []
-                turns.append({
-                    "created_at": r["created_at"],
-                    "location": r["location"],
-                    "crop": r["crop"],
-                    "user_query": r["user_query"],
-                    "bot_answer": r["bot_answer"],
-                    "sources": srcs,
-                })
+                turns.append(
+                    {
+                        "created_at": r["created_at"],
+                        "location": r["location"],
+                        "crop": r["crop"],
+                        "user_query": r["user_query"],
+                        "bot_answer": r["bot_answer"],
+                        "sources": srcs,
+                    }
+                )
                 if r["crop"] and not out["primary_crop"]:
                     out["primary_crop"] = r["crop"]
                 q_short = (r["user_query"] or "").strip()[:220]
                 a_short = (r["bot_answer"] or "").strip()[:280]
-                turn_lines.append(f"  • سأل المزارع: «{q_short}» ← رديت عليه: «{a_short}»")
+                turn_lines.append(
+                    f"  • سأل المزارع: «{q_short}» ← رديت عليه: «{a_short}»"
+                )
 
             out["recent_turns"] = turns
             out["turns"] = turns
@@ -179,9 +189,14 @@ def get_agent_memory_context(
 
             notes_parts = []
             if diag_lines:
-                notes_parts.append("آخر تشخيصات الصور المرفوعة من المزارع:\n" + "\n".join(diag_lines))
+                notes_parts.append(
+                    "آخر تشخيصات الصور المرفوعة من المزارع:\n" + "\n".join(diag_lines)
+                )
             if turn_lines:
-                notes_parts.append("سجل المحادثة السابقة مع المزارع (لتكمل عليها):\n" + "\n".join(turn_lines[-8:]))
+                notes_parts.append(
+                    "سجل المحادثة السابقة مع المزارع (لتكمل عليها):\n"
+                    + "\n".join(turn_lines[-8:])
+                )
             out["memory_notes"] = "\n".join(notes_parts)
     except Exception:
         pass
@@ -232,7 +247,9 @@ def save_chat_log(
     if c_tok <= 0 and bot_answer:
         c_tok = estimate_tokens(bot_answer)
     t_tok = int(total_tokens or (p_tok + c_tok))
-    eff_model = llm_model or ("gemini-2.5-flash" if "Legacy" not in (rag_engine or "") else "Legacy-RAG")
+    eff_model = llm_model or (
+        "gemini-2.5-flash" if "Legacy" not in (rag_engine or "") else "Legacy-RAG"
+    )
     eff_key = mask_api_key(api_key_masked) if api_key_masked else "Key #1 (الأساسي)"
 
     with sqlite3.connect(str(DB_PATH)) as conn:
@@ -284,6 +301,7 @@ def save_chat_log(
         chat_id = int(cursor.lastrowid)
 
     from computer_vision.storage.telemetry_repository import save_token_usage_log
+
     save_token_usage_log(
         service_type="استشارة الشات (Agri-RAG)",
         model_name=eff_model,

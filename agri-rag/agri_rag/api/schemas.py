@@ -7,10 +7,17 @@ from ..domain.farm import FarmContext
 
 
 class ChatRequest(BaseModel):
-    question: str = Field(min_length=1, max_length=1000, description="Arabic (Egyptian dialect OK) question, or STT transcript")
+    question: str = Field(
+        min_length=1,
+        max_length=1000,
+        description="Arabic (Egyptian dialect OK) question, or STT transcript",
+    )
     session_id: str | None = Field(None, max_length=64)
     crop: str | None = None
-    farm: FarmContext | None = Field(None, description="Structured output of OCR (soil) + Vision (diagnoses) + weather")
+    farm: FarmContext | None = Field(
+        None,
+        description="Structured output of OCR (soil) + Vision (diagnoses) + weather",
+    )
 
 
 class ChatResponse(BaseModel):
@@ -25,7 +32,10 @@ class ChatResponse(BaseModel):
 
 class AlertsRequest(BaseModel):
     farm: FarmContext
-    enrich: bool = Field(False, description="Add RAG-grounded guidance to each non-info alert (adds LLM latency)")
+    enrich: bool = Field(
+        False,
+        description="Add RAG-grounded guidance to each non-info alert (adds LLM latency)",
+    )
 
 
 class AlertsResponse(BaseModel):

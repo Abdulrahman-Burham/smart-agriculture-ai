@@ -3,6 +3,7 @@
 * `sentence_transformers` (default): multilingual-e5, strong on Arabic, runs locally.
 * `hash`: deterministic, dependency-free embedder for unit tests / offline CI only.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -24,19 +25,28 @@ class SentenceTransformerEmbedder:
         from sentence_transformers import SentenceTransformer  # lazy: heavy import
 
         self._model = SentenceTransformer(model_name)
-        self._e5 = "e5" in model_name.lower()  # e5 models need "query:" / "passage:" prefixes
+        self._e5 = (
+            "e5" in model_name.lower()
+        )  # e5 models need "query:" / "passage:" prefixes
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         prefix = "passage: " if self._e5 else ""
-        vecs = self._model.encode([prefix + strip_diacritics(t) for t in texts],
-                                  normalize_embeddings=True, batch_size=32, show_progress_bar=False)
+        vecs = self._model.encode(
+            [prefix + strip_diacritics(t) for t in texts],
+            normalize_embeddings=True,
+            batch_size=32,
+            show_progress_bar=False,
+        )
         return vecs.tolist()
 
     @lru_cache(maxsize=2048)  # repeated / popular questions skip the encoder entirely
     def _cached_query(self, text: str) -> tuple[float, ...]:
         prefix = "query: " if self._e5 else ""
-        vec = self._model.encode([prefix + strip_diacritics(text)], normalize_embeddings=True,
-                                 show_progress_bar=False)[0]
+        vec = self._model.encode(
+            [prefix + strip_diacritics(text)],
+            normalize_embeddings=True,
+            show_progress_bar=False,
+        )[0]
         return tuple(vec.tolist())
 
     def embed_query(self, text: str) -> list[float]:
@@ -52,7 +62,7 @@ class HashEmbedder:
     def _vec(self, text: str) -> list[float]:
         vec = [0.0] * self.dim
         for tok in tokenize(text):
-            feats = [tok] + [tok[i:i + 3] for i in range(max(len(tok) - 2, 0))]
+            feats = [tok] + [tok[i : i + 3] for i in range(max(len(tok) - 2, 0))]
             for f in feats:
                 h = int(hashlib.md5(f.encode()).hexdigest(), 16)
                 vec[h % self.dim] += 1.0 if h & 1 else -1.0

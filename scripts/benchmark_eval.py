@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -57,7 +56,9 @@ def run_benchmark_evaluation() -> Dict[str, Any]:
             intent_matches += 1
 
         citations = res.get("citations", [])
-        if citations and any(c.get("source_doc") == item["expected_doc"] for c in citations):
+        if citations and any(
+            c.get("source_doc") == item["expected_doc"] for c in citations
+        ):
             citation_valid += 1
             reciprocal_ranks.append(1.0)
         else:
@@ -77,7 +78,9 @@ def run_benchmark_evaluation() -> Dict[str, Any]:
 
     out_file = Path("reports/benchmark_eval.json")
     out_file.parent.mkdir(parents=True, exist_ok=True)
-    out_file.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
+    out_file.write_text(
+        json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
     print(f"📊 Benchmark evaluation completed! Results saved to {out_file}")
     return results

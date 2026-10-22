@@ -27,7 +27,6 @@ def test_glossary_crop_canonicalisation():
     assert g.canonicalize("محصول مجهول", "crop") == "محصول مجهول"
 
 
-
 def test_classify_user_query_intents():
     # 1. Unintelligible inputs (gibberish, symbols, random characters)
     q_gib = classify_user_query("حهىل")

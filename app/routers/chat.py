@@ -24,7 +24,10 @@ from app.services.llm_service import (
     get_rag_pipeline,
     query_agri_rag,
 )
-from computer_vision.storage.chat_repository import get_agent_memory_context, save_chat_log
+from computer_vision.storage.chat_repository import (
+    get_agent_memory_context,
+    save_chat_log,
+)
 from computer_vision.storage.telemetry_repository import save_error_log
 from computer_vision.storage.utils import extract_client_info, extract_user_from_request
 
@@ -84,18 +87,25 @@ async def chat_endpoint(
         if request.rag_choice == "legacy_rag":
             pipeline = get_rag_pipeline()
             from rag.tools import get_current_date_context, get_weather
+
             date_context = await asyncio.to_thread(get_current_date_context)
             weather_data = await asyncio.to_thread(get_weather)
             weather_str = ""
             if weather_data.get("status") == "success":
                 weather_str = f"درجة الحرارة: {weather_data.get('temperature')}°C، سرعة الرياح: {weather_data.get('wind_speed')} كم/س."
-            mem_str = f"\n[ذاكرة المحادثة والتشخيصات السابقة للمزارع:\n{mem_ctx.get('memory_notes', '')}]" if mem_ctx.get("memory_notes") else ""
+            mem_str = (
+                f"\n[ذاكرة المحادثة والتشخيصات السابقة للمزارع:\n{mem_ctx.get('memory_notes', '')}]"
+                if mem_ctx.get("memory_notes")
+                else ""
+            )
             enriched_query = f"{request.query}\n(معلومة للمساعد: {date_context} {weather_str}{mem_str})"
             result = await asyncio.to_thread(pipeline.run, enriched_query)
-            sources = list(set(
-                f"صفحة {c.get('metadata', {}).get('page_start', '?')}"
-                for c in result.get("sources", [])
-            ))
+            sources = list(
+                set(
+                    f"صفحة {c.get('metadata', {}).get('page_start', '?')}"
+                    for c in result.get("sources", [])
+                )
+            )
             latency = round(time.time() - start_time, 3)
             conf = round(result.get("retrieval_confidence", 0), 4)
 
@@ -140,7 +150,9 @@ async def chat_endpoint(
         irrig_enum = IRRIG_TO_ENUM.get(raw_irrig.strip())
 
         farm_ctx: Dict[str, Any] = {
-            "farm_id": f"user-{u_id}" if u_id else f"visitor-{client_info['visitor_hash'][:8]}",
+            "farm_id": f"user-{u_id}"
+            if u_id
+            else f"visitor-{client_info['visitor_hash'][:8]}",
             "farmer_name": u_name or mem_ctx.get("farmer_name") or None,
             "governorate": request.location or mem_ctx.get("governorate") or "القاهرة",
         }

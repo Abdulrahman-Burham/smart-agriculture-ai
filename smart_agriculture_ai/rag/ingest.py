@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import uuid
 from pathlib import Path
 from typing import Any
@@ -23,7 +22,9 @@ def load_documents(paths: list[str]) -> list[dict[str, Any]]:
                 "id": str(uuid.uuid4()),
                 "source_doc": file_path.name,
                 "text": text,
-                "doc_type": "guide" if "guide" in file_path.name.lower() else "protocol",
+                "doc_type": "guide"
+                if "guide" in file_path.name.lower()
+                else "protocol",
                 "crop_type": "unknown",
                 "disease_name": "unknown",
                 "region": "unknown",
@@ -32,7 +33,9 @@ def load_documents(paths: list[str]) -> list[dict[str, Any]]:
     return documents
 
 
-def chunk_documents(documents: list[dict[str, Any]], chunk_size: int = 500, overlap: int = 75) -> list[dict[str, Any]]:
+def chunk_documents(
+    documents: list[dict[str, Any]], chunk_size: int = 500, overlap: int = 75
+) -> list[dict[str, Any]]:
     """Split documents into semantic chunk blocks while preserving protocols as single units."""
 
     chunks: list[dict[str, Any]] = []
@@ -41,7 +44,9 @@ def chunk_documents(documents: list[dict[str, Any]], chunk_size: int = 500, over
         if not text:
             continue
 
-        paragraphs = [section.strip() for section in text.split("\n\n") if section.strip()]
+        paragraphs = [
+            section.strip() for section in text.split("\n\n") if section.strip()
+        ]
         current = ""
         for paragraph in paragraphs:
             if document.get("doc_type") == "protocol" and len(paragraph) > chunk_size:
@@ -97,7 +102,9 @@ def chunk_documents(documents: list[dict[str, Any]], chunk_size: int = 500, over
     return chunks
 
 
-def embed_and_store(chunks: list[dict[str, Any]], embedding_model: str, vector_store) -> list[str]:
+def embed_and_store(
+    chunks: list[dict[str, Any]], embedding_model: str, vector_store
+) -> list[str]:
     """Embed chunk content and upsert it into the configured vector store."""
 
     ids: list[str] = []
@@ -105,11 +112,13 @@ def embed_and_store(chunks: list[dict[str, Any]], embedding_model: str, vector_s
     for chunk in chunks:
         chunk_id = chunk.get("id", str(uuid.uuid4()))
         ids.append(chunk_id)
-        documents.append({
-            "id": chunk_id,
-            "content": chunk.get("content", ""),
-            "metadata": chunk.get("metadata", {}),
-        })
+        documents.append(
+            {
+                "id": chunk_id,
+                "content": chunk.get("content", ""),
+                "metadata": chunk.get("metadata", {}),
+            }
+        )
 
     if vector_store is not None:
         vector_store.add_documents(documents)
@@ -125,7 +134,9 @@ def build_bm25_index(chunks: list[dict[str, Any]]) -> object:
     return BM25Service().build_index(corpus)
 
 
-def ingest_knowledge_base(paths: list[str], vector_store, embedding_model: str) -> dict[str, Any]:
+def ingest_knowledge_base(
+    paths: list[str], vector_store, embedding_model: str
+) -> dict[str, Any]:
     """Ingest all available text knowledge into the vector store and BM25 index."""
 
     documents = load_documents(paths)

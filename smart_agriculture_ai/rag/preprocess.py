@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 
-ARABIC_DIACRITICS = "\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652\u0653\u0654\u0655\u0656\u0657\u0658\u0670\u06E1\u06E2\u06E3\u06E4\u06E5\u06E6\u06E7\u06E8\u06E9"
+ARABIC_DIACRITICS = "\u064b\u064c\u064d\u064e\u064f\u0650\u0651\u0652\u0653\u0654\u0655\u0656\u0657\u0658\u0670\u06e1\u06e2\u06e3\u06e4\u06e5\u06e6\u06e7\u06e8\u06e9"
 
 
 def normalize_arabic_text(text: str) -> str:
@@ -41,8 +41,6 @@ def canonicalize_terms(text: str, lexicon: dict[str, Any]) -> str:
     if not lexicon:
         return cleaned
 
-    replacements: list[tuple[str, str]] = []
-
     alias_map: dict[str, str] = {}
     for group_name, entries in lexicon.get("dialect_aliases", {}).items():
         for item in entries:
@@ -62,16 +60,36 @@ def detect_query_intent(query: str) -> str:
     """Detect a coarse query intent for retrieval routing."""
 
     normalized = normalize_arabic_text((query or "").lower())
-    if any(word in normalized for word in ["مرض", "لفحة", "صدأ", "عفن", "ذبول", "آفة", "حشرة", "بكتيريا"]):
+    if any(
+        word in normalized
+        for word in ["مرض", "لفحة", "صدأ", "عفن", "ذبول", "آفة", "حشرة", "بكتيريا"]
+    ):
         return "disease_query"
-    if any(pattern in normalized for pattern in ["جرعة", "كمية", "جرعات", "نسبة", "معدل", "تسميد", "سماد", "مبيد"]):
+    if any(
+        pattern in normalized
+        for pattern in [
+            "جرعة",
+            "كمية",
+            "جرعات",
+            "نسبة",
+            "معدل",
+            "تسميد",
+            "سماد",
+            "مبيد",
+        ]
+    ):
         return "dosage_lookup"
-    if any(word in normalized for word in ["ري", "مياه", "معدل الري", "متي", "توقيت الري", "رطوبة", "سقاية"]):
+    if any(
+        word in normalized
+        for word in ["ري", "مياه", "معدل الري", "متي", "توقيت الري", "رطوبة", "سقاية"]
+    ):
         return "general_advice"
     return "general_advice"
 
 
-def preprocess_query(query: str, lexicon: dict[str, Any], vision_context: dict[str, Any] | None = None) -> dict[str, Any]:
+def preprocess_query(
+    query: str, lexicon: dict[str, Any], vision_context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Normalize and enrich a user query before retrieval."""
 
     original = query or ""

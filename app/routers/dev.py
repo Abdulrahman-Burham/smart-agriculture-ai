@@ -93,7 +93,9 @@ async def developer_analytics_api(
 
 
 @router.get("/api/dev/guest-policy", include_in_schema=False)
-async def developer_get_guest_policy(request: Request, key: str = Query("")) -> Dict[str, Any]:
+async def developer_get_guest_policy(
+    request: Request, key: str = Query("")
+) -> Dict[str, Any]:
     """Get current Guest Login Gate policy."""
     verify_dev_key(key, request)
     return {"status": "ok", "guest_policy": load_guest_policy()}
@@ -107,7 +109,9 @@ async def developer_update_guest_policy(
 ) -> Dict[str, Any]:
     """Update Guest Login Gate policy (enforce_login, max_free_uses) live without restarting."""
     verify_dev_key(key, request)
-    saved = await asyncio.to_thread(save_guest_policy, payload.enforce_login, payload.max_free_uses)
+    saved = await asyncio.to_thread(
+        save_guest_policy, payload.enforce_login, payload.max_free_uses
+    )
     return {"status": "ok", "guest_policy": saved}
 
 
@@ -121,12 +125,16 @@ async def developer_user_360_api(
 ) -> JSONResponse:
     """Return a complete 360-degree activity dossier for a specific user, cookie visitor, or IP."""
     verify_dev_key(key, request)
-    dossier = await asyncio.to_thread(get_user_360_profile, user_id, visitor_id, client_ip)
+    dossier = await asyncio.to_thread(
+        get_user_360_profile, user_id, visitor_id, client_ip
+    )
     return JSONResponse(content=dossier)
 
 
 @router.get("/api/dev/image/{image_id}", include_in_schema=False)
-async def developer_view_image(image_id: int, request: Request, key: str = Query("")) -> Response:
+async def developer_view_image(
+    image_id: int, request: Request, key: str = Query("")
+) -> Response:
     """Stream a privately stored uploaded image for the developer dashboard (returns 404 without key or Admin login)."""
     verify_dev_key(key, request)
     record = await asyncio.to_thread(get_image_blob_by_id, image_id)
@@ -137,7 +145,9 @@ async def developer_view_image(image_id: int, request: Request, key: str = Query
 
 
 @router.get("/api/dev/gemini-keys", include_in_schema=False)
-async def developer_list_gemini_keys(request: Request, key: str = Query("")) -> Dict[str, Any]:
+async def developer_list_gemini_keys(
+    request: Request, key: str = Query("")
+) -> Dict[str, Any]:
     """Return masked Gemini API keys currently active in the rotation pool."""
     verify_dev_key(key, request)
     keys, model_name = get_gemini_key_pool_and_model()
@@ -183,7 +193,9 @@ async def developer_add_gemini_key(
     if new_k not in saved_keys:
         saved_keys.append(new_k)
     saved_obj["keys"] = saved_keys
-    _GEMINI_KEYS_FILE.write_text(json.dumps(saved_obj, ensure_ascii=False, indent=2), encoding="utf-8")
+    _GEMINI_KEYS_FILE.write_text(
+        json.dumps(saved_obj, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     try:
         os.chmod(str(_GEMINI_KEYS_FILE), 0o600)
     except Exception:
@@ -191,7 +203,12 @@ async def developer_add_gemini_key(
 
     keys, model_name = get_gemini_key_pool_and_model()
     masked = [mask_api_key(k, i + 1) for i, k in enumerate(keys)]
-    return {"status": "ok", "count": len(keys), "masked_keys": masked, "primary_model": model_name}
+    return {
+        "status": "ok",
+        "count": len(keys),
+        "masked_keys": masked,
+        "primary_model": model_name,
+    }
 
 
 @router.post("/api/dev/gemini-config", include_in_schema=False)
@@ -220,14 +237,19 @@ async def developer_update_gemini_config(
         all_keys, _ = get_gemini_key_pool_and_model()
         key_to_remove = None
         for idx, raw_k in enumerate(all_keys):
-            if mask_api_key(raw_k, idx + 1) == target_mask or f"{raw_k[:7]}...{raw_k[-4:]}" in target_mask:
+            if (
+                mask_api_key(raw_k, idx + 1) == target_mask
+                or f"{raw_k[:7]}...{raw_k[-4:]}" in target_mask
+            ):
                 key_to_remove = raw_k
                 break
         if key_to_remove:
             saved_keys = [k for k in saved_obj.get("keys", []) if k != key_to_remove]
             saved_obj["keys"] = saved_keys
 
-    _GEMINI_KEYS_FILE.write_text(json.dumps(saved_obj, ensure_ascii=False, indent=2), encoding="utf-8")
+    _GEMINI_KEYS_FILE.write_text(
+        json.dumps(saved_obj, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     try:
         os.chmod(str(_GEMINI_KEYS_FILE), 0o600)
     except Exception:
@@ -235,11 +257,18 @@ async def developer_update_gemini_config(
 
     keys, model_name = get_gemini_key_pool_and_model()
     masked = [mask_api_key(k, i + 1) for i, k in enumerate(keys)]
-    return {"status": "ok", "count": len(keys), "masked_keys": masked, "primary_model": model_name}
+    return {
+        "status": "ok",
+        "count": len(keys),
+        "masked_keys": masked,
+        "primary_model": model_name,
+    }
 
 
 @router.post("/api/dev/gemini-keys/test", include_in_schema=False)
-async def developer_test_gemini_keys(request: Request, key: str = Query("")) -> Dict[str, Any]:
+async def developer_test_gemini_keys(
+    request: Request, key: str = Query("")
+) -> Dict[str, Any]:
     """Live health & quota check for every configured Gemini API key in the rotation pool."""
     verify_dev_key(key, request)
     keys, model_name = get_gemini_key_pool_and_model()
@@ -383,7 +412,9 @@ async def developer_test_gemini_keys(request: Request, key: str = Query("")) -> 
 
 
 @router.post("/api/dev/clear-cache", include_in_schema=False)
-async def developer_clear_cache(request: Request, key: str = Query("")) -> Dict[str, Any]:
+async def developer_clear_cache(
+    request: Request, key: str = Query("")
+) -> Dict[str, Any]:
     """Flush in-memory TTS audio cache and weather cache to free RAM or force fresh synthesis."""
     verify_dev_key(key, request)
     tts_count = len(_TTS_AUDIO_CACHE)
@@ -418,7 +449,10 @@ async def developer_save_oauth_config(
             detail="معرّف Google Client ID يجب أن ينتهي بـ .apps.googleusercontent.com (من Google Cloud Console).",
         )
 
-    new_cfg = save_oauth_config(google_client_id=g_cid if g_cid else None, microsoft_client_id=m_cid if m_cid else None)
+    new_cfg = save_oauth_config(
+        google_client_id=g_cid if g_cid else None,
+        microsoft_client_id=m_cid if m_cid else None,
+    )
     return {
         "status": "ok",
         "google_client_id": new_cfg.get("google_client_id", ""),
@@ -458,7 +492,9 @@ async def developer_export_data(
         return Response(
             content=zip_bytes,
             media_type="application/zip",
-            headers={"Content-Disposition": 'attachment; filename="plant_disease_retraining_dataset.zip"'},
+            headers={
+                "Content-Disposition": 'attachment; filename="plant_disease_retraining_dataset.zip"'
+            },
         )
 
     if export_type == "finetune_jsonl":
@@ -466,7 +502,9 @@ async def developer_export_data(
         return Response(
             content=jsonl_bytes,
             media_type="application/jsonl; charset=utf-8",
-            headers={"Content-Disposition": 'attachment; filename="agri_rag_finetuning_dataset.jsonl"'},
+            headers={
+                "Content-Disposition": 'attachment; filename="agri_rag_finetuning_dataset.jsonl"'
+            },
         )
 
     keys, _ = get_gemini_key_pool_and_model()
@@ -478,7 +516,9 @@ async def developer_export_data(
         return Response(
             content=body,
             media_type="application/json; charset=utf-8",
-            headers={"Content-Disposition": 'attachment; filename="developer_telemetry.json"'},
+            headers={
+                "Content-Disposition": 'attachment; filename="developer_telemetry.json"'
+            },
         )
 
     output = io.StringIO()
@@ -486,74 +526,197 @@ async def developer_export_data(
     writer = csv.writer(output)
 
     if export_type == "chats_csv":
-        writer.writerow([
-            "ID", "التاريخ", "المستخدم", "حساب المستخدم", "IP", "المدينة/الشبكة", "الجهاز", "المحافظة", "المحصول",
-            "تصنيف السؤال", "فجوة معرفية؟", "المحرك", "الموديل (LLM)", "مفتاح API", "إجمالي التوكنز",
-            "السؤال", "الإجابة", "الثقة", "الزمن (ms)", "الحالة"
-        ])
+        writer.writerow(
+            [
+                "ID",
+                "التاريخ",
+                "المستخدم",
+                "حساب المستخدم",
+                "IP",
+                "المدينة/الشبكة",
+                "الجهاز",
+                "المحافظة",
+                "المحصول",
+                "تصنيف السؤال",
+                "فجوة معرفية؟",
+                "المحرك",
+                "الموديل (LLM)",
+                "مفتاح API",
+                "إجمالي التوكنز",
+                "السؤال",
+                "الإجابة",
+                "الثقة",
+                "الزمن (ms)",
+                "الحالة",
+            ]
+        )
         for c in data.get("recent_chats", []):
-            writer.writerow([
-                c.get("id"), c.get("created_at"), c.get("user_name") or "زائر", c.get("user_identifier") or "",
-                c.get("client_ip"),
-                f"{c.get('geo_city', '')} ({c.get('isp', '')})", c.get("device_type"),
-                c.get("location"), c.get("crop"), c.get("topic_category"),
-                "نعم" if c.get("is_knowledge_gap") else "لا", c.get("rag_engine"),
-                c.get("llm_model") or "gemini-2.5-flash", c.get("api_key_masked") or "", c.get("total_tokens") or 0,
-                c.get("user_query"), c.get("bot_answer"), c.get("confidence"),
-                c.get("latency_ms"), c.get("status"),
-            ])
+            writer.writerow(
+                [
+                    c.get("id"),
+                    c.get("created_at"),
+                    c.get("user_name") or "زائر",
+                    c.get("user_identifier") or "",
+                    c.get("client_ip"),
+                    f"{c.get('geo_city', '')} ({c.get('isp', '')})",
+                    c.get("device_type"),
+                    c.get("location"),
+                    c.get("crop"),
+                    c.get("topic_category"),
+                    "نعم" if c.get("is_knowledge_gap") else "لا",
+                    c.get("rag_engine"),
+                    c.get("llm_model") or "gemini-2.5-flash",
+                    c.get("api_key_masked") or "",
+                    c.get("total_tokens") or 0,
+                    c.get("user_query"),
+                    c.get("bot_answer"),
+                    c.get("confidence"),
+                    c.get("latency_ms"),
+                    c.get("status"),
+                ]
+            )
         filename = "chat_logs.csv"
     elif export_type == "tokens_csv":
-        writer.writerow([
-            "ID", "التاريخ", "نوع الخدمة", "المسار (Endpoint)", "الموديل (Model)", "مفتاح API (Key)",
-            "توكنز الإدخال (Prompt)", "توكنز الإخراج (Completion)", "إجمالي التوكنز (Total)",
-            "التكلفة التقديرية ($)", "الزمن (ms)", "الحالة", "المستخدم", "IP", "ملخص الطلب"
-        ])
+        writer.writerow(
+            [
+                "ID",
+                "التاريخ",
+                "نوع الخدمة",
+                "المسار (Endpoint)",
+                "الموديل (Model)",
+                "مفتاح API (Key)",
+                "توكنز الإدخال (Prompt)",
+                "توكنز الإخراج (Completion)",
+                "إجمالي التوكنز (Total)",
+                "التكلفة التقديرية ($)",
+                "الزمن (ms)",
+                "الحالة",
+                "المستخدم",
+                "IP",
+                "ملخص الطلب",
+            ]
+        )
         tok_logs = (data.get("token_analytics") or {}).get("recent_logs", [])
         for t in tok_logs:
-            writer.writerow([
-                t.get("id"), t.get("created_at"), t.get("service_type"), t.get("endpoint"),
-                t.get("model_name"), t.get("api_key_masked"),
-                t.get("prompt_tokens"), t.get("completion_tokens"), t.get("total_tokens"),
-                t.get("estimated_cost_usd"), t.get("latency_ms"), t.get("status"),
-                t.get("user_name") or "زائر", t.get("client_ip"), t.get("query_preview"),
-            ])
+            writer.writerow(
+                [
+                    t.get("id"),
+                    t.get("created_at"),
+                    t.get("service_type"),
+                    t.get("endpoint"),
+                    t.get("model_name"),
+                    t.get("api_key_masked"),
+                    t.get("prompt_tokens"),
+                    t.get("completion_tokens"),
+                    t.get("total_tokens"),
+                    t.get("estimated_cost_usd"),
+                    t.get("latency_ms"),
+                    t.get("status"),
+                    t.get("user_name") or "زائر",
+                    t.get("client_ip"),
+                    t.get("query_preview"),
+                ]
+            )
         filename = "llm_token_usage.csv"
     elif export_type == "images_csv":
-        writer.writerow([
-            "ID", "التاريخ", "المستخدم", "حساب المستخدم", "اسم الملف", "IP", "المدينة/الشبكة", "الجهاز", "الموديل",
-            "المرض المتوقع (عربي)", "المرض المتوقع (EN)", "التصحيح المعتمد (Ground Truth)",
-            "الثقة", "هامش الثقة (Margin%)", "يحتاج مراجعة؟", "الأبعاد", "الحجم KB",
-            "حدة الصورة (Blur)", "الإضاءة", "نسبة الأوراق الخضراء%", "تقييم الجودة",
-            "كاميرا EXIF", "الزمن (ms)", "التوصية"
-        ])
+        writer.writerow(
+            [
+                "ID",
+                "التاريخ",
+                "المستخدم",
+                "حساب المستخدم",
+                "اسم الملف",
+                "IP",
+                "المدينة/الشبكة",
+                "الجهاز",
+                "الموديل",
+                "المرض المتوقع (عربي)",
+                "المرض المتوقع (EN)",
+                "التصحيح المعتمد (Ground Truth)",
+                "الثقة",
+                "هامش الثقة (Margin%)",
+                "يحتاج مراجعة؟",
+                "الأبعاد",
+                "الحجم KB",
+                "حدة الصورة (Blur)",
+                "الإضاءة",
+                "نسبة الأوراق الخضراء%",
+                "تقييم الجودة",
+                "كاميرا EXIF",
+                "الزمن (ms)",
+                "التوصية",
+            ]
+        )
         for img in data.get("recent_images", []):
-            writer.writerow([
-                img.get("id"), img.get("created_at"), img.get("user_name") or "زائر", img.get("user_identifier") or "",
-                img.get("filename"), img.get("client_ip"),
-                f"{img.get('geo_city', '')} ({img.get('isp', '')})", img.get("device_type"),
-                img.get("model_used"), img.get("predicted_class_ar"), img.get("predicted_class"),
-                img.get("verified_label"), img.get("confidence"), img.get("margin_score"),
-                "نعم" if img.get("is_uncertain") else "لا",
-                f"{img.get('width', 0)}x{img.get('height', 0)}", img.get("file_size_kb"),
-                img.get("blur_score"), img.get("brightness_score"), img.get("green_ratio"),
-                img.get("quality_flag"), img.get("exif_camera"), img.get("latency_ms"),
-                img.get("rag_advice"),
-            ])
+            writer.writerow(
+                [
+                    img.get("id"),
+                    img.get("created_at"),
+                    img.get("user_name") or "زائر",
+                    img.get("user_identifier") or "",
+                    img.get("filename"),
+                    img.get("client_ip"),
+                    f"{img.get('geo_city', '')} ({img.get('isp', '')})",
+                    img.get("device_type"),
+                    img.get("model_used"),
+                    img.get("predicted_class_ar"),
+                    img.get("predicted_class"),
+                    img.get("verified_label"),
+                    img.get("confidence"),
+                    img.get("margin_score"),
+                    "نعم" if img.get("is_uncertain") else "لا",
+                    f"{img.get('width', 0)}x{img.get('height', 0)}",
+                    img.get("file_size_kb"),
+                    img.get("blur_score"),
+                    img.get("brightness_score"),
+                    img.get("green_ratio"),
+                    img.get("quality_flag"),
+                    img.get("exif_camera"),
+                    img.get("latency_ms"),
+                    img.get("rag_advice"),
+                ]
+            )
         filename = "uploaded_images_forensics.csv"
     elif export_type == "users_csv":
-        writer.writerow([
-            "ID", "الاسم", "رقم الموبايل / الإيميل", "الموبايل", "البريد الإلكتروني",
-            "المحافظة", "المحصول الأساسي", "الصلاحية", "مرات الدخول",
-            "عدد الصور المفحوصة", "عدد استشارات الشات", "تاريخ التسجيل", "آخر دخول", "IP", "الجهاز"
-        ])
+        writer.writerow(
+            [
+                "ID",
+                "الاسم",
+                "رقم الموبايل / الإيميل",
+                "الموبايل",
+                "البريد الإلكتروني",
+                "المحافظة",
+                "المحصول الأساسي",
+                "الصلاحية",
+                "مرات الدخول",
+                "عدد الصور المفحوصة",
+                "عدد استشارات الشات",
+                "تاريخ التسجيل",
+                "آخر دخول",
+                "IP",
+                "الجهاز",
+            ]
+        )
         for u in data.get("registered_users", []):
-            writer.writerow([
-                u.get("id"), u.get("full_name"), u.get("identifier"), u.get("phone"), u.get("email"),
-                u.get("governorate"), u.get("primary_crop"), u.get("role"), u.get("login_count"),
-                u.get("images_count", 0), u.get("chats_count", 0), u.get("created_at"),
-                u.get("last_login_at"), u.get("client_ip"), u.get("device_type"),
-            ])
+            writer.writerow(
+                [
+                    u.get("id"),
+                    u.get("full_name"),
+                    u.get("identifier"),
+                    u.get("phone"),
+                    u.get("email"),
+                    u.get("governorate"),
+                    u.get("primary_crop"),
+                    u.get("role"),
+                    u.get("login_count"),
+                    u.get("images_count", 0),
+                    u.get("chats_count", 0),
+                    u.get("created_at"),
+                    u.get("last_login_at"),
+                    u.get("client_ip"),
+                    u.get("device_type"),
+                ]
+            )
         filename = "registered_users.csv"
     else:
         raise HTTPException(status_code=404, detail="Not Found")
@@ -566,7 +729,9 @@ async def developer_export_data(
 
 
 @router.get("/api/dev/backups", tags=["Developer Admin"])
-async def list_database_backups_endpoint(request: Request, key: str = Query("")) -> Dict[str, Any]:
+async def list_database_backups_endpoint(
+    request: Request, key: str = Query("")
+) -> Dict[str, Any]:
     """List all available compressed SQLite database backups."""
     verify_dev_key(key, request)
     from computer_vision.storage.backup_service import list_backups
@@ -580,14 +745,18 @@ async def list_database_backups_endpoint(request: Request, key: str = Query(""))
 
 
 @router.post("/api/dev/backups/create", tags=["Developer Admin"])
-async def trigger_database_backup_endpoint(request: Request, key: str = Query("")) -> Dict[str, Any]:
+async def trigger_database_backup_endpoint(
+    request: Request, key: str = Query("")
+) -> Dict[str, Any]:
     """Trigger an immediate live online WAL backup and gzip archive."""
     verify_dev_key(key, request)
     from computer_vision.storage.backup_service import perform_sqlite_backup
 
     result = await asyncio.to_thread(perform_sqlite_backup)
     if not result.get("success"):
-        raise HTTPException(status_code=500, detail=result.get("error", "Backup failed"))
+        raise HTTPException(
+            status_code=500, detail=result.get("error", "Backup failed")
+        )
     return {
         "status": "success",
         "message": "تم إنشاء نسخة احتياطية مشفرة ومضغوطة لقاعدة البيانات بنجاح",
@@ -605,7 +774,9 @@ async def download_database_backup_endpoint(
 
     file_path = get_backup_file_path(filename)
     if not file_path or not file_path.exists():
-        raise HTTPException(status_code=404, detail="ملف النسخة الاحتياطية غير موجود أو منتهي الصلاحية")
+        raise HTTPException(
+            status_code=404, detail="ملف النسخة الاحتياطية غير موجود أو منتهي الصلاحية"
+        )
 
     return FileResponse(
         path=str(file_path),
@@ -616,14 +787,18 @@ async def download_database_backup_endpoint(
 
 
 @router.get("/api/dev/telegram-config", tags=["Developer Admin"])
-async def get_telegram_config_endpoint(request: Request, key: str = Query("")) -> Dict[str, Any]:
+async def get_telegram_config_endpoint(
+    request: Request, key: str = Query("")
+) -> Dict[str, Any]:
     """Retrieve current Telegram webhook alert status and masked configuration."""
     verify_dev_key(key, request)
     from app.services.telegram_service import load_telegram_config
 
     cfg = load_telegram_config()
     token = cfg.get("bot_token", "")
-    masked_token = f"{token[:6]}...{token[-4:]}" if len(token) > 10 else ("مضبوط" if token else "")
+    masked_token = (
+        f"{token[:6]}...{token[-4:]}" if len(token) > 10 else ("مضبوط" if token else "")
+    )
     return {
         "status": "success",
         "enabled": cfg.get("enabled", False),
@@ -654,7 +829,9 @@ async def save_telegram_config_endpoint(
 
 
 @router.post("/api/dev/telegram-test", tags=["Developer Admin"])
-async def test_telegram_alert_endpoint(request: Request, key: str = Query("")) -> Dict[str, Any]:
+async def test_telegram_alert_endpoint(
+    request: Request, key: str = Query("")
+) -> Dict[str, Any]:
     """Dispatch an immediate test alert to verify Telegram credentials."""
     verify_dev_key(key, request)
     from app.services.telegram_service import send_telegram_alert
@@ -674,5 +851,3 @@ async def test_telegram_alert_endpoint(request: Request, key: str = Query("")) -
         "status": "success",
         "message": "تم إرسال رسالة الاختبار بنجاح إلى التليجرام! تفقد المحادثة الآن.",
     }
-
-

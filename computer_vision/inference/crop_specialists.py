@@ -179,19 +179,48 @@ EXPANDED_CROP_CATALOGUES: Dict[str, Dict[str, Any]] = {
 
 # Mapping between common Arabic/English crop aliases and canonical keys
 CROP_ALIAS_MAP: Dict[str, str] = {
-    "طماطم": "طماطم", "tomato": "طماطم", "tomatoes": "طماطم",
-    "بطاطس": "بطاطس", "potato": "بطاطس", "potatoes": "بطاطس",
-    "ذرة": "ذرة", "corn": "ذرة", "maize": "ذرة",
-    "عنب": "عنب", "grape": "عنب", "grapes": "عنب",
-    "تفاح": "تفاح", "apple": "تفاح", "apples": "تفاح",
-    "فراولة": "فراولة", "strawberry": "فراولة", "strawberries": "فراولة",
-    "فلفل": "فلفل", "فلفل حلو": "فلفل", "pepper": "فلفل", "bell_pepper": "فلفل",
-    "موالح": "موالح", "برتقال": "موالح", "ليمون": "موالح", "citrus": "موالح", "orange": "موالح",
-    "مانجو": "مانجو", "مانجا": "مانجو", "mango": "مانجو",
-    "قمح": "قمح", "wheat": "قمح",
-    "زيتون": "زيتون", "olive": "زيتون", "olives": "زيتون",
-    "أرز": "أرز", "ارز": "أرز", "rice": "أرز",
-    "بصل": "بصل", "ثوم": "بصل", "onion": "بصل", "garlic": "بصل",
+    "طماطم": "طماطم",
+    "tomato": "طماطم",
+    "tomatoes": "طماطم",
+    "بطاطس": "بطاطس",
+    "potato": "بطاطس",
+    "potatoes": "بطاطس",
+    "ذرة": "ذرة",
+    "corn": "ذرة",
+    "maize": "ذرة",
+    "عنب": "عنب",
+    "grape": "عنب",
+    "grapes": "عنب",
+    "تفاح": "تفاح",
+    "apple": "تفاح",
+    "apples": "تفاح",
+    "فراولة": "فراولة",
+    "strawberry": "فراولة",
+    "strawberries": "فراولة",
+    "فلفل": "فلفل",
+    "فلفل حلو": "فلفل",
+    "pepper": "فلفل",
+    "bell_pepper": "فلفل",
+    "موالح": "موالح",
+    "برتقال": "موالح",
+    "ليمون": "موالح",
+    "citrus": "موالح",
+    "orange": "موالح",
+    "مانجو": "مانجو",
+    "مانجا": "مانجو",
+    "mango": "مانجو",
+    "قمح": "قمح",
+    "wheat": "قمح",
+    "زيتون": "زيتون",
+    "olive": "زيتون",
+    "olives": "زيتون",
+    "أرز": "أرز",
+    "ارز": "أرز",
+    "rice": "أرز",
+    "بصل": "بصل",
+    "ثوم": "بصل",
+    "onion": "بصل",
+    "garlic": "بصل",
 }
 
 
@@ -308,21 +337,25 @@ def diagnose_expanded_crop(
     ranked_pairs = sorted(zip(diseases, scores), key=lambda x: x[1], reverse=True)
     for d, score in ranked_pairs:
         conf_pct = round(score * 100.0, 2)
-        top_3_results.append({
-            "class": d["id"],
-            "confidence": f"{conf_pct:.2f}%",
-        })
-        detailed_predictions.append({
-            "class": d["id"],
-            "label": d["id"],
-            "label_ar": d["name_ar"],
-            "name": f"{d['id']} ({d['name_ar']})",
-            "confidence": round(score, 4),
-            "confidence_percent": conf_pct,
-            "confidence_str": f"{conf_pct:.2f}%",
-            "symptoms": d["symptoms"],
-            "severity": d["severity"],
-        })
+        top_3_results.append(
+            {
+                "class": d["id"],
+                "confidence": f"{conf_pct:.2f}%",
+            }
+        )
+        detailed_predictions.append(
+            {
+                "class": d["id"],
+                "label": d["id"],
+                "label_ar": d["name_ar"],
+                "name": f"{d['id']} ({d['name_ar']})",
+                "confidence": round(score, 4),
+                "confidence_percent": conf_pct,
+                "confidence_str": f"{conf_pct:.2f}%",
+                "symptoms": d["symptoms"],
+                "severity": d["severity"],
+            }
+        )
 
     top_pred = detailed_predictions[0]
     return {
@@ -387,9 +420,11 @@ def filter_predictions_by_crop(
 
     normalized_detailed.sort(key=lambda x: x["confidence"], reverse=True)
     for p in normalized_detailed[:3]:
-        top_3.append({
-            "class": p["class"],
-            "confidence": p["confidence_str"],
-        })
+        top_3.append(
+            {
+                "class": p["class"],
+                "confidence": p["confidence_str"],
+            }
+        )
 
     return top_3, normalized_detailed

@@ -15,7 +15,10 @@ import time
 from fastapi.testclient import TestClient
 
 from app.main import app
-from computer_vision.storage.chat_repository import get_agent_memory_context, save_chat_log
+from computer_vision.storage.chat_repository import (
+    get_agent_memory_context,
+    save_chat_log,
+)
 from computer_vision.storage.image_repository import save_image_record
 from computer_vision.storage.user_repository import register_user
 from computer_vision.storage.utils import create_auth_token, verify_auth_token
@@ -84,7 +87,7 @@ def test_multi_account_strict_chat_and_diagnosis_isolation():
         irrigation_type="تنقيط",
     )
     assert user_b is not None, f"Register B failed: {err_b}"
-    uid_b = user_b["id"]
+    assert user_b["id"] != user_a["id"], "User IDs must be uniquely isolated"
     token_b = create_auth_token(user_b)
 
     # 4. User B requests memory with User A's session_id via API

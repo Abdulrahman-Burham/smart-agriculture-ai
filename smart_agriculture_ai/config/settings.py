@@ -10,7 +10,11 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 
 
 def _get_bool(value: str, default: bool = False) -> bool:
-    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"} if value is not None else default
+    return (
+        str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+        if value is not None
+        else default
+    )
 
 
 @dataclass
@@ -67,7 +71,13 @@ class Settings:
         ]
     )
     region_options: list[str] = field(
-        default_factory=lambda: ["delta", "upper_egypt", "nile_valley", "desert", "coastal"]
+        default_factory=lambda: [
+            "delta",
+            "upper_egypt",
+            "nile_valley",
+            "desert",
+            "coastal",
+        ]
     )
 
     @property

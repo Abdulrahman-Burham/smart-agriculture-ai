@@ -35,7 +35,9 @@ def mean(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
 
 
-def suggest_threshold(in_scope_top: list[float], out_scope_top: list[float]) -> float | None:
+def suggest_threshold(
+    in_scope_top: list[float], out_scope_top: list[float]
+) -> float | None:
     """Midpoint between the weakest in-scope and strongest out-of-scope top similarity."""
     if not in_scope_top or not out_scope_top:
         return None

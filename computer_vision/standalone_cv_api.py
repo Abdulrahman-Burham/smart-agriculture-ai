@@ -4,12 +4,12 @@ from typing import Literal
 import numpy as np
 import json
 import os
-import io
 import time
 
 try:
     import tensorflow as tf
     import cv2
+
     HAS_TF_CV2 = True
 except Exception:
     tf = None  # type: ignore[assignment]
@@ -83,11 +83,13 @@ JSON_PATH = os.path.join(BASE_DIR, "models", "class_names.json")
 best_model = None
 if HAS_TF_CV2 and tf is not None:
     original_from_config = tf.keras.layers.Dense.from_config
+
     @classmethod
     def patched_from_config(cls, config):
         if isinstance(config, dict):
-            config.pop('quantization_config', None)
+            config.pop("quantization_config", None)
         return original_from_config(config)
+
     tf.keras.layers.Dense.from_config = patched_from_config
 
     if os.path.exists(MODEL_PATH):
@@ -98,7 +100,7 @@ if HAS_TF_CV2 and tf is not None:
             best_model = None
 
 if os.path.exists(JSON_PATH):
-    with open(JSON_PATH, 'r', encoding='utf-8') as f:
+    with open(JSON_PATH, "r", encoding="utf-8") as f:
         class_names = json.load(f)
 else:
     class_names = list(DEFAULT_CLASS_NAMES)
@@ -115,6 +117,7 @@ try:
         import torch
         import torch.nn as nn
         from torchvision import models, transforms
+
         with open(RESNET_JSON, encoding="utf-8") as rf:
             resnet_classes = json.load(rf)["class_names"]
         _rm = models.resnet18(weights=None)
@@ -122,21 +125,26 @@ try:
         _rm.load_state_dict(torch.load(resnet_path := RESNET_PATH, map_location="cpu"))
         _rm.eval()
         resnet_model = _rm
-        resnet_tfm = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-        ])
+        resnet_tfm = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            ]
+        )
 except Exception as e:
     print(f"Optional ResNet18 not loaded: {e}")
+
 
 @app.get("/")
 def home():
     return {
         "message": "PlantVillage API is LIVE!",
         "default_model": "EfficientNetV2B2_best.keras",
-        "available_models": ["EfficientNetV2B2"] + (["ResNet18"] if resnet_model is not None else [])
+        "available_models": ["EfficientNetV2B2"]
+        + (["ResNet18"] if resnet_model is not None else []),
     }
+
 
 @app.get("/health")
 def health():
@@ -144,9 +152,11 @@ def health():
         "status": "online",
         "model_loaded": best_model is not None,
         "model_type": "EfficientNetV2B2_best.keras",
-        "available_models": ["EfficientNetV2B2"] + (["ResNet18"] if resnet_model is not None else []),
-        "num_classes": len(class_names)
+        "available_models": ["EfficientNetV2B2"]
+        + (["ResNet18"] if resnet_model is not None else []),
+        "num_classes": len(class_names),
     }
+
 
 @app.post("/predict")
 async def predict(
@@ -154,8 +164,8 @@ async def predict(
     file: UploadFile = File(...),
     model_choice: Literal["EfficientNetV2B2", "ResNet18"] = Query(
         "EfficientNetV2B2",
-        description="الموديل المستخدم للتشخيص (الافتراضي المثبت: EfficientNetV2B2)"
-    )
+        description="الموديل المستخدم للتشخيص (الافتراضي المثبت: EfficientNetV2B2)",
+    ),
 ):
     start_ts = time.time()
     client_info = extract_client_info(request)
@@ -164,9 +174,10 @@ async def predict(
 
         # 1. First run the Strict Plant Gatekeeper (< 18% foliage rejection) & Crop Specialist Pipeline
         from app.services.vision_service import get_cv_classifier
+
         classifier = get_cv_classifier()
         cv_res = classifier.predict(contents, model_choice=model_choice)
-        
+
         is_plant = cv_res.get("is_plant", True)
         if not is_plant or cv_res.get("predicted_class") == "Not_A_Plant":
             latency_ms = round((time.time() - start_ts) * 1000, 2)
@@ -178,7 +189,9 @@ async def predict(
                     source_endpoint="/cv/predict",
                     model_used="Vision_Gatekeeper",
                     predicted_class="Not_A_Plant",
-                    predicted_class_ar=cv_res.get("detected_object_ar", "صورة غير نباتية"),
+                    predicted_class_ar=cv_res.get(
+                        "detected_object_ar", "صورة غير نباتية"
+                    ),
                     confidence="0.00%",
                     top_predictions=[],
                     client_ip=client_info["client_ip"],
@@ -194,14 +207,18 @@ async def predict(
                 "status": "rejected",
                 "is_plant": False,
                 "predicted_class": "Not_A_Plant",
-                "predicted_class_ar": cv_res.get("detected_object_ar", "صورة غير نباتية"),
+                "predicted_class_ar": cv_res.get(
+                    "detected_object_ar", "صورة غير نباتية"
+                ),
                 "confidence": "0.00%",
                 "top_predictions": [],
                 "rejection_reason_ar": cv_res.get(
                     "rejection_reason_ar",
-                    "تم رفض الصورة لأنها لا تحتوي على ورقة نبات واضحة أو نسبة المجموع الخضري ضئيلة جداً (< 18%)"
+                    "تم رفض الصورة لأنها لا تحتوي على ورقة نبات واضحة أو نسبة المجموع الخضري ضئيلة جداً (< 18%)",
                 ),
-                "quality_flag": cv_res.get("quality_flag", "❌ نسبة نبات منخفضة جداً (غير صالحة للتشخيص)"),
+                "quality_flag": cv_res.get(
+                    "quality_flag", "❌ نسبة نبات منخفضة جداً (غير صالحة للتشخيص)"
+                ),
             }
 
         # 2. Plant confirmed -> Return specialist-isolated top predictions
@@ -216,7 +233,9 @@ async def predict(
                 source_endpoint="/cv/predict",
                 model_used=cv_res.get("model_used", model_choice),
                 predicted_class=top_cls,
-                predicted_class_ar=cv_res.get("predicted_class_ar", ARABIC_CLASS_MAP.get(top_cls, top_cls)),
+                predicted_class_ar=cv_res.get(
+                    "predicted_class_ar", ARABIC_CLASS_MAP.get(top_cls, top_cls)
+                ),
                 confidence=cv_res.get("confidence", "0.00%"),
                 top_predictions=top_3_results,
                 client_ip=client_info["client_ip"],
@@ -239,7 +258,7 @@ async def predict(
             "top_predictions": top_3_results,
             "predictions": top_3_results,
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:

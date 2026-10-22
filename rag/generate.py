@@ -103,7 +103,9 @@ class GroqLLMProvider(LLMProviderInterface):
             return f"Error executing Groq LLM query: {err}"
 
 
-def build_grounded_prompt(query: str, context_chunks: List[Dict[str, Any]]) -> tuple[str, str]:
+def build_grounded_prompt(
+    query: str, context_chunks: List[Dict[str, Any]]
+) -> tuple[str, str]:
     """Assemble strict grounded prompt requiring Egyptian farming Arabic and chunk citations."""
     system_prompt = (
         "أنت خبير ومساعد زراعي مصري متخصص في خدمة المزارعين.\n"

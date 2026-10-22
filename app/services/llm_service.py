@@ -54,16 +54,28 @@ def load_oauth_config() -> Dict[str, str]:
     return cfg
 
 
-def save_oauth_config(google_client_id: Optional[str] = None, microsoft_client_id: Optional[str] = None) -> Dict[str, Any]:
+def save_oauth_config(
+    google_client_id: Optional[str] = None, microsoft_client_id: Optional[str] = None
+) -> Dict[str, Any]:
     """Persist OAuth client IDs to data/oauth_config.json."""
     current = load_oauth_config()
     new_cfg = {
-        "google_client_id": (google_client_id.strip() if google_client_id is not None else current.get("google_client_id", "")),
-        "microsoft_client_id": (microsoft_client_id.strip() if microsoft_client_id is not None else current.get("microsoft_client_id", "")),
+        "google_client_id": (
+            google_client_id.strip()
+            if google_client_id is not None
+            else current.get("google_client_id", "")
+        ),
+        "microsoft_client_id": (
+            microsoft_client_id.strip()
+            if microsoft_client_id is not None
+            else current.get("microsoft_client_id", "")
+        ),
         "google_client_secret": current.get("google_client_secret", ""),
     }
     _OAUTH_CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-    _OAUTH_CONFIG_FILE.write_text(json.dumps(new_cfg, ensure_ascii=False, indent=2), encoding="utf-8")
+    _OAUTH_CONFIG_FILE.write_text(
+        json.dumps(new_cfg, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     try:
         os.chmod(str(_OAUTH_CONFIG_FILE), 0o600)
     except Exception:
@@ -105,12 +117,14 @@ def get_local_agri_rag() -> Any:
         if agri_rag_dir.exists() and str(agri_rag_dir) not in sys.path:
             sys.path.insert(0, str(agri_rag_dir))
         from dotenv import dotenv_values
+
         env_file = agri_rag_dir / ".env"
         if env_file.exists():
             for k, v in dotenv_values(str(env_file)).items():
                 if v is not None and k not in os.environ:
                     os.environ[k] = v
         from agri_rag.container import build_container
+
         _local_agri_rag_container = build_container()
     return _local_agri_rag_container
 
@@ -129,14 +143,16 @@ def get_rag_pipeline() -> Any:
             if data_dir.exists():
                 docs = []
                 for p in data_dir.glob("*.txt"):
-                    docs.append({
-                        "source_doc": p.name,
-                        "doc_type": "guide",
-                        "crop_type": "general",
-                        "disease_name": "general",
-                        "region": "egypt_general",
-                        "content": p.read_text(encoding="utf-8"),
-                    })
+                    docs.append(
+                        {
+                            "source_doc": p.name,
+                            "doc_type": "guide",
+                            "crop_type": "general",
+                            "disease_name": "general",
+                            "region": "egypt_general",
+                            "content": p.read_text(encoding="utf-8"),
+                        }
+                    )
                 if docs:
                     _rag_pipeline.ingest_documents(docs)
         except Exception as e:
@@ -188,12 +204,19 @@ def build_rag_llm_telemetry(question: str, out_data: Dict[str, Any]) -> Dict[str
     answer = str(out_data.get("answer") or "")
     sources = out_data.get("sources") or []
     sources_text = " ".join(
-        f"{s.get('title', '')} {s.get('section', '')} {s.get('snippet', '')}" for s in sources if isinstance(s, dict)
+        f"{s.get('title', '')} {s.get('section', '')} {s.get('snippet', '')}"
+        for s in sources
+        if isinstance(s, dict)
     )
-    p_tok = int(out_data.get("prompt_tokens") or (estimate_tokens(question) + estimate_tokens(sources_text) + 640))
+    p_tok = int(
+        out_data.get("prompt_tokens")
+        or (estimate_tokens(question) + estimate_tokens(sources_text) + 640)
+    )
     c_tok = int(out_data.get("completion_tokens") or estimate_tokens(answer))
     return {
-        "model_name": str(out_data.get("model_name") or model_name or "gemini-2.5-flash"),
+        "model_name": str(
+            out_data.get("model_name") or model_name or "gemini-2.5-flash"
+        ),
         "api_key_masked": str(out_data.get("api_key_masked") or key_mask),
         "prompt_tokens": p_tok,
         "completion_tokens": c_tok,
@@ -234,8 +257,11 @@ async def query_agri_rag(
         try:
             c = await asyncio.to_thread(get_local_agri_rag)
             from agri_rag.domain.farm import FarmContext
+
             farm_obj = FarmContext(**farm) if farm else None
-            res = await c.pipeline.ask(question, session_id=session_id, farm=farm_obj, crop=crop)
+            res = await c.pipeline.ask(
+                question, session_id=session_id, farm=farm_obj, crop=crop
+            )
             out = {
                 "answer": res.answer,
                 "grounded": res.grounded,
@@ -248,13 +274,19 @@ async def query_agri_rag(
             out["_llm_telemetry"] = build_rag_llm_telemetry(question, out)
             return out
         except Exception as e:
-            logger.warning(f"In-process agri-rag notice ({e}), falling back to local RAGPipeline...")
+            logger.warning(
+                f"In-process agri-rag notice ({e}), falling back to local RAGPipeline..."
+            )
 
     pipeline = await asyncio.to_thread(get_rag_pipeline)
     rag_res = await asyncio.to_thread(pipeline.run, user_query=question)
     citations = rag_res.get("citations", []) or []
     sources_list = [
-        {"id": c.get("citation_tag", f"[{i+1}]"), "title": c.get("source_doc", "مرجع زراعي"), "section": c.get("doc_type", "")}
+        {
+            "id": c.get("citation_tag", f"[{i+1}]"),
+            "title": c.get("source_doc", "مرجع زراعي"),
+            "section": c.get("doc_type", ""),
+        }
         for i, c in enumerate(citations)
     ]
     out = {
@@ -271,9 +303,25 @@ async def query_agri_rag(
 
 
 KNOWN_AGRI_RAG_CROPS = {
-    "طماطم", "بطاطس", "ذرة", "قمح", "مانجو", "أرز",
-    "عنب", "تفاح", "فراولة", "فلفل", "فلفل حلو", "موالح", "برتقال", "ليمون",
-    "زيتون", "بصل", "ثوم", "خيار", "نخيل"
+    "طماطم",
+    "بطاطس",
+    "ذرة",
+    "قمح",
+    "مانجو",
+    "أرز",
+    "عنب",
+    "تفاح",
+    "فراولة",
+    "فلفل",
+    "فلفل حلو",
+    "موالح",
+    "برتقال",
+    "ليمون",
+    "زيتون",
+    "بصل",
+    "ثوم",
+    "خيار",
+    "نخيل",
 }
 
 IRRIG_TO_ENUM: Dict[str, str] = {
@@ -309,4 +357,3 @@ def format_agri_rag_sources(data: Dict[str, Any]) -> Tuple[List[str], float]:
         default=0.88 if data.get("grounded") else 0.0,
     )
     return formatted, round(top_sim, 4)
-

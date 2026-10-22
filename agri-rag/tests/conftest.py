@@ -1,5 +1,4 @@
 import uuid
-from pathlib import Path
 
 import pytest
 
@@ -11,8 +10,15 @@ from agri_rag.ingestion.indexer import index_directory
 
 @pytest.fixture()
 def settings() -> Settings:
-    return Settings(_env_file=None, embedding_backend="hash", llm_provider="fake", min_similarity=0.0, weather_enabled=False,
-                    collection=f"test_{uuid.uuid4().hex[:8]}", knowledge_dir=ROOT / "data" / "knowledge")
+    return Settings(
+        _env_file=None,
+        embedding_backend="hash",
+        llm_provider="fake",
+        min_similarity=0.0,
+        weather_enabled=False,
+        collection=f"test_{uuid.uuid4().hex[:8]}",
+        knowledge_dir=ROOT / "data" / "knowledge",
+    )
 
 
 @pytest.fixture()

@@ -2,14 +2,11 @@
 
 import io
 from PIL import Image
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 from computer_vision.inference.classifier import PlantDiseaseClassifier
 from computer_vision.inference.crop_specialists import (
-    EXPANDED_CROP_CATALOGUES,
-    CORE_CROP_KEYWORDS,
     diagnose_expanded_crop,
     filter_predictions_by_crop,
     is_expanded_crop,
@@ -101,10 +98,22 @@ def test_diagnose_expanded_crop_wheat():
 def test_filter_predictions_by_crop_renormalization():
     """Verify crop-aware probability isolation on unified predictions."""
     sample_preds = [
-        {"class": "Tomato___Early_blight", "label_ar": "طماطم — اللفحة المبكرة", "confidence": 0.40},
+        {
+            "class": "Tomato___Early_blight",
+            "label_ar": "طماطم — اللفحة المبكرة",
+            "confidence": 0.40,
+        },
         {"class": "Tomato___healthy", "label_ar": "طماطم — سليم", "confidence": 0.10},
-        {"class": "Potato___Late_blight", "label_ar": "بطاطس — اللفحة المتأخرة", "confidence": 0.30},
-        {"class": "Pepper,_bell___Bacterial_spot", "label_ar": "فلفل حلو — التبقع البكتيري", "confidence": 0.20},
+        {
+            "class": "Potato___Late_blight",
+            "label_ar": "بطاطس — اللفحة المتأخرة",
+            "confidence": 0.30,
+        },
+        {
+            "class": "Pepper,_bell___Bacterial_spot",
+            "label_ar": "فلفل حلو — التبقع البكتيري",
+            "confidence": 0.20,
+        },
     ]
 
     # Filter for Tomato
@@ -199,4 +208,3 @@ def test_rejection_of_low_plant_ratio_image_record_50():
     assert res["is_plant"] is False
     assert "⚠️ تنبيه: هذه الصورة ليست لنبات!" in res["rejection_reason"]
     assert "مش صورة نبات" in res["advice"]
-

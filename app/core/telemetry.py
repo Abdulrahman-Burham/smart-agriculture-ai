@@ -15,7 +15,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-from computer_vision.storage.telemetry_repository import save_error_log, save_visitor_log
+from computer_vision.storage.telemetry_repository import (
+    save_error_log,
+    save_visitor_log,
+)
 from computer_vision.storage.utils import extract_client_info, extract_user_from_request
 
 _IGNORE_PREFIXES = (
@@ -90,6 +93,8 @@ class SilentTelemetryMiddleware(BaseHTTPMiddleware):
                         referer=client_info["referer"],
                         user_id=auth_user.get("uid") if auth_user else None,
                         user_name=auth_user.get("name", "") if auth_user else "",
-                        user_identifier=auth_user.get("identifier", "") if auth_user else "",
+                        user_identifier=auth_user.get("identifier", "")
+                        if auth_user
+                        else "",
                     )
                 )

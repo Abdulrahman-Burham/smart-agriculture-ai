@@ -1,4 +1,5 @@
 """Prompt templates. Authentic Egyptian Colloquial Arabic system prompt with strict grounding and dynamic verbosity rules."""
+
 from __future__ import annotations
 
 from ..retrieval.hybrid import RetrievedChunk
@@ -38,8 +39,10 @@ def render_sources(chunks: list[RetrievedChunk], max_chars: int) -> str:
     used = 0
     for i, c in enumerate(chunks, start=1):
         m = c.metadata
-        block = (f'<source id="{i}" title="{m.get("title", "")}" section="{m.get("section", "")}" '
-                 f'crop="{m.get("crop", "")}">\n{c.text}\n</source>')
+        block = (
+            f'<source id="{i}" title="{m.get("title", "")}" section="{m.get("section", "")}" '
+            f'crop="{m.get("crop", "")}">\n{c.text}\n</source>'
+        )
         if used + len(block) > max_chars and parts:
             break
         parts.append(block)
@@ -50,7 +53,7 @@ def render_sources(chunks: list[RetrievedChunk], max_chars: int) -> str:
 def render_conversation_memory(history: list[dict] | None, max_turns: int = 12) -> str:
     if not history:
         return ""
-    recent = history[-2 * max_turns:]
+    recent = history[-2 * max_turns :]
     lines: list[str] = []
     for idx, msg in enumerate(recent, start=1):
         role_label = "المزارع" if msg.get("role") == "user" else "مساعد المزرعة"
@@ -72,5 +75,9 @@ def build_user_message(
 ) -> str:
     ctx = f"<farm_context>\n{farm_context}\n</farm_context>\n\n" if farm_context else ""
     mem = render_conversation_memory(history)
-    instruction_tag = f"<response_style>\n{dynamic_instruction}\n</response_style>\n\n" if dynamic_instruction else ""
+    instruction_tag = (
+        f"<response_style>\n{dynamic_instruction}\n</response_style>\n\n"
+        if dynamic_instruction
+        else ""
+    )
     return f"{render_sources(chunks, max_chars)}\n\n{ctx}{mem}{instruction_tag}<question>\n{question}\n</question>"

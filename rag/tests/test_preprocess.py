@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
-import pytest
 
 from rag.preprocess import (
     canonicalize_terms,
@@ -57,7 +55,10 @@ def test_lexicon_substitution():
 
 def test_detect_query_intent():
     # Legacy & Benchmark assertions
-    assert detect_query_intent("ما هو علاج أعراض مرض اللفحة المتأخرة في البطاطس؟") == "disease_query"
+    assert (
+        detect_query_intent("ما هو علاج أعراض مرض اللفحة المتأخرة في البطاطس؟")
+        == "disease_query"
+    )
     assert detect_query_intent("ما هي جرعة سماد اليوريا لكل فدان؟") == "dosage_lookup"
     assert detect_query_intent("متى يفضل ري القمح في موسم الشتاء؟") == "general_advice"
 
@@ -67,13 +68,20 @@ def test_detect_query_intent():
     assert detect_query_intent("asdfghjkl") == "unintelligible"
     assert detect_query_intent("اعمل ايه؟", has_context=False) == "needs_clarification"
     assert detect_query_intent("ينفع اخلط نحاس مع سماد ورقي؟") == "quick_direct"
-    assert detect_query_intent("برنامج تسميد كامل للقمح من الزراعة للحصاد") == "comprehensive_protocol"
+    assert (
+        detect_query_intent("برنامج تسميد كامل للقمح من الزراعة للحصاد")
+        == "comprehensive_protocol"
+    )
     assert detect_query_intent("صباح الخير يا باشا") == "chit_chat"
 
 
 def test_preprocess_query_structure():
     lexicon = {"dialect_aliases": {}, "product_aliases": {}}
-    vision_context = {"crop_type": "tomato", "disease_label": "late_blight", "confidence_score": 0.92}
+    vision_context = {
+        "crop_type": "tomato",
+        "disease_label": "late_blight",
+        "confidence_score": 0.92,
+    }
 
     res = preprocess_query("طريقة ري الطماطم", lexicon, vision_context=vision_context)
     assert "original_query" in res

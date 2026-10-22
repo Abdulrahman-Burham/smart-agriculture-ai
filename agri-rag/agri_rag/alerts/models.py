@@ -30,7 +30,9 @@ class Alert(BaseModel):
     severity: Severity
     title: str
     message: str
-    reasons: list[str] = Field(default_factory=list)  # the exact numbers/facts that triggered it
+    reasons: list[str] = Field(
+        default_factory=list
+    )  # the exact numbers/facts that triggered it
     action: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     guidance: str | None = None  # RAG-grounded elaboration (optional enrichment)

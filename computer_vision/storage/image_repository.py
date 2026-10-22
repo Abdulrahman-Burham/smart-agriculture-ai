@@ -56,7 +56,10 @@ def save_image_record(
     file_timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     sha256_hash = hashlib.sha256(image_bytes).hexdigest()
 
-    safe_name = "".join(c if c.isalnum() or c in (".", "_", "-") else "_" for c in (filename or "image.jpg"))
+    safe_name = "".join(
+        c if c.isalnum() or c in (".", "_", "-") else "_"
+        for c in (filename or "image.jpg")
+    )
     if not safe_name:
         safe_name = "image.jpg"
 
@@ -73,7 +76,9 @@ def save_image_record(
         device_type, _ = parse_user_agent(user_agent)
 
     forensics = analyze_image_forensics(image_bytes)
-    _, margin_pct, is_uncertain = compute_uncertainty_metrics(top_predictions, confidence)
+    _, margin_pct, is_uncertain = compute_uncertainty_metrics(
+        top_predictions, confidence
+    )
     geo = resolve_ip_geo(client_ip)
 
     with sqlite3.connect(str(DB_PATH)) as conn:
@@ -133,7 +138,9 @@ def save_image_record(
         return int(cursor.lastrowid)
 
 
-def update_image_ground_truth(image_id: int, verified_label: str, developer_notes: str = "") -> bool:
+def update_image_ground_truth(
+    image_id: int, verified_label: str, developer_notes: str = ""
+) -> bool:
     """Allow the developer to verify or correct an uploaded image's label for Active Learning retraining."""
     init_db()
     with sqlite3.connect(str(DB_PATH)) as conn:
@@ -158,9 +165,17 @@ def get_image_blob_by_id(image_id: int) -> Optional[Tuple[bytes, str, str]]:
             return None
         blob, ctype, fname, fpath = row
         if blob:
-            return bytes(blob), (ctype or "image/jpeg"), (fname or f"image_{image_id}.jpg")
+            return (
+                bytes(blob),
+                (ctype or "image/jpeg"),
+                (fname or f"image_{image_id}.jpg"),
+            )
         if fpath and os.path.exists(fpath):
-            return Path(fpath).read_bytes(), (ctype or "image/jpeg"), (fname or f"image_{image_id}.jpg")
+            return (
+                Path(fpath).read_bytes(),
+                (ctype or "image/jpeg"),
+                (fname or f"image_{image_id}.jpg"),
+            )
         return None
 
 
@@ -191,7 +206,6 @@ def get_image_record_by_id(image_id: int) -> Optional[Dict[str, Any]]:
         return d
 
 
-
 def build_retraining_zip() -> bytes:
     """Build an in-memory ZIP archive of all uploaded images organized by class_name/image.jpg + manifest.csv for retraining."""
     init_db()
@@ -200,20 +214,47 @@ def build_retraining_zip() -> bytes:
         csv_buf = io.StringIO()
         csv_buf.write("\ufeff")
         writer = csv.writer(csv_buf)
-        writer.writerow([
-            "id", "created_at", "final_training_label", "predicted_class", "verified_label",
-            "confidence", "margin_score", "is_uncertain", "width", "height",
-            "blur_score", "brightness_score", "green_ratio", "quality_flag",
-            "model_used", "client_ip", "geo_city", "developer_notes", "zip_path",
-        ])
+        writer.writerow(
+            [
+                "id",
+                "created_at",
+                "final_training_label",
+                "predicted_class",
+                "verified_label",
+                "confidence",
+                "margin_score",
+                "is_uncertain",
+                "width",
+                "height",
+                "blur_score",
+                "brightness_score",
+                "green_ratio",
+                "quality_flag",
+                "model_used",
+                "client_ip",
+                "geo_city",
+                "developer_notes",
+                "zip_path",
+            ]
+        )
 
         with sqlite3.connect(str(DB_PATH)) as conn:
             conn.row_factory = sqlite3.Row
-            rows = conn.execute("SELECT * FROM uploaded_images ORDER BY id DESC").fetchall()
+            rows = conn.execute(
+                "SELECT * FROM uploaded_images ORDER BY id DESC"
+            ).fetchall()
             for r in rows:
                 img_id = r["id"]
-                final_label = (r["verified_label"] or r["predicted_class"] or "Unknown").strip()
-                safe_folder = "".join(c if c.isalnum() or c in ("_", "-", ".") else "_" for c in final_label) or "Unknown"
+                final_label = (
+                    r["verified_label"] or r["predicted_class"] or "Unknown"
+                ).strip()
+                safe_folder = (
+                    "".join(
+                        c if c.isalnum() or c in ("_", "-", ".") else "_"
+                        for c in final_label
+                    )
+                    or "Unknown"
+                )
                 ext = Path(r["filename"] or "img.jpg").suffix or ".jpg"
                 zip_rel_path = f"dataset/{safe_folder}/img_{img_id:05d}{ext}"
 
@@ -224,12 +265,29 @@ def build_retraining_zip() -> bytes:
                 if img_bytes:
                     zf.writestr(zip_rel_path, img_bytes)
 
-                writer.writerow([
-                    img_id, r["created_at"], final_label, r["predicted_class"], r["verified_label"],
-                    r["confidence"], r["margin_score"], r["is_uncertain"], r["width"], r["height"],
-                    r["blur_score"], r["brightness_score"], r["green_ratio"], r["quality_flag"],
-                    r["model_used"], r["client_ip"], r["geo_city"], r["developer_notes"], zip_rel_path,
-                ])
+                writer.writerow(
+                    [
+                        img_id,
+                        r["created_at"],
+                        final_label,
+                        r["predicted_class"],
+                        r["verified_label"],
+                        r["confidence"],
+                        r["margin_score"],
+                        r["is_uncertain"],
+                        r["width"],
+                        r["height"],
+                        r["blur_score"],
+                        r["brightness_score"],
+                        r["green_ratio"],
+                        r["quality_flag"],
+                        r["model_used"],
+                        r["client_ip"],
+                        r["geo_city"],
+                        r["developer_notes"],
+                        zip_rel_path,
+                    ]
+                )
 
         zf.writestr("dataset/manifest_metadata.csv", csv_buf.getvalue().encode("utf-8"))
 
@@ -291,4 +349,3 @@ def get_followups_for_image(original_image_id: int) -> List[Dict[str, Any]]:
             (int(original_image_id),),
         )
         return [dict(r) for r in cur.fetchall()]
-

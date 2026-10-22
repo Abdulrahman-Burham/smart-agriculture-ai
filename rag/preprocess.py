@@ -65,7 +65,9 @@ def load_lexicon(path: str | Path) -> Dict[str, Any]:
     """Load dialect and product canonicalization dictionary from JSON file."""
     filepath = Path(path)
     if not filepath.exists():
-        logger.warning(f"Lexicon file not found at {filepath}. Returning empty lexicon.")
+        logger.warning(
+            f"Lexicon file not found at {filepath}. Returning empty lexicon."
+        )
         return {"dialect_aliases": {}, "product_aliases": {}}
 
     with open(filepath, "r", encoding="utf-8") as f:
@@ -103,7 +105,9 @@ def canonicalize_terms(text: str, lexicon: Dict[str, Any]) -> str:
             continue
         # Case insensitive boundary matching for English/Code-switched, simple replace for Arabic
         if re.search(r"[a-zA-Z]", alias_pattern):
-            pattern = re.compile(r"\b" + re.escape(alias_pattern) + r"\b", re.IGNORECASE)
+            pattern = re.compile(
+                r"\b" + re.escape(alias_pattern) + r"\b", re.IGNORECASE
+            )
             result = pattern.sub(canonical_replacement, result)
         else:
             pattern = re.compile(re.escape(alias_pattern))
@@ -145,7 +149,20 @@ def detect_query_intent(query: str, has_context: bool = False) -> str:
     arabic_chars = re.findall(r"[\u0621-\u064A]", raw)
     if latin_chars and not arabic_chars:
         clean_lat = raw.lower().strip()
-        common_en = {"hi", "hello", "thanks", "thank you", "ok", "yes", "no", "tomato", "potato", "npk", "urea", "wheat"}
+        common_en = {
+            "hi",
+            "hello",
+            "thanks",
+            "thank you",
+            "ok",
+            "yes",
+            "no",
+            "tomato",
+            "potato",
+            "npk",
+            "urea",
+            "wheat",
+        }
         if clean_lat not in common_en and len(clean_lat) >= 4:
             vowels = sum(1 for c in clean_lat if c in "aeiou")
             if vowels == 0 or len(clean_lat) / max(vowels, 1) > 5:
@@ -155,69 +172,207 @@ def detect_query_intent(query: str, has_context: bool = False) -> str:
 
     # 4. Extreme Ambiguity without Context (e.g. "اعمل ايه؟", "الحقني", "بايظة")
     vague_phrases = [
-        "اعمل ايه", "الحقني", "بايظة", "بتموت", "عندي مشكلة", "ساعدني", "قولي اعمل ايه",
-        "الحل ايه", "الزرعة تعبانة", "فيه مشكلة", "انقذني", "اسوي ايه"
+        "اعمل ايه",
+        "الحقني",
+        "بايظة",
+        "بتموت",
+        "عندي مشكلة",
+        "ساعدني",
+        "قولي اعمل ايه",
+        "الحل ايه",
+        "الزرعة تعبانة",
+        "فيه مشكلة",
+        "انقذني",
+        "اسوي ايه",
     ]
     clean_punct = re.sub(r"[؟?!.،,:\-_\s]+", " ", normalized).strip()
-    if not has_context and any(clean_punct == vp or clean_punct.startswith(vp + " ") for vp in vague_phrases):
+    if not has_context and any(
+        clean_punct == vp or clean_punct.startswith(vp + " ") for vp in vague_phrases
+    ):
         return "needs_clarification"
 
     # 5. Chit-chat / Greetings indicators
     chit_chat_keywords = [
-        "اهلا", "أهلا", "مرحبا", "سلام", "شلونك", "ازيك", "كيفك", "الو", "انت مين",
-        "صباح", "مساء", "مين انت", "شكرا", "يعطيك العافية", "من انت", "تسلم", "الله يباركلك"
+        "اهلا",
+        "أهلا",
+        "مرحبا",
+        "سلام",
+        "شلونك",
+        "ازيك",
+        "كيفك",
+        "الو",
+        "انت مين",
+        "صباح",
+        "مساء",
+        "مين انت",
+        "شكرا",
+        "يعطيك العافية",
+        "من انت",
+        "تسلم",
+        "الله يباركلك",
     ]
     if any(kw in normalized for kw in chit_chat_keywords):
         return "chit_chat"
 
     # 6. Quick Direct ('كلمتين ويسكت')
     quick_indicators = [
-        "ينفع اخلط", "ينفع نخلط", "اخلط", "ارش الصبح ولا", "الصبح ولا بالليل", "الصبح ولا العصر",
-        "فطر ولا بكتيريا", "حشرة ولا فطر", "مدة الامان كام", "فترة الامان كام", "يعني ايه phi",
-        "اروي كل كام", "الري كل كام", "افضل وقت للرش", "ميعاد الرش"
+        "ينفع اخلط",
+        "ينفع نخلط",
+        "اخلط",
+        "ارش الصبح ولا",
+        "الصبح ولا بالليل",
+        "الصبح ولا العصر",
+        "فطر ولا بكتيريا",
+        "حشرة ولا فطر",
+        "مدة الامان كام",
+        "فترة الامان كام",
+        "يعني ايه phi",
+        "اروي كل كام",
+        "الري كل كام",
+        "افضل وقت للرش",
+        "ميعاد الرش",
     ]
     if any(qi in normalized for qi in quick_indicators):
         return "quick_direct"
 
     # 7. Comprehensive Protocol ('بروتوكول تفصيلي')
     comprehensive_indicators = [
-        "برنامج تسميد", "جدول تسميد", "برنامج مكافحة", "جدول مكافحة", "مكافحة متكاملة",
-        "من الزراعة للحصاد", "بالتفصيل", "فصلي", "خطوة بخطوة", "برنامج كامل", "دليل كامل"
+        "برنامج تسميد",
+        "جدول تسميد",
+        "برنامج مكافحة",
+        "جدول مكافحة",
+        "مكافحة متكاملة",
+        "من الزراعة للحصاد",
+        "بالتفصيل",
+        "فصلي",
+        "خطوة بخطوة",
+        "برنامج كامل",
+        "دليل كامل",
     ]
     if any(ci in normalized for ci in comprehensive_indicators):
         return "comprehensive_protocol"
 
     # 8. Dosage / pesticide / fertilizer lookup indicators
     dosage_keywords = [
-        "جرعة", "جرعات", "كمية", "نسبة", "معدل", "تسميد", "سماد", "مبيد",
-        "تركيز", "معاملة", "npk", "urea", "يوريا", "لتر", "فدان", "رش"
+        "جرعة",
+        "جرعات",
+        "كمية",
+        "نسبة",
+        "معدل",
+        "تسميد",
+        "سماد",
+        "مبيد",
+        "تركيز",
+        "معاملة",
+        "npk",
+        "urea",
+        "يوريا",
+        "لتر",
+        "فدان",
+        "رش",
     ]
     if any(kw in normalized for kw in dosage_keywords):
         return "dosage_lookup"
 
     # 9. Disease / pest identification indicators
     disease_keywords = [
-        "مرض", "امراض", "اعراض", "اصابة", "عفن", "لفحة", "صدأ", "ذبول",
-        "حشرة", "حشرات", "آفة", "آفات", "بكتيريا", "ديدان", "سوسة", "بياض"
+        "مرض",
+        "امراض",
+        "اعراض",
+        "اصابة",
+        "عفن",
+        "لفحة",
+        "صدأ",
+        "ذبول",
+        "حشرة",
+        "حشرات",
+        "آفة",
+        "آفات",
+        "بكتيريا",
+        "ديدان",
+        "سوسة",
+        "بياض",
     ]
     if any(kw in normalized for kw in disease_keywords):
         return "disease_query"
 
     # 10. Out-of-vocabulary / Random Arabic keymash without context
     agri_words = {
-        "طماطم", "بطاطس", "قمح", "ذرة", "عنب", "مانجو", "مانجا", "زيتون", "ارز", "أرز",
-        "بصل", "ثوم", "تفاح", "فراولة", "فلفل", "خيار", "كوسة", "باذنجان", "برتقال", "موالح",
-        "نخيل", "نخل", "رمان", "موز", "تين", "كنتالوب", "بطيخ", "فول", "زرع", "محصول", "ارض",
-        "غيط", "مزرعة", "شجر", "شجرة", "ورق", "ثمار", "عقد", "تزهير", "تقليم", "ري", "سقي",
-        "طقس", "جو", "مطر", "حرارة"
+        "طماطم",
+        "بطاطس",
+        "قمح",
+        "ذرة",
+        "عنب",
+        "مانجو",
+        "مانجا",
+        "زيتون",
+        "ارز",
+        "أرز",
+        "بصل",
+        "ثوم",
+        "تفاح",
+        "فراولة",
+        "فلفل",
+        "خيار",
+        "كوسة",
+        "باذنجان",
+        "برتقال",
+        "موالح",
+        "نخيل",
+        "نخل",
+        "رمان",
+        "موز",
+        "تين",
+        "كنتالوب",
+        "بطيخ",
+        "فول",
+        "زرع",
+        "محصول",
+        "ارض",
+        "غيط",
+        "مزرعة",
+        "شجر",
+        "شجرة",
+        "ورق",
+        "ثمار",
+        "عقد",
+        "تزهير",
+        "تقليم",
+        "ري",
+        "سقي",
+        "طقس",
+        "جو",
+        "مطر",
+        "حرارة",
     }
     question_words = {
-        "ازاي", "كيف", "ليه", "امتى", "متى", "فين", "كام", "كم", "هل", "ماهو", "ما هو", "ما هي", "ايه", "ينفع", "ممكن", "طريقة"
+        "ازاي",
+        "كيف",
+        "ليه",
+        "امتى",
+        "متى",
+        "فين",
+        "كام",
+        "كم",
+        "هل",
+        "ماهو",
+        "ما هو",
+        "ما هي",
+        "ايه",
+        "ينفع",
+        "ممكن",
+        "طريقة",
     }
     has_agri = any(w in normalized for w in agri_words)
     has_q = any(w in normalized for w in question_words)
     words = normalized.split()
-    if not has_context and not has_agri and not has_q and len(words) <= 3 and len(raw) <= 25:
+    if (
+        not has_context
+        and not has_agri
+        and not has_q
+        and len(words) <= 3
+        and len(raw) <= 25
+    ):
         return "unintelligible"
 
     return "general_advice"

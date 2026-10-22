@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
@@ -15,7 +13,7 @@ if str(ROOT_DIR) not in sys.path:
 
 os.environ.setdefault("CI", "1")
 
-from tests.load.test_load_performance import run_load_stress_test
+from tests.load.test_load_performance import run_load_stress_test  # noqa: E402
 
 
 def generate_qa_report(report_dir: str | Path = "reports") -> Path:

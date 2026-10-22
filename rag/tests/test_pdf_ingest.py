@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import json
-import textwrap
-from pathlib import Path
 from typing import Any, Dict, List
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -21,6 +18,7 @@ from rag.pdf_ingest import (
 
 
 # ─── Arabic normalization ────────────────────────────────────────────────────
+
 
 class TestNormalizeArabic:
     def test_alef_unification(self):
@@ -45,6 +43,7 @@ class TestNormalizeArabic:
 
 
 # ─── Metadata inference ──────────────────────────────────────────────────────
+
 
 class TestInferMetadata:
     def test_detects_wheat_crop(self):
@@ -83,6 +82,7 @@ class TestInferMetadata:
 
 # ─── Content hash ────────────────────────────────────────────────────────────
 
+
 class TestContentHash:
     def test_same_text_same_hash(self):
         assert _content_hash("hello") == _content_hash("hello")
@@ -96,9 +96,13 @@ class TestContentHash:
 
 # ─── Section splitter ────────────────────────────────────────────────────────
 
+
 class TestSplitIntoSections:
     def _make_pages(self, texts: List[str]) -> List[Dict[str, Any]]:
-        return [{"page": i + 1, "text": t, "raw_length": len(t)} for i, t in enumerate(texts)]
+        return [
+            {"page": i + 1, "text": t, "raw_length": len(t)}
+            for i, t in enumerate(texts)
+        ]
 
     def test_single_page_one_section(self):
         pages = self._make_pages(["محتوى الصفحة الأولى\nمعلومات عامة عن الزراعة"])
@@ -106,10 +110,12 @@ class TestSplitIntoSections:
         assert len(sections) >= 1
 
     def test_header_starts_new_section(self):
-        pages = self._make_pages([
-            "محتوى الفصل الأول\nنص عام",
-            "الفصل الثاني في القمح\nتوصيات مكافحة",
-        ])
+        pages = self._make_pages(
+            [
+                "محتوى الفصل الأول\nنص عام",
+                "الفصل الثاني في القمح\nتوصيات مكافحة",
+            ]
+        )
         sections = split_into_sections(pages)
         assert len(sections) >= 1  # At minimum the header page triggers split
 
@@ -121,6 +127,7 @@ class TestSplitIntoSections:
 
 
 # ─── pdf_to_documents (mocked extraction) ────────────────────────────────────
+
 
 class TestPdfToDocuments:
     def test_raises_if_file_not_found(self, tmp_path):
@@ -194,6 +201,7 @@ class TestPdfToDocuments:
 
 # ─── load_pdfs_to_documents (multi-PDF) ──────────────────────────────────────
 
+
 class TestLoadPdfsToDocuments:
     def test_skips_missing_files_gracefully(self, tmp_path):
         missing = tmp_path / "nonexistent.pdf"
@@ -207,8 +215,12 @@ class TestLoadPdfsToDocuments:
         pdf1.write_bytes(b"%PDF-1.4 dummy")
         pdf2.write_bytes(b"%PDF-1.4 dummy")
 
-        repeated_text = "نفس المحتوى في كلا الملفين لاختبار التكرار العالمي في الزراعة المصرية" * 5
-        fake_pages = [{"page": 1, "text": repeated_text, "raw_length": len(repeated_text)}]
+        repeated_text = (
+            "نفس المحتوى في كلا الملفين لاختبار التكرار العالمي في الزراعة المصرية" * 5
+        )
+        fake_pages = [
+            {"page": 1, "text": repeated_text, "raw_length": len(repeated_text)}
+        ]
 
         with patch("rag.pdf_ingest.extract_pages", return_value=fake_pages):
             docs = load_pdfs_to_documents([pdf1, pdf2], deduplicate_global=True)
@@ -221,8 +233,20 @@ class TestLoadPdfsToDocuments:
         pdf1.write_bytes(b"%PDF-1.4 dummy")
         pdf2.write_bytes(b"%PDF-1.4 dummy")
 
-        pages_a = [{"page": 1, "text": "معلومات القمح والزراعة في مصر العليا والصعيد وكيفية مكافحة الآفات الزراعية", "raw_length": 100}]
-        pages_b = [{"page": 1, "text": "توصيات الطماطم والبياض الدقيقي في دلتا النيل وكيفية العلاج والوقاية من الامراض", "raw_length": 100}]
+        pages_a = [
+            {
+                "page": 1,
+                "text": "معلومات القمح والزراعة في مصر العليا والصعيد وكيفية مكافحة الآفات الزراعية",
+                "raw_length": 100,
+            }
+        ]
+        pages_b = [
+            {
+                "page": 1,
+                "text": "توصيات الطماطم والبياض الدقيقي في دلتا النيل وكيفية العلاج والوقاية من الامراض",
+                "raw_length": 100,
+            }
+        ]
 
         def mock_extract(path):
             if "c.pdf" in str(path):

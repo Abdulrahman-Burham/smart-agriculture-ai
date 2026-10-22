@@ -30,12 +30,16 @@ logger = logging.getLogger(__name__)
 class RAGPipeline:
     """Orchestrates the 6-stage Egyptian Agricultural RAG pipeline end-to-end."""
 
-    def __init__(self, config_path: str = "rag/config.yaml", lexicon_path: str = "rag/lexicon.json"):
+    def __init__(
+        self,
+        config_path: str = "rag/config.yaml",
+        lexicon_path: str = "rag/lexicon.json",
+    ):
         import os
         from dotenv import load_dotenv
-        
+
         load_dotenv()
-        
+
         self.config = self._load_config(config_path)
         self.lexicon = load_lexicon(lexicon_path)
 
@@ -43,20 +47,26 @@ class RAGPipeline:
         qdrant_url = os.environ.get("QDRANT_URL")
         qdrant_key = os.environ.get("QDRANT_API_KEY")
         cohere_key = os.environ.get("COHERE_API_KEY")
-        
+
         if qdrant_url and qdrant_key and cohere_key:
             logger.info("Initializing Qdrant Cloud Vector Store...")
             self.vector_store = QdrantVectorStore(
                 url=qdrant_url,
                 api_key=qdrant_key,
                 cohere_api_key=cohere_key,
-                collection_name=self.config.get("vector_store", {}).get("collection_name", "egyptian_agriculture")
+                collection_name=self.config.get("vector_store", {}).get(
+                    "collection_name", "egyptian_agriculture"
+                ),
             )
         else:
             logger.info("Initializing Local Chroma Vector Store...")
             self.vector_store = ChromaVectorStore(
-                collection_name=self.config.get("vector_store", {}).get("collection_name", "egyptian_agriculture"),
-                persist_directory=self.config.get("vector_store", {}).get("persist_directory", "./chroma_db"),
+                collection_name=self.config.get("vector_store", {}).get(
+                    "collection_name", "egyptian_agriculture"
+                ),
+                persist_directory=self.config.get("vector_store", {}).get(
+                    "persist_directory", "./chroma_db"
+                ),
             )
 
         self.llm_provider = MockLLMProvider()
@@ -65,7 +75,9 @@ class RAGPipeline:
     def _load_config(self, path: str) -> Dict[str, Any]:
         filepath = Path(path)
         if not filepath.exists():
-            logger.warning(f"Config file not found at {filepath}. Using default settings.")
+            logger.warning(
+                f"Config file not found at {filepath}. Using default settings."
+            )
             return {
                 "confidence": {"threshold": 0.40},
                 "retrieval": {"top_k_fused": 20, "rrf_k": 60},
@@ -123,7 +135,9 @@ class RAGPipeline:
         vision_context: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Log request details to logs/requests.jsonl."""
-        log_file = self.config.get("logging", {}).get("requests_log", "logs/requests.jsonl")
+        log_file = self.config.get("logging", {}).get(
+            "requests_log", "logs/requests.jsonl"
+        )
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -152,7 +166,9 @@ class RAGPipeline:
         start_time = time.time()
 
         # Stage 1: Preprocess (Orthography, Lexicon, Intent)
-        prep_data = preprocess_query(user_query, self.lexicon, vision_context=vision_context)
+        prep_data = preprocess_query(
+            user_query, self.lexicon, vision_context=vision_context
+        )
         query_text = prep_data["canonical_query"]
         intent = prep_data["intent"]
 
@@ -190,10 +206,14 @@ class RAGPipeline:
         if intent == "chit_chat":
             prompt = f"أنت مساعد زراعي مصري ذكي ومختص واسمك 'الخبير الزراعي'. المستخدم يوجه لك رسالة ترحيب أو دردشة خفيفة. رد بأسلوب ودي ولطيف، باللغة العربية (يفضل باللهجة المصرية الخفيفة)، واسأله كيف يمكنك مساعدته في مزرعته أو أرضه الزراعية اليوم.\n\nرسالة المستخدم: {user_query}"
             try:
-                answer = self.llm_provider.generate_text(prompt) if hasattr(self.llm_provider, "generate_text") else "أهلاً بك يا فندم! أنا الخبير الزراعي، إزاي أقدر أساعدك في أرضك ومحصولك النهاردة؟"
+                answer = (
+                    self.llm_provider.generate_text(prompt)
+                    if hasattr(self.llm_provider, "generate_text")
+                    else "أهلاً بك يا فندم! أنا الخبير الزراعي، إزاي أقدر أساعدك في أرضك ومحصولك النهاردة؟"
+                )
             except Exception:
                 answer = "أهلاً بك يا فندم! أنا الخبير الزراعي، إزاي أقدر أساعدك في أرضك ومحصولك النهاردة؟"
-            
+
             return {
                 "query": user_query,
                 "processed_query": query_text,
@@ -204,7 +224,7 @@ class RAGPipeline:
                 "needs_agronomist_review": False,
                 "vision_context_used": vision_context,
                 "latency_seconds": round(time.time() - start_time, 4),
-                "sources": []
+                "sources": [],
             }
 
         # Stage 2: Hybrid Retrieval (Vector + BM25 + RRF + Vision metadata boost)
@@ -219,21 +239,34 @@ class RAGPipeline:
         )
 
         # Stage 3: Reranking & Metadata Filtering
-        crop_target = crop_filter or (vision_context.get("crop_type") if vision_context else None)
-        disease_target = disease_filter or (vision_context.get("disease_label") if vision_context else None)
+        crop_target = crop_filter or (
+            vision_context.get("crop_type") if vision_context else None
+        )
+        disease_target = disease_filter or (
+            vision_context.get("disease_label") if vision_context else None
+        )
 
         filtered_candidates = apply_metadata_filters(
-            fused_candidates, crop=crop_target, disease=disease_target, region=region_filter
+            fused_candidates,
+            crop=crop_target,
+            disease=disease_target,
+            region=region_filter,
         )
 
         top_k = self.config.get("rerank", {}).get("top_k", 5)
         use_ce = self.config.get("rerank", {}).get("use_cross_encoder", False)
         final_chunks = rerank_candidates(
-            filtered_candidates, query=query_text, top_k=top_k, use_cross_encoder=use_ce, config=self.config
+            filtered_candidates,
+            query=query_text,
+            top_k=top_k,
+            use_cross_encoder=use_ce,
+            config=self.config,
         )
 
         # Stage 4: Grounded Generation
-        gen_result = generate_grounded_answer(query_text, final_chunks, self.llm_provider, self.config)
+        gen_result = generate_grounded_answer(
+            query_text, final_chunks, self.llm_provider, self.config
+        )
         confidence = gen_result["retrieval_confidence"]
         threshold = self.config.get("confidence", {}).get("threshold", 0.40)
 
@@ -253,9 +286,14 @@ class RAGPipeline:
                 config=self.config,
             )
             final_chunks_fallback = rerank_candidates(
-                fused_candidates_fallback, query=rewritten_query, top_k=top_k, config=self.config
+                fused_candidates_fallback,
+                query=rewritten_query,
+                top_k=top_k,
+                config=self.config,
             )
-            fallback_gen = generate_grounded_answer(rewritten_query, final_chunks_fallback, self.llm_provider, self.config)
+            fallback_gen = generate_grounded_answer(
+                rewritten_query, final_chunks_fallback, self.llm_provider, self.config
+            )
 
             # Accept fallback if it improved confidence
             if fallback_gen["retrieval_confidence"] > confidence:

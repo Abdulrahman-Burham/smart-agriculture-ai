@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import logging
-import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from prometheus_client import Counter, Histogram, Gauge
 
 logger = logging.getLogger(__name__)
@@ -13,23 +12,22 @@ logger = logging.getLogger(__name__)
 REQUEST_COUNT = Counter(
     "rag_requests_total",
     "Total RAG and CV pipeline requests processed",
-    ["intent", "status"]
+    ["intent", "status"],
 )
 
 REQUEST_LATENCY = Histogram(
     "rag_request_latency_seconds",
     "Pipeline request end-to-end latency in seconds",
-    buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0]
+    buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
 )
 
 CONFIDENCE_GAUGE = Gauge(
-    "rag_retrieval_confidence",
-    "Latest retrieval confidence score"
+    "rag_retrieval_confidence", "Latest retrieval confidence score"
 )
 
 AGRONOMIST_REVIEW_COUNTER = Counter(
     "rag_agronomist_review_total",
-    "Total queries flagged for mandatory agronomist review"
+    "Total queries flagged for mandatory agronomist review",
 )
 
 

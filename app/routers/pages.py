@@ -20,7 +20,9 @@ _NO_CACHE_HEADERS = {
 def is_mobile_request(request: Request) -> bool:
     """Detect if the incoming request comes from a smartphone or tablet."""
     ua = (request.headers.get("user-agent") or "").lower()
-    return any(k in ua for k in ("mobile", "android", "iphone", "ipad", "ipod", "harmonyos"))
+    return any(
+        k in ua for k in ("mobile", "android", "iphone", "ipad", "ipod", "harmonyos")
+    )
 
 
 @router.get("/")
@@ -78,8 +80,6 @@ async def serve_epidemic_map():
     return FileResponse(TEMPLATES_DIR / "epidemic_map.html", headers=_NO_CACHE_HEADERS)
 
 
-
-
 @router.get("/login")
 @router.head("/login")
 async def serve_login_page():
@@ -116,13 +116,17 @@ async def serve_logo():
 @router.get("/manifest.json")
 async def serve_pwa_manifest():
     """Serve Progressive Web App manifest."""
-    return FileResponse(STATIC_DIR / "manifest.json", media_type="application/manifest+json")
+    return FileResponse(
+        STATIC_DIR / "manifest.json", media_type="application/manifest+json"
+    )
 
 
 @router.get("/service-worker.js")
 async def serve_service_worker():
     """Serve Progressive Web App service worker script."""
-    return FileResponse(STATIC_DIR / "service-worker.js", media_type="application/javascript")
+    return FileResponse(
+        STATIC_DIR / "service-worker.js", media_type="application/javascript"
+    )
 
 
 @router.get("/prescription/{image_id}")
@@ -156,4 +160,3 @@ async def serve_prescription_page(image_id: int):
     template = jinja_env.get_template("prescription.html")
     html_content = template.render(**record, image_id=image_id)
     return HTMLResponse(content=html_content, headers=_NO_CACHE_HEADERS)
-

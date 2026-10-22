@@ -50,7 +50,9 @@ def load_telegram_config() -> Dict[str, Any]:
     return cfg
 
 
-def save_telegram_config(bot_token: str, chat_id: str, enabled: bool = True) -> Dict[str, Any]:
+def save_telegram_config(
+    bot_token: str, chat_id: str, enabled: bool = True
+) -> Dict[str, Any]:
     """Persist Telegram alert configuration to data/telegram_config.json."""
     cfg = {
         "enabled": bool(enabled),
@@ -152,6 +154,7 @@ def dispatch_telegram_alert_fire_and_forget(
         cfg = load_telegram_config()
         if cfg.get("enabled") and cfg.get("bot_token") and cfg.get("chat_id"):
             import threading
+
             icon = "🚨" if level == "danger" else "ℹ️"
             txt = f"{icon} <b>[الخبير الزراعي] {title}</b>\n\n{message}"
             threading.Thread(

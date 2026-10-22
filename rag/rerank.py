@@ -30,17 +30,31 @@ def apply_metadata_filters(
         cand_disease = str(meta.get("disease_name", "")).lower()
         cand_region = str(meta.get("region", "")).lower()
 
-        if crop and cand_crop not in ["unknown", "general", "all"] and cand_crop != crop.lower():
+        if (
+            crop
+            and cand_crop not in ["unknown", "general", "all"]
+            and cand_crop != crop.lower()
+        ):
             continue
-        if disease and cand_disease not in ["unknown", "general", "all"] and cand_disease != disease.lower():
+        if (
+            disease
+            and cand_disease not in ["unknown", "general", "all"]
+            and cand_disease != disease.lower()
+        ):
             continue
-        if region and cand_region not in ["unknown", "general", "egypt_general"] and cand_region != region.lower():
+        if (
+            region
+            and cand_region not in ["unknown", "general", "egypt_general"]
+            and cand_region != region.lower()
+        ):
             continue
 
         filtered.append(cand)
 
     if not filtered and not strict:
-        logger.info("Metadata filtering returned empty list; falling back to original candidates.")
+        logger.info(
+            "Metadata filtering returned empty list; falling back to original candidates."
+        )
         return candidates
 
     return filtered
@@ -72,8 +86,12 @@ def rerank_candidates(
             reranked = sorted(candidates, key=lambda x: x["rerank_score"], reverse=True)
             return reranked[:top_k]
         except Exception as err:
-            logger.warning(f"Cross-encoder reranking failed ({err}). Falling back to fusion rank order.")
+            logger.warning(
+                f"Cross-encoder reranking failed ({err}). Falling back to fusion rank order."
+            )
 
     # Standard passthrough using RRF / fusion score order
-    candidates_sorted = sorted(candidates, key=lambda x: x.get("rrf_score", 0.0), reverse=True)
+    candidates_sorted = sorted(
+        candidates, key=lambda x: x.get("rrf_score", 0.0), reverse=True
+    )
     return candidates_sorted[:top_k]

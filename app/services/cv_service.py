@@ -23,7 +23,7 @@ class ComputerVisionService:
         """Preprocess raw image bytes into normalized tensor array representation."""
         if not image_bytes:
             raise ValueError("Empty image payload received.")
-        
+
         # Metadata extraction simulation
         image_size_bytes = len(image_bytes)
         return {
@@ -45,25 +45,25 @@ class ComputerVisionService:
                 "confidence_score": 0.0,
                 "bounding_box": [0.0, 0.0, 0.0, 0.0],
                 "model_version": self.model_version,
-                "predictions": []
+                "predictions": [],
             }
-            
+
         try:
             image_stream = io.BytesIO(image_bytes)
             results = self.classifier.predict(image_stream)
-            
-            crop_type = results.get('crop_type', 'unknown')
-            disease_label = results.get('disease_name', 'unknown')
-            confidence = results.get('top_confidence', 0.0)
-            predictions = results.get('predictions', [])
-            
+
+            crop_type = results.get("crop_type", "unknown")
+            disease_label = results.get("disease_name", "unknown")
+            confidence = results.get("top_confidence", 0.0)
+            predictions = results.get("predictions", [])
+
             return {
                 "crop_type": crop_type,
                 "disease_label": disease_label,
                 "confidence_score": confidence,
-                "bounding_box": [0.15, 0.20, 0.85, 0.90], # mock bounding box
+                "bounding_box": [0.15, 0.20, 0.85, 0.90],  # mock bounding box
                 "model_version": self.model_version,
-                "predictions": predictions
+                "predictions": predictions,
             }
         except Exception as e:
             logger.error(f"Prediction error: {e}")

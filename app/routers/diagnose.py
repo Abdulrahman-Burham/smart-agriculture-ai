@@ -35,7 +35,10 @@ from computer_vision.storage.image_repository import (
     save_followup_record,
     save_image_record,
 )
-from computer_vision.storage.telemetry_repository import save_error_log, save_token_usage_log
+from computer_vision.storage.telemetry_repository import (
+    save_error_log,
+    save_token_usage_log,
+)
 from computer_vision.storage.utils import extract_client_info, extract_user_from_request
 
 logger = logging.getLogger(__name__)
@@ -65,7 +68,9 @@ async def diagnose_endpoint(
     u_name = auth_user.get("name", "") if auth_user else ""
     u_ident = auth_user.get("identifier", "") if auth_user else ""
 
-    await enforce_guest_gate_or_401(client_info, int(u_id) if u_id else None, "/api/diagnose")
+    await enforce_guest_gate_or_401(
+        client_info, int(u_id) if u_id else None, "/api/diagnose"
+    )
 
     try:
         # Step 1: Read and validate image bytes
@@ -73,7 +78,10 @@ async def diagnose_endpoint(
         if not image_bytes:
             raise HTTPException(status_code=400, detail="Empty image file.")
         if len(image_bytes) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail="حجم الصورة يتجاوز الحد المسموح به (15 ميجابايت).")
+            raise HTTPException(
+                status_code=413,
+                detail="حجم الصورة يتجاوز الحد المسموح به (15 ميجابايت).",
+            )
 
         # Step 2: Fetch memory context to resolve crop hint if not explicitly passed
         memory_ctx: Dict[str, Any] = {}
@@ -88,7 +96,9 @@ async def diagnose_endpoint(
         except Exception as mem_err:
             logger.warning(f"Memory fetch notice in diagnose: {mem_err}")
 
-        resolved_crop_hint = crop or memory_ctx.get("primary_crop") or memory_ctx.get("crop")
+        resolved_crop_hint = (
+            crop or memory_ctx.get("primary_crop") or memory_ctx.get("crop")
+        )
 
         # Step 3: Run Computer Vision prediction (with crop hint) + Gemini Plant Gatekeeper in parallel
         cv = get_cv_classifier()
@@ -96,7 +106,9 @@ async def diagnose_endpoint(
 
         if cv:
             image_stream = io.BytesIO(image_bytes)
-            cv_task = asyncio.to_thread(cv.predict, image_stream, 3, model_choice, crop_hint=resolved_crop_hint)
+            cv_task = asyncio.to_thread(
+                cv.predict, image_stream, 3, model_choice, crop_hint=resolved_crop_hint
+            )
             gemini_gate_task = asyncio.to_thread(
                 verify_plant_image_gemini_sync,
                 image_bytes,
@@ -117,7 +129,11 @@ async def diagnose_endpoint(
                 detected_obj = (
                     gemini_gate.get("detected_ar")
                     if not gemini_is_plant and gemini_gate.get("detected_ar")
-                    else (cv_result.get("detected_object_ar") or cv_result.get("rejection_reason_ar") or "صورة غير نباتية")
+                    else (
+                        cv_result.get("detected_object_ar")
+                        or cv_result.get("rejection_reason_ar")
+                        or "صورة غير نباتية"
+                    )
                 )
                 reject_reason = (
                     f"⚠️ تنبيه: هذه الصورة ليست لنبات! (تم رصد: {detected_obj}) — "
@@ -213,29 +229,53 @@ async def diagnose_endpoint(
                 vision_context=vision_context,
             )
             advice_text = rag_result["answer"]
-            sources = list(set(
-                f"صفحة {c.get('metadata', {}).get('page_start', '?')}"
-                for c in rag_result.get("sources", [])
-            ))
+            sources = list(
+                set(
+                    f"صفحة {c.get('metadata', {}).get('page_start', '?')}"
+                    for c in rag_result.get("sources", [])
+                )
+            )
             rag_conf = round(rag_result.get("retrieval_confidence", 0), 4)
-            diag_llm_tel = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "model_name": "legacy_rag", "api_key_masked": ""}
+            diag_llm_tel = {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+                "model_name": "legacy_rag",
+                "api_key_masked": "",
+            }
         else:
             # Primary Agri-RAG integration using FarmContext + VisionDiagnosis + Memory contract
             resolved_area = area_feddan or memory_ctx.get("area_feddan")
-            raw_irrig = (irrigation_type or memory_ctx.get("irrigation_type") or "").strip()
-            irrig_map = {"تنقيط": "drip", "غمر": "surface", "رش": "sprinkler", "محوري": "pivot", "drip": "drip", "surface": "surface", "sprinkler": "sprinkler"}
+            raw_irrig = (
+                irrigation_type or memory_ctx.get("irrigation_type") or ""
+            ).strip()
+            irrig_map = {
+                "تنقيط": "drip",
+                "غمر": "surface",
+                "رش": "sprinkler",
+                "محوري": "pivot",
+                "drip": "drip",
+                "surface": "surface",
+                "sprinkler": "sprinkler",
+            }
             resolved_irrig = irrig_map.get(raw_irrig)
 
             farm_payload: Dict[str, Any] = {
-                "farm_id": f"user-{u_id}" if u_id else f"visitor-{client_info['visitor_hash'][:8]}",
+                "farm_id": f"user-{u_id}"
+                if u_id
+                else f"visitor-{client_info['visitor_hash'][:8]}",
                 "farmer_name": farmer_display_name or None,
                 "governorate": location or memory_ctx.get("governorate") or "القاهرة",
-                "crop": crop_ar if crop_ar else (resolved_crop_hint or memory_ctx.get("crop") or None),
+                "crop": crop_ar
+                if crop_ar
+                else (resolved_crop_hint or memory_ctx.get("crop") or None),
                 "area_feddan": float(resolved_area) if resolved_area else None,
                 "irrigation_method": resolved_irrig,
                 "diagnoses": [
                     {
-                        "label": f"{predicted_ar} ({predicted_en})" if predicted_ar else predicted_en,
+                        "label": f"{predicted_ar} ({predicted_en})"
+                        if predicted_ar
+                        else predicted_en,
                         "confidence": round(min(1.0, max(0.0, conf_score)), 4),
                         "crop": crop_ar if crop_ar else (resolved_crop_hint or None),
                     }
@@ -246,7 +286,15 @@ async def diagnose_endpoint(
                 f"تم فحص صورة ورقة نبات {crop_ar} وكانت نتيجة التشخيص: {predicted_ar} ({predicted_en}). "
                 f"ما هي الأعراض وخطوات الوقاية والمكافحة المعتمدة لهذا التشخيص في {crop_ar}؟ ({query})"
             )
-            filter_crop = crop_ar if crop_ar in KNOWN_AGRI_RAG_CROPS else (resolved_crop_hint if resolved_crop_hint in KNOWN_AGRI_RAG_CROPS else None)
+            filter_crop = (
+                crop_ar
+                if crop_ar in KNOWN_AGRI_RAG_CROPS
+                else (
+                    resolved_crop_hint
+                    if resolved_crop_hint in KNOWN_AGRI_RAG_CROPS
+                    else None
+                )
+            )
 
             agri_data = await query_agri_rag(
                 question=rag_question,
@@ -313,8 +361,13 @@ async def diagnose_endpoint(
         # Dispatch Telegram epidemic notification if disease detected with high confidence
         try:
             conf_val = float(cv_result.get("confidence", 0.0) or 0.0)
-            if conf_val >= 0.88 and not any(k in predicted_en.lower() for k in ("healthy", "not_a_plant")):
-                from app.services.telegram_service import dispatch_telegram_alert_fire_and_forget
+            if conf_val >= 0.88 and not any(
+                k in predicted_en.lower() for k in ("healthy", "not_a_plant")
+            ):
+                from app.services.telegram_service import (
+                    dispatch_telegram_alert_fire_and_forget,
+                )
+
                 dispatch_telegram_alert_fire_and_forget(
                     title="رصد إصابة مرضية مؤكدة 🌾",
                     message=(
@@ -324,7 +377,10 @@ async def diagnose_endpoint(
                         f"• كود الروشتة: <code>RX-{saved_img_id}</code>"
                     ),
                     level="epidemic",
-                    details={"المزارع": u_name or "زائر", "الموديل": cv_result.get("model_used", model_choice)},
+                    details={
+                        "المزارع": u_name or "زائر",
+                        "الموديل": cv_result.get("model_used", model_choice),
+                    },
                 )
         except Exception:
             pass
@@ -360,7 +416,11 @@ async def diagnose_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/diagnose/followup", response_model=FollowupEvaluationResponse, tags=["Vision + RAG"])
+@router.post(
+    "/api/diagnose/followup",
+    response_model=FollowupEvaluationResponse,
+    tags=["Vision + RAG"],
+)
 async def evaluate_leaf_recovery_followup_endpoint(
     http_request: Request,
     previous_image_id: Optional[int] = Form(None),
@@ -381,7 +441,9 @@ async def evaluate_leaf_recovery_followup_endpoint(
 
     target_id = previous_image_id or baseline_image_id
     if not target_id:
-        raise HTTPException(status_code=400, detail="يرجى تحديد رقم الفحص السابق (previous_image_id)")
+        raise HTTPException(
+            status_code=400, detail="يرجى تحديد رقم الفحص السابق (previous_image_id)"
+        )
 
     target_file = image or followup_image
     if not target_file:
@@ -392,7 +454,9 @@ async def evaluate_leaf_recovery_followup_endpoint(
     # Load baseline record
     baseline = await asyncio.to_thread(get_image_record_by_id, target_id)
     if not baseline:
-        raise HTTPException(status_code=404, detail="السجل المرجعي للفحص السابق غير موجود أو تم حذفه.")
+        raise HTTPException(
+            status_code=404, detail="السجل المرجعي للفحص السابق غير موجود أو تم حذفه."
+        )
 
     image_bytes = await target_file.read()
 
@@ -404,7 +468,9 @@ async def evaluate_leaf_recovery_followup_endpoint(
     cv_result: Dict[str, Any] = {}
     if cv:
         image_stream = io.BytesIO(image_bytes)
-        cv_result = await asyncio.to_thread(cv.predict, image_stream, 3, "EfficientNetV2B2")
+        cv_result = await asyncio.to_thread(
+            cv.predict, image_stream, 3, "EfficientNetV2B2"
+        )
     current_class = cv_result.get("predicted_class", "Healthy")
     current_class_ar = cv_result.get("predicted_class_ar", "أوراق سليمة")
     current_conf = float(cv_result.get("confidence", 0.0) or 0.0)
@@ -416,7 +482,9 @@ async def evaluate_leaf_recovery_followup_endpoint(
     if current_class == orig_class:
         if current_conf < 0.50:
             rec_status = "controlled"
-            rec_status_ar = "انحسار واضح للعدوى وجفاف حواف البقع الفطرية (تحت السيطرة) ✅"
+            rec_status_ar = (
+                "انحسار واضح للعدوى وجفاف حواف البقع الفطرية (تحت السيطرة) ✅"
+            )
             rec_score = 78.0
             clinical_ar = (
                 f"مقارنة بالفحص السابق قبل {days_since_treatment} أيام، يُظهر الفحص انخفاضاً حاداً في نشاط "
@@ -512,7 +580,6 @@ async def evaluate_leaf_recovery_followup_endpoint(
         should_repeat_spray=(rec_status == "active"),
         latency_seconds=0.0,
     )
-
 
 
 @router.post("/api/v1/diagnose-and-advise", tags=["Vision + RAG"])

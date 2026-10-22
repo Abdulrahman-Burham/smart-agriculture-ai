@@ -31,7 +31,9 @@ except Exception:
 import numpy as np
 from PIL import ExifTags, Image
 
-AUTH_SECRET_KEY = os.environ.get("AGRI_AUTH_SECRET", "smart-agri-jwt-secret-abdo-2026-prod-key")
+AUTH_SECRET_KEY = os.environ.get(
+    "AGRI_AUTH_SECRET", "smart-agri-jwt-secret-abdo-2026-prod-key"
+)
 
 _IP_GEO_CACHE: Dict[str, Dict[str, Any]] = {}
 _ARABIC_DIGITS_MAP = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
@@ -41,35 +43,116 @@ _EGYPT_PHONE_REGEX = re.compile(r"^01[0125][0-9]{8}$")
 _NAME_CLEAN_REGEX = re.compile(r"^[\u0600-\u06FFa-zA-Z\s.\-']+$")
 
 VALID_EGYPT_GOVERNORATES = {
-    "القاهرة", "الجيزة", "الإسكندرية", "البحيرة", "كفر الشيخ", "الدقهلية",
-    "الشرقية", "المنوفية", "الغربية", "القليوبية", "الإسماعيلية", "السويس",
-    "بورسعيد", "دمياط", "الفيوم", "بني سويف", "المنيا", "أسيوط", "سوهاج",
-    "قنا", "الأقصر", "أسوان", "البحر الأحمر", "الوادي الجديد", "مطروح",
-    "شمال سيناء", "جنوب سيناء",
+    "القاهرة",
+    "الجيزة",
+    "الإسكندرية",
+    "البحيرة",
+    "كفر الشيخ",
+    "الدقهلية",
+    "الشرقية",
+    "المنوفية",
+    "الغربية",
+    "القليوبية",
+    "الإسماعيلية",
+    "السويس",
+    "بورسعيد",
+    "دمياط",
+    "الفيوم",
+    "بني سويف",
+    "المنيا",
+    "أسيوط",
+    "سوهاج",
+    "قنا",
+    "الأقصر",
+    "أسوان",
+    "البحر الأحمر",
+    "الوادي الجديد",
+    "مطروح",
+    "شمال سيناء",
+    "جنوب سيناء",
 }
 
 VALID_CROPS = {
-    "", "طماطم", "بطاطس", "قمح", "ذرة", "مانجو", "أرز", "عنب", "فراولة",
-    "خوخ", "تفاح", "برتقال", "فلفل حلو", "فلفل", "قطن", "بصل", "ثوم", "موالح",
+    "",
+    "طماطم",
+    "بطاطس",
+    "قمح",
+    "ذرة",
+    "مانجو",
+    "أرز",
+    "عنب",
+    "فراولة",
+    "خوخ",
+    "تفاح",
+    "برتقال",
+    "فلفل حلو",
+    "فلفل",
+    "قطن",
+    "بصل",
+    "ثوم",
+    "موالح",
 }
 
 _WEAK_PASSWORDS = {
-    "123456", "1234567", "12345678", "123456789", "1234567890",
-    "654321", "000000", "111111", "222222", "333333", "444444",
-    "555555", "666666", "777777", "888888", "999999",
-    "password", "password123", "qwerty", "qwerty123", "abcdef",
-    "112233", "123123", "010101", "admin123",
+    "123456",
+    "1234567",
+    "12345678",
+    "123456789",
+    "1234567890",
+    "654321",
+    "000000",
+    "111111",
+    "222222",
+    "333333",
+    "444444",
+    "555555",
+    "666666",
+    "777777",
+    "888888",
+    "999999",
+    "password",
+    "password123",
+    "qwerty",
+    "qwerty123",
+    "abcdef",
+    "112233",
+    "123123",
+    "010101",
+    "admin123",
 }
 
 _FAKE_PHONES = {
-    "01000000000", "01111111111", "01222222222", "01555555555",
-    "01011111111", "01022222222", "01033333333", "01044444444",
-    "01055555555", "01066666666", "01077777777", "01088888888",
-    "01099999999", "01012345678", "01112345678", "01212345678",
-    "01512345678", "01234567890",
+    "01000000000",
+    "01111111111",
+    "01222222222",
+    "01555555555",
+    "01011111111",
+    "01022222222",
+    "01033333333",
+    "01044444444",
+    "01055555555",
+    "01066666666",
+    "01077777777",
+    "01088888888",
+    "01099999999",
+    "01012345678",
+    "01112345678",
+    "01212345678",
+    "01512345678",
+    "01234567890",
 }
 
-_RESERVED_WORDS = {"abdo", "admin", "developer", "root", "system", "support", "مدير", "ادمن", "أدمن"}
+_RESERVED_WORDS = {
+    "abdo",
+    "admin",
+    "developer",
+    "root",
+    "system",
+    "support",
+    "مدير",
+    "ادمن",
+    "أدمن",
+}
 
 
 def normalize_identifier(raw: str) -> Tuple[str, str, str]:
@@ -110,11 +193,16 @@ def validate_new_user_data(
     if len(name) > 80:
         return None, "الاسم طويل جداً (الحد الأقصى 80 حرفاً)."
     if not _NAME_CLEAN_REGEX.match(name):
-        return None, "الاسم يجب أن يحتوي على حروف عربية أو إنجليزية فقط بدون أرقام أو رموز خاصة."
+        return (
+            None,
+            "الاسم يجب أن يحتوي على حروف عربية أو إنجليزية فقط بدون أرقام أو رموز خاصة.",
+        )
     letters_only = re.sub(r"[\s.\-']", "", name)
     if len(letters_only) < 3 or len(set(letters_only.lower())) < 2:
         return None, "يرجى كتابة اسم حقيقي واضح (مثل: أحمد محمد أو الحاج محمود)."
-    if name.lower() in _RESERVED_WORDS or any(w in _RESERVED_WORDS for w in name.lower().split()):
+    if name.lower() in _RESERVED_WORDS or any(
+        w in _RESERVED_WORDS for w in name.lower().split()
+    ):
         return None, "هذا الاسم محجوز للنظام، يرجى إدخال اسمك الشخصي."
 
     # 2. Validate Identifier (Egyptian Mobile Phone OR Valid Email)
@@ -130,7 +218,10 @@ def validate_new_user_data(
         if len(email) > 120 or ".." in email or not _EMAIL_REGEX.match(email):
             return None, "صيغة البريد الإلكتروني غير صحيحة (مثال صحيح: name@gmail.com)."
         domain = email.split("@", 1)[1]
-        if domain in ("example.com", "test.com", "mail.com", "localhost") or len(domain) < 4:
+        if (
+            domain in ("example.com", "test.com", "mail.com", "localhost")
+            or len(domain) < 4
+        ):
             return None, "يرجى إدخال بريد إلكتروني حقيقي وفعّال."
     else:
         if not phone or not _EGYPT_PHONE_REGEX.match(phone):
@@ -139,7 +230,10 @@ def validate_new_user_data(
                 "رقم الموبايل غير صحيح؛ يجب أن يتكون من 11 رقماً ويبدأ بـ 010 أو 011 أو 012 أو 015 (أو أدخل بريداً إلكترونياً صحيحاً).",
             )
         if phone in _FAKE_PHONES or len(set(phone[3:])) == 1:
-            return None, "رقم الموبايل المدخل يبدو غير حقيقي (أرقام مكررة أو وهمية)، يرجى إدخال رقمك الفعلي."
+            return (
+                None,
+                "رقم الموبايل المدخل يبدو غير حقيقي (أرقام مكررة أو وهمية)، يرجى إدخال رقمك الفعلي.",
+            )
 
     # 3. Validate Password & Confirmation
     pw = password or ""
@@ -149,11 +243,24 @@ def validate_new_user_data(
         return None, "كلمة المرور طويلة جداً."
     pw_norm = pw.translate(_ARABIC_DIGITS_MAP).strip().lower()
     if pw_norm in _WEAK_PASSWORDS or len(set(pw_norm)) < 3:
-        return None, "كلمة المرور ضعيفة جداً أو شائعة (مثل 123456 أو أرقام مكررة)؛ اختر كلمة مرور أقوى لحماية حسابك."
+        return (
+            None,
+            "كلمة المرور ضعيفة جداً أو شائعة (مثل 123456 أو أرقام مكررة)؛ اختر كلمة مرور أقوى لحماية حسابك.",
+        )
     if pw_norm == identifier or (phone and pw_norm == phone):
-        return None, "لا يمكن أن تكون كلمة المرور هي نفس رقم الموبايل أو البريد الإلكتروني."
-    if confirm_password is not None and confirm_password != "" and pw != confirm_password:
-        return None, "كلمتا المرور غير متطابقتين؛ يرجى التأكد من كتابة نفس كلمة المرور في الخانتين."
+        return (
+            None,
+            "لا يمكن أن تكون كلمة المرور هي نفس رقم الموبايل أو البريد الإلكتروني.",
+        )
+    if (
+        confirm_password is not None
+        and confirm_password != ""
+        and pw != confirm_password
+    ):
+        return (
+            None,
+            "كلمتا المرور غير متطابقتين؛ يرجى التأكد من كتابة نفس كلمة المرور في الخانتين.",
+        )
 
     # 4. Validate Governorate & Primary Crop
     gov = (governorate or "القاهرة").strip()
@@ -177,7 +284,9 @@ def validate_new_user_data(
 def hash_password(password: str, salt: Optional[str] = None) -> str:
     """Hash a password using PBKDF2-HMAC-SHA256 with 120,000 iterations."""
     salt_val = salt or secrets.token_hex(16)
-    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt_val.encode("utf-8"), 120000)
+    dk = hashlib.pbkdf2_hmac(
+        "sha256", password.encode("utf-8"), salt_val.encode("utf-8"), 120000
+    )
     return f"pbkdf2_sha256${salt_val}${dk.hex()}"
 
 
@@ -205,9 +314,13 @@ def create_auth_token(user_dict: Dict[str, Any], expires_days: int = 30) -> str:
         "crop": user_dict.get("primary_crop", ""),
         "exp": int(time.time()) + (expires_days * 86400),
     }
-    raw_json = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    raw_json = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
+        "utf-8"
+    )
     b64_payload = base64.urlsafe_b64encode(raw_json).decode("ascii").rstrip("=")
-    sig = hmac.new(AUTH_SECRET_KEY.encode("utf-8"), b64_payload.encode("ascii"), hashlib.sha256).hexdigest()
+    sig = hmac.new(
+        AUTH_SECRET_KEY.encode("utf-8"), b64_payload.encode("ascii"), hashlib.sha256
+    ).hexdigest()
     return f"{b64_payload}.{sig}"
 
 
@@ -253,7 +366,13 @@ def parse_user_agent(ua_string: str) -> Tuple[str, str]:
     if not ua:
         return "غير معروف", "Unknown"
 
-    if "bot" in ua or "spider" in ua or "crawler" in ua or "curl" in ua or "python-requests" in ua:
+    if (
+        "bot" in ua
+        or "spider" in ua
+        or "crawler" in ua
+        or "curl" in ua
+        or "python-requests" in ua
+    ):
         device = "🤖 Bot / Script"
     elif "android" in ua:
         device = "📱 موبايل Android"
@@ -328,7 +447,9 @@ def extract_client_info(request: Any) -> Dict[str, str]:
     if cookie_vid and len(cookie_vid) >= 6:
         visitor_hash = cookie_vid[:32]
     else:
-        visitor_hash = hashlib.sha256(f"{ip}|{ua}".encode("utf-8", errors="ignore")).hexdigest()[:12]
+        visitor_hash = hashlib.sha256(
+            f"{ip}|{ua}".encode("utf-8", errors="ignore")
+        ).hexdigest()[:12]
 
     return {
         "client_ip": ip,
@@ -343,7 +464,12 @@ def extract_client_info(request: Any) -> Dict[str, str]:
 
 def resolve_ip_geo(ip: str) -> Dict[str, str]:
     """Silently resolve IP to (country, city, isp) with in-memory caching."""
-    if not ip or ip in ("127.0.0.1", "localhost", "unknown", "::1") or ip.startswith("10.") or ip.startswith("192.168."):
+    if (
+        not ip
+        or ip in ("127.0.0.1", "localhost", "unknown", "::1")
+        or ip.startswith("10.")
+        or ip.startswith("192.168.")
+    ):
         return {"country": "Local", "city": "Localhost", "isp": "Internal"}
 
     if ip in _IP_GEO_CACHE:
@@ -351,13 +477,17 @@ def resolve_ip_geo(ip: str) -> Dict[str, str]:
 
     try:
         url = f"http://ip-api.com/json/{ip}?fields=status,country,regionName,city,isp"
-        req = urllib.request.Request(url, headers={"User-Agent": "SmartAgriTelemetry/1.0"})
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "SmartAgriTelemetry/1.0"}
+        )
         with urllib.request.urlopen(req, timeout=2.5) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             if data.get("status") == "success":
                 res = {
                     "country": data.get("country", ""),
-                    "city": f"{data.get('regionName', '')} - {data.get('city', '')}".strip(" -"),
+                    "city": f"{data.get('regionName', '')} - {data.get('city', '')}".strip(
+                        " -"
+                    ),
                     "isp": data.get("isp", ""),
                 }
                 _IP_GEO_CACHE[ip] = res
@@ -402,8 +532,13 @@ def analyze_image_forensics(image_bytes: bytes) -> Dict[str, Any]:
                 hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
                 b_ch = bgr[:, :, 0].astype(np.float32)
                 g_ch = bgr[:, :, 1].astype(np.float32)
-                mask_plant = (cv2.inRange(hsv, np.array([22, 28, 25]), np.array([92, 255, 255])) > 0) & (g_ch >= (b_ch - 4.0))
-                green_pct = float(np.count_nonzero(mask_plant)) / float(max(1, h * w)) * 100.0
+                mask_plant = (
+                    cv2.inRange(hsv, np.array([22, 28, 25]), np.array([92, 255, 255]))
+                    > 0
+                ) & (g_ch >= (b_ch - 4.0))
+                green_pct = (
+                    float(np.count_nonzero(mask_plant)) / float(max(1, h * w)) * 100.0
+                )
                 metrics["green_ratio"] = round(green_pct, 1)
 
                 issues = []
@@ -417,7 +552,9 @@ def analyze_image_forensics(image_bytes: bytes) -> Dict[str, Any]:
                     issues.append("❌ نسبة نبات منخفضة جداً (غير صالحة للتشخيص)")
                 elif green_pct < 25.0:
                     issues.append("⚠️ نسبة نبات ضعيفة (يُفضل تصوير الورقة عن قرب)")
-                metrics["quality_flag"] = " ، ".join(issues) if issues else "✅ جودة ممتازة"
+                metrics["quality_flag"] = (
+                    " ، ".join(issues) if issues else "✅ جودة ممتازة"
+                )
         else:
             pil_fallback = Image.open(io.BytesIO(image_bytes)).convert("RGB")
             w, h = pil_fallback.size
@@ -452,7 +589,9 @@ def analyze_image_forensics(image_bytes: bytes) -> Dict[str, Any]:
             model = str(exif_map.get("Model", "")).strip("\x00 ")
             if make or model:
                 metrics["exif_camera"] = f"{make} {model}".strip()
-            dt = str(exif_map.get("DateTimeOriginal") or exif_map.get("DateTime") or "").strip("\x00 ")
+            dt = str(
+                exif_map.get("DateTimeOriginal") or exif_map.get("DateTime") or ""
+            ).strip("\x00 ")
             if dt:
                 metrics["exif_datetime"] = dt
     except Exception:
@@ -461,7 +600,9 @@ def analyze_image_forensics(image_bytes: bytes) -> Dict[str, Any]:
     return metrics
 
 
-def compute_uncertainty_metrics(top_predictions: List[Dict[str, Any]], top_conf_str: str) -> Tuple[float, float, int]:
+def compute_uncertainty_metrics(
+    top_predictions: List[Dict[str, Any]], top_conf_str: str
+) -> Tuple[float, float, int]:
     """Return (top1_pct, margin_pct, is_uncertain_int) for Active Learning filtering."""
     probs: List[float] = []
     for p in top_predictions or []:
@@ -487,26 +628,45 @@ def compute_uncertainty_metrics(top_predictions: List[Dict[str, Any]], top_conf_
     return round(top1, 2), margin, is_uncertain
 
 
-def classify_chat_topic_and_gap(user_query: str, bot_answer: str, confidence: float) -> Tuple[str, int]:
+def classify_chat_topic_and_gap(
+    user_query: str, bot_answer: str, confidence: float
+) -> Tuple[str, int]:
     """Classify the farmer's question topic and detect if the RAG knowledge base had a gap."""
     q = (user_query or "").lower()
     a = (bot_answer or "").lower()
 
     if any(w in q for w in ("علاج", "مبيد", "رش", "مكافحة", "دواء", "فطري", "حشري")):
         topic = "💊 مكافحة وعلاج"
-    elif any(w in q for w in ("سماد", "تسميد", "بوتاسيوم", "نيتروجين", "فوسفور", "يوريا", "عناصر")):
+    elif any(
+        w in q
+        for w in ("سماد", "تسميد", "بوتاسيوم", "نيتروجين", "فوسفور", "يوريا", "عناصر")
+    ):
         topic = "🌱 تسميد وتغذية"
     elif any(w in q for w in ("ري", "مياه", "سقي", "تنقيط", "عطش", "ملوحة")):
         topic = "💧 ري ومياه"
-    elif any(w in q for w in ("أعراض", "بقع", "اصفرار", "ذبول", "ندوة", "لفحة", "مرض", "تجعّد")):
+    elif any(
+        w in q
+        for w in ("أعراض", "بقع", "اصفرار", "ذبول", "ندوة", "لفحة", "مرض", "تجعّد")
+    ):
         topic = "🔍 تشخيص وأعراض"
-    elif any(w in q for w in ("ميعاد", "موعد", "زراعة", "شتل", "حصاد", "موسم", "تقاوي")):
+    elif any(
+        w in q for w in ("ميعاد", "موعد", "زراعة", "شتل", "حصاد", "موسم", "تقاوي")
+    ):
         topic = "📅 مواعيد زراعة وحصاد"
     else:
         topic = "🌾 استشارة عامة"
 
-    gap_phrases = ("لا تحتوي المراجع", "غير متوفر في المراجع", "لا تتوفر معلومات كافية", "المراجع المتاحة لا")
-    is_gap = 1 if (confidence < 0.62 or any(p in a for p in gap_phrases) or not a.strip()) else 0
+    gap_phrases = (
+        "لا تحتوي المراجع",
+        "غير متوفر في المراجع",
+        "لا تتوفر معلومات كافية",
+        "المراجع المتاحة لا",
+    )
+    is_gap = (
+        1
+        if (confidence < 0.62 or any(p in a for p in gap_phrases) or not a.strip())
+        else 0
+    )
     return topic, is_gap
 
 
@@ -533,7 +693,9 @@ def estimate_tokens(text: str) -> int:
     return max(1, int(round(len(s) / 2.8)))
 
 
-def estimate_gemini_cost_usd(model_name: str, prompt_tokens: int, completion_tokens: int) -> float:
+def estimate_gemini_cost_usd(
+    model_name: str, prompt_tokens: int, completion_tokens: int
+) -> float:
     """Estimate commercial API cost in USD based on standard Gemini Flash/Pro pricing per 1M tokens."""
     m = (model_name or "").lower()
     if "pro" in m:

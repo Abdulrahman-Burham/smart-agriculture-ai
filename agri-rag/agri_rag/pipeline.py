@@ -1,4 +1,5 @@
 """The RAG pipeline: understand -> retrieve -> ground -> generate (streaming) -> cite."""
+
 from __future__ import annotations
 
 import asyncio
@@ -39,13 +40,26 @@ class ChatResult:
 
 
 class RagPipeline:
-    def __init__(self, retriever: HybridRetriever, llm: LLMClient, sessions: InMemorySessionStore, settings: Settings,
-                 weather: WeatherService | None = None):
-        self.retriever, self.llm, self.sessions, self.s = retriever, llm, sessions, settings
+    def __init__(
+        self,
+        retriever: HybridRetriever,
+        llm: LLMClient,
+        sessions: InMemorySessionStore,
+        settings: Settings,
+        weather: WeatherService | None = None,
+    ):
+        self.retriever, self.llm, self.sessions, self.s = (
+            retriever,
+            llm,
+            sessions,
+            settings,
+        )
         self.weather = weather
 
     # -- helpers ------------------------------------------------------------------
-    def _retrieval_query(self, question: str, history: list[dict], farm: FarmContext | None = None) -> str:
+    def _retrieval_query(
+        self, question: str, history: list[dict], farm: FarmContext | None = None
+    ) -> str:
         """Build context-enriched text used for hybrid retrieval across multi-turn conversations.
 
         * Combines follow-up questions with recent user turns so pronouns/implicit references
@@ -53,7 +67,11 @@ class RagPipeline:
         * Enriches with confident vision diagnoses and active crop from FarmContext.
         """
         query, n_tokens = question, len(tokenize(question))
-        prev_user_msgs = [m["content"] for m in history if m.get("role") == "user" and m.get("content")]
+        prev_user_msgs = [
+            m["content"]
+            for m in history
+            if m.get("role") == "user" and m.get("content")
+        ]
 
         # If there is conversation history and the question is a follow-up or < 18 tokens, include last 2 user turns
         if prev_user_msgs and n_tokens < 18:
@@ -70,16 +88,29 @@ class RagPipeline:
     @staticmethod
     def _source_payload(result: RetrievalResult) -> list[dict]:
         return [
-            {"id": i, "title": c.metadata.get("title"), "source": c.metadata.get("source"),
-             "section": c.metadata.get("section"), "crop": c.metadata.get("crop"),
-             "score": round(c.score, 4), "similarity": round(c.similarity, 3) if c.similarity is not None else None,
-             "snippet": c.text[:240]}
+            {
+                "id": i,
+                "title": c.metadata.get("title"),
+                "source": c.metadata.get("source"),
+                "section": c.metadata.get("section"),
+                "crop": c.metadata.get("crop"),
+                "score": round(c.score, 4),
+                "similarity": round(c.similarity, 3)
+                if c.similarity is not None
+                else None,
+                "snippet": c.text[:240],
+            }
             for i, c in enumerate(result.chunks, start=1)
         ]
 
     # -- main entry ---------------------------------------------------------------
-    async def stream(self, question: str, session_id: str | None = None, farm: FarmContext | None = None,
-                     crop: str | None = None) -> AsyncIterator[dict]:
+    async def stream(
+        self,
+        question: str,
+        session_id: str | None = None,
+        farm: FarmContext | None = None,
+        crop: str | None = None,
+    ) -> AsyncIterator[dict]:
         """Yields events: sources -> token* -> done. Everything the UI needs, in order."""
         t0 = time.perf_counter()
         session_id = session_id or uuid.uuid4().hex
@@ -97,13 +128,18 @@ class RagPipeline:
             farm.area_feddan = float(sess_ctx["area_feddan"])
         if not farm.irrigation_method and sess_ctx.get("irrigation_method"):
             from .domain.farm import IrrigationMethod
+
             try:
                 farm.irrigation_method = IrrigationMethod(sess_ctx["irrigation_method"])
             except Exception:
                 pass
         if not farm.diagnoses and sess_ctx.get("diagnoses"):
             from .domain.farm import VisionDiagnosis
-            farm.diagnoses = [VisionDiagnosis(**d) if isinstance(d, dict) else d for d in sess_ctx["diagnoses"]]
+
+            farm.diagnoses = [
+                VisionDiagnosis(**d) if isinstance(d, dict) else d
+                for d in sess_ctx["diagnoses"]
+            ]
 
         crop = crop or farm.crop
 
@@ -114,7 +150,12 @@ class RagPipeline:
         # Fast path for non-retrieval intents: Gibberish, Chit-chat, Extreme Ambiguity
         if not q_analysis.requires_retrieval and q_analysis.suggested_fast_response:
             fast_answer = q_analysis.suggested_fast_response
-            yield {"type": "sources", "sources": [], "session_id": session_id, "glossary_matches": []}
+            yield {
+                "type": "sources",
+                "sources": [],
+                "session_id": session_id,
+                "glossary_matches": [],
+            }
             yield {"type": "token", "text": fast_answer}
             self.sessions.append(session_id, question, fast_answer)
             total = time.perf_counter() - t0
@@ -134,8 +175,14 @@ class RagPipeline:
             return
 
         # Weather lookup runs concurrently with retrieval so it adds (almost) no latency.
-        weather_task = asyncio.create_task(self.weather.enrich(farm)) if self.weather else None
-        result = await asyncio.to_thread(self.retriever.retrieve, self._retrieval_query(question, history, farm), crop)
+        weather_task = (
+            asyncio.create_task(self.weather.enrich(farm)) if self.weather else None
+        )
+        result = await asyncio.to_thread(
+            self.retriever.retrieve,
+            self._retrieval_query(question, history, farm),
+            crop,
+        )
         if weather_task:
             farm = await weather_task
         t_retrieval = time.perf_counter() - t0
@@ -158,14 +205,22 @@ class RagPipeline:
             crop=crop,
             governorate=farm.governorate if farm else None,
             area_feddan=farm.area_feddan if farm else None,
-            irrigation_method=farm.irrigation_method.value if farm and farm.irrigation_method else None,
-            diagnoses=[d.model_dump() for d in farm.diagnoses] if farm and farm.diagnoses else None,
+            irrigation_method=farm.irrigation_method.value
+            if farm and farm.irrigation_method
+            else None,
+            diagnoses=[d.model_dump() for d in farm.diagnoses]
+            if farm and farm.diagnoses
+            else None,
             last_chunks=result.chunks if grounded and result.chunks else None,
         )
 
         sources = self._source_payload(result)
-        yield {"type": "sources", "sources": sources, "session_id": session_id,
-               "glossary_matches": result.glossary_matches}
+        yield {
+            "type": "sources",
+            "sources": sources,
+            "session_id": session_id,
+            "glossary_matches": result.glossary_matches,
+        }
 
         answer_parts: list[str] = []
         ttft: float | None = None
@@ -200,15 +255,27 @@ class RagPipeline:
         self.sessions.append(session_id, question, answer)
         total = time.perf_counter() - t0
         cited = extract_cited_ids(answer, len(sources))
-        yield {"type": "done", "grounded": grounded, "cited_ids": cited,
-               "weather_source": farm.weather.source if farm and farm.weather else None,
-               "intent": q_analysis.intent,
-               "timings": {"retrieval_ms": round(t_retrieval * 1000), "ttft_ms": round((ttft or total) * 1000),
-                           "total_ms": round(total * 1000),
-                           "within_budget": (ttft or total) <= self.s.latency_budget_s}}
+        yield {
+            "type": "done",
+            "grounded": grounded,
+            "cited_ids": cited,
+            "weather_source": farm.weather.source if farm and farm.weather else None,
+            "intent": q_analysis.intent,
+            "timings": {
+                "retrieval_ms": round(t_retrieval * 1000),
+                "ttft_ms": round((ttft or total) * 1000),
+                "total_ms": round(total * 1000),
+                "within_budget": (ttft or total) <= self.s.latency_budget_s,
+            },
+        }
 
-    async def ask(self, question: str, session_id: str | None = None, farm: FarmContext | None = None,
-                  crop: str | None = None) -> ChatResult:
+    async def ask(
+        self,
+        question: str,
+        session_id: str | None = None,
+        farm: FarmContext | None = None,
+        crop: str | None = None,
+    ) -> ChatResult:
         answer, sources, done, sid = [], [], {}, session_id or ""
         async for ev in self.stream(question, session_id, farm, crop):
             if ev["type"] == "sources":

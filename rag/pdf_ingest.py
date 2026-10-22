@@ -65,8 +65,17 @@ DISEASE_KEYWORDS: Dict[str, List[str]] = {
 }
 
 PROTOCOL_MARKERS = [
-    "جرعة", "جم/فدان", "سم/فدان", "لتر/فدان", "جزء في المليون",
-    "طريقة الاستخدام", "توصية", "يرش", "يعامل", "مبيد", "تركيز",
+    "جرعة",
+    "جم/فدان",
+    "سم/فدان",
+    "لتر/فدان",
+    "جزء في المليون",
+    "طريقة الاستخدام",
+    "توصية",
+    "يرش",
+    "يعامل",
+    "مبيد",
+    "تركيز",
 ]
 
 REGION_KEYWORDS: Dict[str, List[str]] = {
@@ -79,6 +88,7 @@ REGION_KEYWORDS: Dict[str, List[str]] = {
 
 
 # ─── Text Normalisation ───────────────────────────────────────────────────────
+
 
 def _normalize_arabic(text: str) -> str:
     """Normalize Arabic Unicode forms, strip diacritics and extra whitespace."""
@@ -102,6 +112,7 @@ def _content_hash(text: str) -> str:
 
 # ─── Metadata Inference from Text ────────────────────────────────────────────
 
+
 def infer_metadata_from_text(text: str, filename: str = "") -> Dict[str, Any]:
     """Scan text for crop, disease, region keywords and return best match."""
     text_lower = text.lower()
@@ -117,6 +128,13 @@ def infer_metadata_from_text(text: str, filename: str = "") -> Dict[str, Any]:
         if any(alias in text_lower for alias in aliases):
             crop_type = crop
             break
+
+    # Fallback: check filename if crop wasn't detected in text
+    if crop_type == "unknown" and fn_lower:
+        for crop, aliases in CROP_KEYWORDS.items():
+            if any(alias in fn_lower for alias in aliases):
+                crop_type = crop
+                break
 
     # Detect disease
     for disease, aliases in DISEASE_KEYWORDS.items():
@@ -146,6 +164,7 @@ def infer_metadata_from_text(text: str, filename: str = "") -> Dict[str, Any]:
 
 # ─── PyMuPDF Extractor ────────────────────────────────────────────────────────
 
+
 def _extract_pages_pymupdf(pdf_path: Path) -> Generator[Dict[str, Any], None, None]:
     """Extract text page-by-page using PyMuPDF with RTL/Arabic support."""
     try:
@@ -166,7 +185,8 @@ def _extract_pages_pymupdf(pdf_path: Path) -> Generator[Dict[str, Any], None, No
                 continue
             for line in block.get("lines", []):
                 line_text = " ".join(
-                    span["text"] for span in line.get("spans", [])
+                    span["text"]
+                    for span in line.get("spans", [])
                     if span["text"].strip()
                 )
                 if line_text.strip():
@@ -189,6 +209,7 @@ def _extract_pages_pymupdf(pdf_path: Path) -> Generator[Dict[str, Any], None, No
 
 # ─── pdfplumber Fallback ──────────────────────────────────────────────────────
 
+
 def _extract_pages_pdfplumber(pdf_path: Path) -> Generator[Dict[str, Any], None, None]:
     """Extract text page-by-page using pdfplumber as fallback."""
     import pdfplumber
@@ -209,6 +230,7 @@ def _extract_pages_pdfplumber(pdf_path: Path) -> Generator[Dict[str, Any], None,
 
 # ─── Page-level extractor dispatcher ─────────────────────────────────────────
 
+
 def extract_pages(pdf_path: Path) -> List[Dict[str, Any]]:
     """Extract all pages, preferring PyMuPDF with pdfplumber fallback."""
     try:
@@ -226,7 +248,10 @@ def extract_pages(pdf_path: Path) -> List[Dict[str, Any]]:
 
 # ─── Section splitter ─────────────────────────────────────────────────────────
 
-def split_into_sections(pages: List[Dict[str, Any]], pages_per_section: int = 5) -> List[Dict[str, Any]]:
+
+def split_into_sections(
+    pages: List[Dict[str, Any]], pages_per_section: int = 5
+) -> List[Dict[str, Any]]:
     """Group consecutive pages into sections based on detected header changes.
 
     A new section starts when a page begins with a recognized Arabic heading.
@@ -247,12 +272,14 @@ def split_into_sections(pages: List[Dict[str, Any]], pages_per_section: int = 5)
         headers_found = HEADER_PATTERN.findall(page["text"])
         if headers_found and current_section_pages:
             found_any_header = True
-            sections.append({
-                "header": current_header,
-                "text": "\n\n".join(p["text"] for p in current_section_pages),
-                "page_start": current_section_pages[0]["page"],
-                "page_end": current_section_pages[-1]["page"],
-            })
+            sections.append(
+                {
+                    "header": current_header,
+                    "text": "\n\n".join(p["text"] for p in current_section_pages),
+                    "page_start": current_section_pages[0]["page"],
+                    "page_end": current_section_pages[-1]["page"],
+                }
+            )
             current_section_pages = []
             current_header = headers_found[0].strip()
 
@@ -260,12 +287,14 @@ def split_into_sections(pages: List[Dict[str, Any]], pages_per_section: int = 5)
 
     # Flush remaining pages
     if current_section_pages:
-        sections.append({
-            "header": current_header,
-            "text": "\n\n".join(p["text"] for p in current_section_pages),
-            "page_start": current_section_pages[0]["page"],
-            "page_end": current_section_pages[-1]["page"],
-        })
+        sections.append(
+            {
+                "header": current_header,
+                "text": "\n\n".join(p["text"] for p in current_section_pages),
+                "page_start": current_section_pages[0]["page"],
+                "page_end": current_section_pages[-1]["page"],
+            }
+        )
 
     # If no structured headers were found, fall back to fixed page-window grouping
     if not found_any_header and len(sections) == 1 and len(pages) > pages_per_section:
@@ -273,17 +302,20 @@ def split_into_sections(pages: List[Dict[str, Any]], pages_per_section: int = 5)
         sections = []
         for i in range(0, len(pages), pages_per_section):
             window = pages[i : i + pages_per_section]
-            sections.append({
-                "header": f"صفحات {window[0]['page']}–{window[-1]['page']}",
-                "text": "\n\n".join(p["text"] for p in window),
-                "page_start": window[0]["page"],
-                "page_end": window[-1]["page"],
-            })
+            sections.append(
+                {
+                    "header": f"صفحات {window[0]['page']}–{window[-1]['page']}",
+                    "text": "\n\n".join(p["text"] for p in window),
+                    "page_start": window[0]["page"],
+                    "page_end": window[-1]["page"],
+                }
+            )
 
     return sections
 
 
 # ─── Main PDF → Document converter ───────────────────────────────────────────
+
 
 def pdf_to_documents(
     pdf_path: str | Path,
@@ -351,23 +383,26 @@ def pdf_to_documents(
             if base_metadata:
                 meta.update({k: v for k, v in base_metadata.items() if v is not None})
 
-            documents.append({
-                "content": chunk_text,
-                "source_doc": path.name,
-                "doc_type": meta["doc_type"],
-                "crop_type": meta["crop_type"],
-                "disease_name": meta["disease_name"],
-                "region": meta["region"],
-                "page_start": section["page_start"],
-                "page_end": section["page_end"],
-                "section_header": section["header"],
-            })
+            documents.append(
+                {
+                    "content": chunk_text,
+                    "source_doc": path.name,
+                    "doc_type": meta["doc_type"],
+                    "crop_type": meta["crop_type"],
+                    "disease_name": meta["disease_name"],
+                    "region": meta["region"],
+                    "page_start": section["page_start"],
+                    "page_end": section["page_end"],
+                    "section_header": section["header"],
+                }
+            )
 
     logger.info(f"Produced {len(documents)} unique documents from '{path.name}'")
     return documents
 
 
 # ─── Multi-PDF batch loader ───────────────────────────────────────────────────
+
 
 def load_pdfs_to_documents(
     pdf_paths: List[str | Path],
@@ -408,9 +443,14 @@ def load_pdfs_to_documents(
 
 # ─── CLI / Script entry point ─────────────────────────────────────────────────
 
-def main(pdf_paths: List[str], output_jsonl: str = "data/extracted_documents.jsonl") -> None:
+
+def main(
+    pdf_paths: List[str], output_jsonl: str = "data/extracted_documents.jsonl"
+) -> None:
     """Extract PDFs and write documents to a JSONL file for inspection / re-ingestion."""
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(name)s | %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(levelname)s | %(name)s | %(message)s"
+    )
     paths = [Path(p) for p in pdf_paths]
     documents = load_pdfs_to_documents(paths)
 
@@ -425,7 +465,7 @@ def main(pdf_paths: List[str], output_jsonl: str = "data/extracted_documents.jso
     # Show sample
     if documents:
         sample = documents[0]
-        print(f"\n--- Sample document ---")
+        print("\n--- Sample document ---")
         print(f"Source : {sample['source_doc']}")
         print(f"Pages  : {sample.get('page_start')}–{sample.get('page_end')}")
         print(f"Type   : {sample['doc_type']}")
@@ -437,6 +477,7 @@ def main(pdf_paths: List[str], output_jsonl: str = "data/extracted_documents.jso
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Usage: python -m rag.pdf_ingest <pdf1> [pdf2] ...")
         sys.exit(1)

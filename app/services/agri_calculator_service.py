@@ -235,7 +235,11 @@ def calculate_tank_mix(req: TankMixRequest) -> TankMixResponse:
 
     # Incompatibility rules
     warnings: List[str] = []
-    text_to_check = (req.product_name or "").lower() + " " + " ".join(req.mix_partners or []).lower()
+    text_to_check = (
+        (req.product_name or "").lower()
+        + " "
+        + " ".join(req.mix_partners or []).lower()
+    )
     for kw1_set, kw2_set, warning_msg in INCOMPATIBILITY_RULES:
         has_kw1 = any(k in text_to_check for k in kw1_set)
         has_kw2 = any(k in text_to_check for k in kw2_set)
@@ -268,26 +272,95 @@ def calculate_tank_mix(req: TankMixRequest) -> TankMixResponse:
     )
 
 
-
 # ─── Salinity & Water Quality Constants (FAO 29 Standards) ────────────────
 
 # Crop threshold EC (dS/m), Slope (% yield loss per 1 dS/m increase above threshold)
 CROP_SALINITY_DATABASE: Dict[str, Dict[str, Any]] = {
-    "نخيل": {"threshold_ec": 4.0, "slope": 3.6, "category": "فائقة التحمل", "max_ec": 18.0},
-    "نخيل البلح": {"threshold_ec": 4.0, "slope": 3.6, "category": "فائقة التحمل", "max_ec": 18.0},
-    "زيتون": {"threshold_ec": 2.7, "slope": 10.0, "category": "عالية التحمل", "max_ec": 10.0},
-    "شعير": {"threshold_ec": 8.0, "slope": 5.0, "category": "عالية جداً", "max_ec": 18.0},
-    "قمح": {"threshold_ec": 6.0, "slope": 7.1, "category": "متوسطة التحمل", "max_ec": 13.0},
-    "طماطم": {"threshold_ec": 2.5, "slope": 9.9, "category": "متوسطة التحمل", "max_ec": 7.5},
-    "بطاطس": {"threshold_ec": 1.7, "slope": 12.0, "category": "حساسة للملوحة", "max_ec": 6.0},
-    "ذرة": {"threshold_ec": 1.7, "slope": 12.0, "category": "متوسطة الحساسية", "max_ec": 6.0},
+    "نخيل": {
+        "threshold_ec": 4.0,
+        "slope": 3.6,
+        "category": "فائقة التحمل",
+        "max_ec": 18.0,
+    },
+    "نخيل البلح": {
+        "threshold_ec": 4.0,
+        "slope": 3.6,
+        "category": "فائقة التحمل",
+        "max_ec": 18.0,
+    },
+    "زيتون": {
+        "threshold_ec": 2.7,
+        "slope": 10.0,
+        "category": "عالية التحمل",
+        "max_ec": 10.0,
+    },
+    "شعير": {
+        "threshold_ec": 8.0,
+        "slope": 5.0,
+        "category": "عالية جداً",
+        "max_ec": 18.0,
+    },
+    "قمح": {
+        "threshold_ec": 6.0,
+        "slope": 7.1,
+        "category": "متوسطة التحمل",
+        "max_ec": 13.0,
+    },
+    "طماطم": {
+        "threshold_ec": 2.5,
+        "slope": 9.9,
+        "category": "متوسطة التحمل",
+        "max_ec": 7.5,
+    },
+    "بطاطس": {
+        "threshold_ec": 1.7,
+        "slope": 12.0,
+        "category": "حساسة للملوحة",
+        "max_ec": 6.0,
+    },
+    "ذرة": {
+        "threshold_ec": 1.7,
+        "slope": 12.0,
+        "category": "متوسطة الحساسية",
+        "max_ec": 6.0,
+    },
     "بصل": {"threshold_ec": 1.2, "slope": 16.0, "category": "حساسة جداً", "max_ec": 4.5},
-    "خيار": {"threshold_ec": 2.0, "slope": 13.0, "category": "حساسة للملوحة", "max_ec": 6.0},
-    "عنب": {"threshold_ec": 1.5, "slope": 9.6, "category": "متوسطة الحساسية", "max_ec": 6.5},
-    "مانجو": {"threshold_ec": 1.5, "slope": 15.0, "category": "حساسة (تسمم كلوريد)", "max_ec": 5.0},
-    "فراولة": {"threshold_ec": 1.0, "slope": 33.0, "category": "شديدة الحساسية", "max_ec": 2.5},
-    "برسيم": {"threshold_ec": 2.0, "slope": 7.3, "category": "متوسطة التحمل", "max_ec": 9.0},
-    "فول": {"threshold_ec": 1.6, "slope": 9.6, "category": "متوسطة الحساسية", "max_ec": 6.5},
+    "خيار": {
+        "threshold_ec": 2.0,
+        "slope": 13.0,
+        "category": "حساسة للملوحة",
+        "max_ec": 6.0,
+    },
+    "عنب": {
+        "threshold_ec": 1.5,
+        "slope": 9.6,
+        "category": "متوسطة الحساسية",
+        "max_ec": 6.5,
+    },
+    "مانجو": {
+        "threshold_ec": 1.5,
+        "slope": 15.0,
+        "category": "حساسة (تسمم كلوريد)",
+        "max_ec": 5.0,
+    },
+    "فراولة": {
+        "threshold_ec": 1.0,
+        "slope": 33.0,
+        "category": "شديدة الحساسية",
+        "max_ec": 2.5,
+    },
+    "برسيم": {
+        "threshold_ec": 2.0,
+        "slope": 7.3,
+        "category": "متوسطة التحمل",
+        "max_ec": 9.0,
+    },
+    "فول": {
+        "threshold_ec": 1.6,
+        "slope": 9.6,
+        "category": "متوسطة الحساسية",
+        "max_ec": 6.5,
+    },
 }
 
 
@@ -332,7 +405,12 @@ def evaluate_water_salinity(req: SalinityRequest) -> SalinityResponse:
 
     if not matched_crop:
         # Default fallback: moderate vegetable crop (like tomato)
-        crop_data = {"threshold_ec": 2.0, "slope": 10.0, "category": "متوسطة التحمل", "max_ec": 7.0}
+        crop_data = {
+            "threshold_ec": 2.0,
+            "slope": 10.0,
+            "category": "متوسطة التحمل",
+            "max_ec": 7.0,
+        }
         display_crop = crop_input or "محصول عام"
     else:
         crop_data = CROP_SALINITY_DATABASE[matched_crop]

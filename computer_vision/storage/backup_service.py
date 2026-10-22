@@ -28,7 +28,7 @@ def _ensure_backups_dir() -> Path:
 
 def perform_sqlite_backup(retention_count: int = 10) -> Dict[str, Any]:
     """Perform a live, non-blocking online backup of the SQLite database.
-    
+
     Uses SQLite's online backup API (safe with WAL mode active),
     then compresses the snapshot into a .db.gz archive and rotates old backups.
     """
@@ -77,7 +77,10 @@ def perform_sqlite_backup(retention_count: int = 10) -> Dict[str, Any]:
         logger.info(f"SQLite backup successful: {final_gz_name} ({size_kb} KB)")
 
         try:
-            from app.services.telegram_service import dispatch_telegram_alert_fire_and_forget
+            from app.services.telegram_service import (
+                dispatch_telegram_alert_fire_and_forget,
+            )
+
             dispatch_telegram_alert_fire_and_forget(
                 title="نسخة احتياطية لقاعدة البيانات 💾",
                 message=f"تم بنجاح إنشاء وأرشفة نسخة احتياطية مضغوطة لقاعدة البيانات:\n• الملف: <code>{final_gz_name}</code>\n• الحجم: <b>{size_kb} KB</b>",
@@ -140,13 +143,17 @@ def list_backups() -> List[Dict[str, Any]]:
         )
         for f in files:
             stat = f.stat()
-            results.append({
-                "filename": f.name,
-                "size_bytes": stat.st_size,
-                "size_kb": round(stat.st_size / 1024, 2),
-                "size_mb": round(stat.st_size / (1024 * 1024), 2),
-                "created_at": datetime.datetime.fromtimestamp(stat.st_mtime).isoformat(),
-            })
+            results.append(
+                {
+                    "filename": f.name,
+                    "size_bytes": stat.st_size,
+                    "size_kb": round(stat.st_size / 1024, 2),
+                    "size_mb": round(stat.st_size / (1024 * 1024), 2),
+                    "created_at": datetime.datetime.fromtimestamp(
+                        stat.st_mtime
+                    ).isoformat(),
+                }
+            )
     except Exception as e:
         logger.error(f"Error listing backups: {e}")
     return results

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from rag.generate import (
     MockLLMProvider,
@@ -18,7 +17,11 @@ def test_build_grounded_prompt():
         {
             "chunk_id": "chk_1",
             "content": "يتم رش مبيد مانكوزيب بمعدل 250 جم لكل 100 لتر ماء.",
-            "metadata": {"crop_type": "بطاطس", "disease_name": "لفحة متاخرة", "doc_type": "protocol"},
+            "metadata": {
+                "crop_type": "بطاطس",
+                "disease_name": "لفحة متاخرة",
+                "doc_type": "protocol",
+            },
         }
     ]
 
@@ -51,7 +54,11 @@ def test_generate_grounded_answer_mock():
         {
             "chunk_id": "chk_1",
             "content": "يُوصى بالري المنتظم للقمح في بداية الصباح.",
-            "metadata": {"crop_type": "قمح", "disease_name": "عام", "doc_type": "guide"},
+            "metadata": {
+                "crop_type": "قمح",
+                "disease_name": "عام",
+                "doc_type": "guide",
+            },
             "rrf_score": 0.025,
         }
     ]

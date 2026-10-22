@@ -11,7 +11,9 @@ from rag.pdf_ingest import load_pdfs_to_documents
 from rag.respond import RAGPipeline
 
 
-def ingest_directory(data_dir: str | Path = "data/sample_knowledge_base") -> Dict[str, Any]:
+def ingest_directory(
+    data_dir: str | Path = "data/sample_knowledge_base",
+) -> Dict[str, Any]:
     """Scan data directory for .txt files and ingest them into RAG pipeline."""
     dir_path = Path(data_dir)
     if not dir_path.exists():
@@ -24,19 +26,25 @@ def ingest_directory(data_dir: str | Path = "data/sample_knowledge_base") -> Dic
     for file_path in dir_path.glob("*.txt"):
         text = file_path.read_text(encoding="utf-8")
         filename_lower = file_path.name.lower()
-        
+
         # Determine doc_type and metadata
         doc_type = "protocol" if "protocol" in filename_lower else "guide"
-        crop_type = "potato" if "potato" in filename_lower else ("tomato" if "tomato" in filename_lower else "general")
-        
-        documents.append({
-            "source_doc": file_path.name,
-            "doc_type": doc_type,
-            "crop_type": crop_type,
-            "disease_name": "general",
-            "region": "egypt_general",
-            "content": text,
-        })
+        crop_type = (
+            "potato"
+            if "potato" in filename_lower
+            else ("tomato" if "tomato" in filename_lower else "general")
+        )
+
+        documents.append(
+            {
+                "source_doc": file_path.name,
+                "doc_type": doc_type,
+                "crop_type": crop_type,
+                "disease_name": "general",
+                "region": "egypt_general",
+                "content": text,
+            }
+        )
 
     if not documents:
         print(f"⚠️ No .txt files found in {dir_path}")
@@ -44,7 +52,9 @@ def ingest_directory(data_dir: str | Path = "data/sample_knowledge_base") -> Dic
 
     print(f"📂 Found {len(documents)} text files in {dir_path}. Ingesting...")
     res = pipeline.ingest_documents(documents)
-    print(f"✅ Successfully ingested {res['num_documents']} documents into {res['num_chunks']} chunks!")
+    print(
+        f"✅ Successfully ingested {res['num_documents']} documents into {res['num_chunks']} chunks!"
+    )
     return res
 
 

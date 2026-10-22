@@ -12,7 +12,9 @@ from computer_vision.storage.backup_service import (
 )
 
 
-def make_mock_request(ip: str = "192.168.1.100", dev_key: str = "", user_id: str = "") -> Request:
+def make_mock_request(
+    ip: str = "192.168.1.100", dev_key: str = "", user_id: str = ""
+) -> Request:
     scope = {
         "type": "http",
         "client": (ip, 12345),
@@ -25,7 +27,9 @@ def make_mock_request(ip: str = "192.168.1.100", dev_key: str = "", user_id: str
 
 
 def test_rate_limiter_allows_under_limit():
-    limiter = RateLimiter(requests_per_minute=5, window_seconds=10.0, scope="test_under")
+    limiter = RateLimiter(
+        requests_per_minute=5, window_seconds=10.0, scope="test_under"
+    )
     req = make_mock_request(ip="10.0.0.1")
     for _ in range(5):
         assert limiter(req) is True
@@ -44,6 +48,7 @@ def test_rate_limiter_blocks_over_limit():
 
 def test_rate_limiter_whitelists_dev_key():
     from app.core.config import DEV_SECRET_KEY
+
     limiter = RateLimiter(requests_per_minute=2, window_seconds=10.0, scope="test_dev")
     req = make_mock_request(ip="10.0.0.3", dev_key=DEV_SECRET_KEY)
     for _ in range(10):
@@ -51,7 +56,9 @@ def test_rate_limiter_whitelists_dev_key():
 
 
 def test_rate_limiter_whitelists_localhost():
-    limiter = RateLimiter(requests_per_minute=1, window_seconds=10.0, scope="test_local")
+    limiter = RateLimiter(
+        requests_per_minute=1, window_seconds=10.0, scope="test_local"
+    )
     req = make_mock_request(ip="127.0.0.1")
     for _ in range(5):
         assert limiter(req) is True

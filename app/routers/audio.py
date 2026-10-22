@@ -35,7 +35,9 @@ async def egyptian_stt_endpoint(
         audio_bytes = await audio.read()
         content_type = audio.content_type or "audio/webm"
 
-    return await transcribe_speech(audio_bytes, content_type=content_type, fallback_text=fallback_text)
+    return await transcribe_speech(
+        audio_bytes, content_type=content_type, fallback_text=fallback_text
+    )
 
 
 @router.get("/api/tts", tags=["Speech (Egyptian Dialect)"])

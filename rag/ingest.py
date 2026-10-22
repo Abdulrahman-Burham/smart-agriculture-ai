@@ -4,20 +4,22 @@ from __future__ import annotations
 
 import logging
 import uuid
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 try:
     from rank_bm25 import BM25Okapi
 except ImportError:
+
     class BM25Okapi:  # type: ignore[no-redef]
         """Lightweight fallback BM25 scorer when rank_bm25 is not installed."""
+
         def __init__(self, corpus: List[List[str]]):
             self.corpus = corpus
 
         def get_scores(self, query_tokens: List[str]) -> List[float]:
             q_set = set(query_tokens)
             return [float(len(q_set.intersection(doc))) for doc in self.corpus]
+
 
 logger = logging.getLogger(__name__)
 
@@ -55,39 +57,53 @@ def chunk_agricultural_guide(
     for paragraph in paragraphs:
         # If single paragraph exceeds chunk limit, split by sentences
         if len(paragraph.split()) > chunk_size:
-            sentences = [s.strip() for s in paragraph.replace("؛", ".").split(".") if s.strip()]
+            sentences = [
+                s.strip() for s in paragraph.replace("؛", ".").split(".") if s.strip()
+            ]
             for sentence in sentences:
                 if len(current_chunk.split()) + len(sentence.split()) <= chunk_size:
                     current_chunk += (" " if current_chunk else "") + sentence + "."
                 else:
                     if current_chunk:
-                        chunks.append({
-                            "chunk_id": str(uuid.uuid4()),
-                            "content": current_chunk.strip(),
-                            "metadata": base_metadata.copy(),
-                        })
+                        chunks.append(
+                            {
+                                "chunk_id": str(uuid.uuid4()),
+                                "content": current_chunk.strip(),
+                                "metadata": base_metadata.copy(),
+                            }
+                        )
                     # Add overlap from tail of current_chunk
-                    overlap_words = current_chunk.split()[-overlap:] if current_chunk else []
+                    overlap_words = (
+                        current_chunk.split()[-overlap:] if current_chunk else []
+                    )
                     current_chunk = " ".join(overlap_words + [sentence + "."])
         else:
             if len(current_chunk.split()) + len(paragraph.split()) <= chunk_size:
                 current_chunk += ("\n\n" if current_chunk else "") + paragraph
             else:
                 if current_chunk:
-                    chunks.append({
-                        "chunk_id": str(uuid.uuid4()),
-                        "content": current_chunk.strip(),
-                        "metadata": base_metadata.copy(),
-                    })
-                overlap_words = current_chunk.split()[-overlap:] if current_chunk else []
-                current_chunk = (" ".join(overlap_words) + "\n\n" if overlap_words else "") + paragraph
+                    chunks.append(
+                        {
+                            "chunk_id": str(uuid.uuid4()),
+                            "content": current_chunk.strip(),
+                            "metadata": base_metadata.copy(),
+                        }
+                    )
+                overlap_words = (
+                    current_chunk.split()[-overlap:] if current_chunk else []
+                )
+                current_chunk = (
+                    " ".join(overlap_words) + "\n\n" if overlap_words else ""
+                ) + paragraph
 
     if current_chunk.strip():
-        chunks.append({
-            "chunk_id": str(uuid.uuid4()),
-            "content": current_chunk.strip(),
-            "metadata": base_metadata.copy(),
-        })
+        chunks.append(
+            {
+                "chunk_id": str(uuid.uuid4()),
+                "content": current_chunk.strip(),
+                "metadata": base_metadata.copy(),
+            }
+        )
 
     return chunks
 
@@ -122,11 +138,13 @@ def chunk_treatment_protocol(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
         base_metadata["section_header"] = doc["section_header"]
 
     for block in blocks:
-        chunks.append({
-            "chunk_id": str(uuid.uuid4()),
-            "content": block,
-            "metadata": base_metadata.copy(),
-        })
+        chunks.append(
+            {
+                "chunk_id": str(uuid.uuid4()),
+                "content": block,
+                "metadata": base_metadata.copy(),
+            }
+        )
 
     return chunks
 
