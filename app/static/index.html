@@ -177,6 +177,89 @@
             color: #FFFFFF;
         }
 
+        /* HCI Treatment Action Checklist & Dynamic Suggested Chips */
+        .suggested-chips-container {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            margin-top: 0.65rem;
+            padding-top: 0.55rem;
+            border-top: 1px dashed rgba(45, 106, 79, 0.2);
+        }
+        .suggested-chip-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid rgba(45, 106, 79, 0.28);
+            background: rgba(45, 106, 79, 0.08);
+            color: var(--primary-green);
+            transition: var(--transition);
+            user-select: none;
+            font-family: inherit;
+        }
+        [data-theme="light"] .suggested-chip-btn {
+            background: #E8F3ED;
+            color: #1B4332;
+            border-color: rgba(45, 106, 79, 0.25);
+        }
+        [data-theme="dark"] .suggested-chip-btn {
+            background: rgba(60, 122, 91, 0.15);
+            color: #A7F3D0;
+            border-color: rgba(60, 122, 91, 0.35);
+        }
+        .suggested-chip-btn:hover {
+            background: var(--primary-green);
+            color: #FFFFFF;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(45, 106, 79, 0.25);
+        }
+        .treatment-checklist-card {
+            margin-top: 0.85rem;
+            padding: 0.85rem;
+            border-radius: 12px;
+            background: rgba(45, 106, 79, 0.08);
+            border: 1px solid rgba(45, 106, 79, 0.22);
+        }
+        [data-theme="light"] .treatment-checklist-card {
+            background: #F4F8F5;
+            border-color: rgba(45, 106, 79, 0.2);
+        }
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            padding: 0.45rem 0.55rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 0.4rem;
+        }
+        [data-theme="light"] .checklist-item {
+            background: #FFFFFF;
+            border: 1px solid rgba(45, 106, 79, 0.1);
+        }
+        .checklist-item:hover {
+            background: rgba(45, 106, 79, 0.12);
+        }
+        .checklist-item.done {
+            opacity: 0.68;
+            text-decoration: line-through;
+        }
+        .checklist-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-green);
+            cursor: pointer;
+            margin-top: 3px;
+            flex-shrink: 0;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -2031,6 +2114,23 @@
                         </button>
                     </div>
                     <div id="cv-inline-advice-text" style="font-size: 0.9rem; line-height: 1.65; color: var(--text-light); background: rgba(0,0,0,0.2); padding: 0.85rem; border-radius: 12px; border-right: 3px solid var(--primary-green);"></div>
+
+                    <!-- Interactive Field Treatment Checklist -->
+                    <div id="cv-treatment-checklist-box" class="treatment-checklist-card" style="display:none;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem; flex-wrap:wrap; gap:0.4rem;">
+                            <span style="font-weight:800; font-size:0.88rem; color:var(--primary-green); display:flex; align-items:center; gap:0.4rem;">
+                                <span>📋</span> خطة المهام التنفيذية في الحقل (Checklist)
+                            </span>
+                            <span id="cv-checklist-progress-badge" style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:10px; background:rgba(45,106,79,0.18); color:var(--primary-dark);">
+                                0/0 منجز
+                            </span>
+                        </div>
+                        <div id="cv-checklist-items" style="display:flex; flex-direction:column; gap:0.35rem;"></div>
+                        <div style="display:flex; gap:0.45rem; margin-top:0.6rem; flex-wrap:wrap;">
+                            <button type="button" class="chat-action-btn" onclick="shareChecklistViaWhatsApp()">📲 إرسال قائمة المهام للعامل بالواتساب</button>
+                            <button type="button" class="chat-action-btn" onclick="openTankMixModal()">🧪 حاسبة خلط المبيد بالماتور</button>
+                        </div>
+                    </div>
                     <div id="cv-prescription-actions" style="margin-top: 0.75rem; display: none; grid-template-columns: 1fr 1fr; gap: 0.55rem;">
                         <a id="btn-view-prescription" href="#" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:6px; padding: 0.65rem 0.5rem; border-radius: 10px; background: linear-gradient(135deg, #059669, #047857); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.85rem; box-shadow: 0 3px 8px rgba(5,150,105,0.25);">
                             📄 الروشتة المعتمدة للطباعة
@@ -3068,8 +3168,203 @@
             }
         }
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function sendQuickPrompt(q) {
+            if (!chatInput) return;
+            chatInput.value = q;
+            handleSend(true);
+        }
+
+        function generateSuggestedChips(text, intent = '') {
+            const t = (text || '').toLowerCase();
+            const chips = [];
+
+            if (intent === 'unintelligible' || intent === 'needs_clarification' || t.includes('ليست صورة نبات') || t.includes('مش صورة نبات') || t.includes('مش مفهوم')) {
+                chips.push({ label: '📸 تصوير ورقة نبات بالكاميرا', action: 'camera' });
+                chips.push({ label: '🍅 فحص مرض الطماطم', query: 'عندي مشكلة في أوراق الطماطم' });
+                chips.push({ label: '🥔 علاج الندوة في البطاطس', query: 'علاج الندوة المتأخرة في البطاطس' });
+                return chips;
+            }
+
+            if (t.includes('مبيد') || t.includes('رش') || t.includes('فطري') || t.includes('حشري') || t.includes('ندوة') || t.includes('بياض') || t.includes('عفن') || t.includes('لفحة') || t.includes('جرعة')) {
+                chips.push({ label: '🧪 احسبلي كمية الماتور (حاسبة الخلط)', action: 'tank_calculator' });
+                chips.push({ label: '⏰ أفضل ميعاد للرش اليوم حسب الطقس', query: 'ما هو أنسب وقت لرش المبيد اليوم حسب الطقس في محافظتي؟' });
+                chips.push({ label: '📅 فترة أمان الحصاد (PHI)', query: 'ما هي فترة أمان الحصاد PHI للمبيدات المذكورة قبل الجمع؟' });
+            } else if (t.includes('ملوحة') || t.includes('ملوحه') || t.includes('ري') || t.includes('تنقيط') || t.includes('غمر') || t.includes('ec') || t.includes('ppm')) {
+                chips.push({ label: '💧 قياس ملوحة المياه (الحاسبة)', action: 'salinity_calculator' });
+                chips.push({ label: '🌿 إزاي أخفف إجهاد الملوحة؟', query: 'كيف أخفف من إجهاد ملوحة مياه الري والتربة على المحصول؟' });
+                chips.push({ label: '⏳ كمية وتوقيت الري المناسب', query: 'ما هو معدل وفترات الري الموصى بها لهذا المحصول؟' });
+            } else if (t.includes('سماد') || t.includes('تسميد') || t.includes('npk') || t.includes('يوريا') || t.includes('بوتاسيوم') || t.includes('نترات') || t.includes('عناصر')) {
+                chips.push({ label: '🌾 برنامج التسميد الكامل للمحصول', query: 'عايز برنامج تسميد وتغذية متكامل للمحصول من الزراعة للحصاد' });
+                chips.push({ label: '🚫 موانع خلط الأسمدة والمبيدات', query: 'هل ينفع اخلط الأسمدة الورقية مع المبيدات الفطرية والحشرية؟' });
+                chips.push({ label: '🧪 تجهيز السمادة والماتور', action: 'tank_calculator' });
+            } else {
+                chips.push({ label: '📸 فحص ورقة بالكاميرا', action: 'camera' });
+                chips.push({ label: '🧪 حاسبة خلط المبيدات', action: 'tank_calculator' });
+                chips.push({ label: '🌤️ حالة الطقس وتأثيره على الزرع', query: 'هل حالة الطقس اليوم مناسبة للرش والتسميد في محافظتي؟' });
+            }
+
+            return chips.slice(0, 3);
+        }
+
+        function extractTreatmentSteps(text) {
+            if (!text) return [];
+            const lines = text.split('\n');
+            const steps = [];
+            const actionKeywords = /رش|عزل|إزالة|تقليم|تطهير|تسميد|ري|فحص|إيقاف|استخدام|معاملة|جمع|حرق|تهوية|تعقيم|مكافحة|خلط/;
+
+            for (let rawLine of lines) {
+                let line = rawLine.trim();
+                if (!line) continue;
+                line = line.replace(/\*\*/g, '').replace(/\*/g, '');
+
+                const numMatch = line.match(/^(\d+)[\.\-\)]\s*(.+)/);
+                if (numMatch) {
+                    const stepText = numMatch[2].trim();
+                    if (stepText.length > 5 && !stepText.startsWith('المراجع') && !stepText.startsWith('المصادر')) {
+                        steps.push(stepText);
+                        continue;
+                    }
+                }
+
+                const bulletMatch = line.match(/^[\-\*•]\s*(.+)/);
+                if (bulletMatch) {
+                    const stepText = bulletMatch[1].trim();
+                    if (stepText.length > 8 && actionKeywords.test(stepText)) {
+                        steps.push(stepText);
+                        continue;
+                    }
+                }
+            }
+            return steps.slice(0, 6);
+        }
+
+        function renderTreatmentChecklist(adviceText, imageId, cropName) {
+            const box = document.getElementById('cv-treatment-checklist-box');
+            const container = document.getElementById('cv-checklist-items');
+            if (!box || !container) return;
+
+            const steps = extractTreatmentSteps(adviceText);
+            if (!steps || steps.length < 2) {
+                box.style.display = 'none';
+                return;
+            }
+
+            window._currentChecklistItems = steps;
+            window._currentChecklistCrop = cropName || 'المحصول';
+            const storageKey = `agri_cl_${imageId || 'latest'}`;
+            let savedState = {};
+            try {
+                savedState = JSON.parse(localStorage.getItem(storageKey) || '{}');
+            } catch (e) {}
+            window._currentChecklistState = savedState;
+
+            container.innerHTML = '';
+            let completedCount = 0;
+
+            steps.forEach((step, idx) => {
+                const isChecked = !!savedState[idx];
+                if (isChecked) completedCount++;
+
+                const label = document.createElement('label');
+                label.className = `checklist-item ${isChecked ? 'done' : ''}`;
+                label.id = `cl-item-${idx}`;
+                label.innerHTML = `
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleChecklistStep(${idx}, '${storageKey}', ${steps.length})">
+                    <span style="font-size:0.86rem; line-height:1.5;">${idx + 1}. ${escapeHtml(step)}</span>
+                `;
+                container.appendChild(label);
+            });
+
+            updateChecklistBadge(completedCount, steps.length);
+            box.style.display = 'block';
+        }
+
+        function toggleChecklistStep(idx, storageKey, total) {
+            const itemEl = document.getElementById(`cl-item-${idx}`);
+            if (!itemEl) return;
+            const chk = itemEl.querySelector('input[type="checkbox"]');
+            const isDone = chk ? chk.checked : false;
+
+            if (isDone) {
+                itemEl.classList.add('done');
+            } else {
+                itemEl.classList.remove('done');
+            }
+
+            if (navigator.vibrate) {
+                try { navigator.vibrate(35); } catch (e) {}
+            }
+
+            if (!window._currentChecklistState) window._currentChecklistState = {};
+            window._currentChecklistState[idx] = isDone;
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(window._currentChecklistState));
+            } catch (e) {}
+
+            let completed = 0;
+            for (let i = 0; i < total; i++) {
+                if (window._currentChecklistState[i]) completed++;
+            }
+            updateChecklistBadge(completed, total);
+
+            if (completed === total && total > 0) {
+                if (navigator.vibrate) {
+                    try { navigator.vibrate([40, 60, 40]); } catch (e) {}
+                }
+                showToast('🎉 الله ينور يا هندسة! تم تنفيذ كافة خطوات العلاج بنجاح.');
+            }
+        }
+
+        function updateChecklistBadge(completed, total) {
+            const badge = document.getElementById('cv-checklist-progress-badge');
+            if (!badge) return;
+            const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+            badge.innerText = `${completed}/${total} منجز (${pct}%)`;
+            if (completed === total && total > 0) {
+                badge.style.background = 'rgba(16, 185, 129, 0.25)';
+                badge.style.color = '#047857';
+            } else {
+                badge.style.background = 'rgba(45,106,79,0.18)';
+                badge.style.color = 'var(--primary-dark)';
+            }
+        }
+
+        function shareChecklistViaWhatsApp() {
+            const items = window._currentChecklistItems || [];
+            if (!items.length) {
+                showToast('لا توجد مهام حالية للمشاركة');
+                return;
+            }
+            const crop = window._currentChecklistCrop || window._activePrescriptionCrop || 'المحصول';
+            let msg = `🌿 *قائمة مهام علاج ورش المحصول (${crop})*\n`;
+            msg += `منصة الخبير الزراعي الذكي\n\n`;
+            msg += `📋 *الخطوات التنفيذية المطلوبة في الحقل:*\n`;
+
+            items.forEach((item, idx) => {
+                const isDone = window._currentChecklistState && window._currentChecklistState[idx];
+                const statusBox = isDone ? '✅ [تم]' : '⬜ [مطلوب]';
+                msg += `${idx + 1}. ${statusBox} ${item}\n`;
+            });
+
+            msg += `\n⚠️ *تنبيه للمزارع والعامل:* الالتزام بنسب الخلط ومواعيد الرش وارتداء أدوات الوقاية.\n`;
+            const rxUrl = window._activePrescriptionUrl || window.location.href;
+            msg += `📄 تفاصيل الروشتة المعتمدة: ${rxUrl}`;
+
+            window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
+        }
+
         // Add message to chat
-        function addMessage(text, isUser = false, sources = [], skipSave = false) {
+        function addMessage(text, isUser = false, sources = [], skipSave = false, intent = '') {
             const div = document.createElement('div');
             div.className = `message ${isUser ? 'message-user' : 'message-bot'}`;
             
@@ -3092,6 +3387,25 @@
                         <button type="button" class="chat-action-btn" onclick="shareWhatsApp('${safeText}')">💬 واتساب</button>
                     </div>
                 `;
+
+                // Render dynamic suggested follow-up chips
+                const chips = generateSuggestedChips(text, intent);
+                if (chips && chips.length > 0) {
+                    content += '<div class="suggested-chips-container">';
+                    chips.forEach(c => {
+                        if (c.action === 'tank_calculator') {
+                            content += `<button type="button" class="suggested-chip-btn" onclick="openTankMixModal()">${c.label}</button>`;
+                        } else if (c.action === 'salinity_calculator') {
+                            content += `<button type="button" class="suggested-chip-btn" onclick="openSalinityModal()">${c.label}</button>`;
+                        } else if (c.action === 'camera') {
+                            content += `<button type="button" class="suggested-chip-btn" onclick="triggerCameraRetake()">${c.label}</button>`;
+                        } else if (c.query) {
+                            const safeQ = c.query.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                            content += `<button type="button" class="suggested-chip-btn" onclick="sendQuickPrompt('${safeQ}')">${c.label}</button>`;
+                        }
+                    });
+                    content += '</div>';
+                }
             }
             
             div.innerHTML = content;
@@ -3306,7 +3620,7 @@
                         imageAlreadyDiagnosed = true;
                         if (data.session_id) persistSessionId(data.session_id);
                         displayCVResults(data.cv_result, data.advice, data.prescription_url, data.image_id);
-                        const msgDiv = addMessage(data.advice, false, data.sources);
+                        const msgDiv = addMessage(data.advice, false, data.sources, false, data.intent);
                         if (shouldSpeakReply && data.advice) {
                             const spkBtn = msgDiv ? msgDiv.querySelector('.egy-tts-btn') : null;
                             speakArabic(data.advice, spkBtn);
@@ -3338,7 +3652,7 @@
                         const data = await res.json();
                         if (data.session_id) persistSessionId(data.session_id);
                         const replyTxt = data.answer || data.response || "عذراً، لم أتمكن من معالجة طلبك.";
-                        const msgDiv = addMessage(replyTxt, false, data.sources);
+                        const msgDiv = addMessage(replyTxt, false, data.sources, false, data.intent);
                         if (shouldSpeakReply && (data.answer || data.response)) {
                             const spkBtn = msgDiv ? msgDiv.querySelector('.egy-tts-btn') : null;
                             speakArabic(replyTxt, spkBtn);
@@ -3515,6 +3829,7 @@
                         speakArabic(adviceText, inlineSpeakBtn);
                     };
                 }
+                renderTreatmentChecklist(adviceText, imageId, cvData.predicted_class_ar || cvData.disease_name);
             }
 
             if (rxActions && rxBtn) {

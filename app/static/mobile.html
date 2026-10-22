@@ -201,6 +201,59 @@
       border-color: #C5DDD0;
     }
 
+    /* HCI Mobile Action Checklist & Suggested Chips */
+    .mob-suggested-chips {
+      margin-top: 8px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .mob-chip-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid rgba(45, 106, 79, 0.28);
+      background: var(--bg-surface);
+      color: var(--brand-forest);
+      border-radius: 16px;
+      padding: 4px 10px;
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .mob-chip-btn:active {
+      transform: scale(0.97);
+      background: rgba(45, 106, 79, 0.12);
+    }
+    .mob-cl-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-soft);
+      cursor: pointer;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      margin-bottom: 4px;
+    }
+    .mob-cl-item.done {
+      opacity: 0.65;
+      text-decoration: line-through;
+      background: rgba(45, 106, 79, 0.05);
+    }
+    .mob-cl-item input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--brand-forest);
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
     /* ── Views ── */
     .view-section {
       display: none;
@@ -879,6 +932,26 @@
           <button type="button" id="scanSpeakBtn" onclick="speakMobileEgyptian(this, window._lastScanSpeechText || '')" style="display:none; align-items:center; gap:5px; padding:6px 11px; border-radius:9px; border:1px solid rgba(45,106,79,0.3); background:var(--brand-mint-tint); color:var(--brand-forest); font-family:inherit; font-size:0.76rem; font-weight:800; cursor:pointer;">
             <span>🔊 اسمع التشخيص والعلاج بالمصري</span>
           </button>
+        </div>
+        <!-- Mobile Interactive Treatment Checklist -->
+        <div id="mobTreatmentChecklistBox" style="display:none; margin-top:10px; padding:9px; border-radius:10px; background:rgba(45,106,79,0.08); border:1px solid rgba(45,106,79,0.22);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-weight:800; font-size:0.8rem; color:var(--brand-forest); display:flex; align-items:center; gap:4px;">
+              <span>📋</span> خطة المهام التنفيذية في الحقل
+            </span>
+            <span id="mobChecklistBadge" style="font-size:0.72rem; font-weight:700; padding:2px 7px; border-radius:8px; background:rgba(45,106,79,0.18); color:var(--brand-forest);">
+              0/0 منجز
+            </span>
+          </div>
+          <div id="mobChecklistItems" style="display:flex; flex-direction:column; gap:5px;"></div>
+          <div style="display:flex; gap:5px; margin-top:8px;">
+            <button type="button" onclick="shareMobileChecklistWhatsApp()" style="flex:1; padding:6px 8px; border-radius:8px; border:1px solid rgba(37,211,102,0.4); background:rgba(37,211,102,0.12); color:#047857; font-family:inherit; font-size:0.73rem; font-weight:800; cursor:pointer;">
+              📲 إرسال المهام للعامل بالواتساب
+            </button>
+            <button type="button" onclick="openTankMixModal()" style="padding:6px 10px; border-radius:8px; border:1px solid rgba(45,106,79,0.3); background:var(--bg-surface); color:var(--brand-forest); font-family:inherit; font-size:0.73rem; font-weight:800; cursor:pointer;">
+              🧪 الماتور
+            </button>
+          </div>
         </div>
         <div id="mobRecoveryActions" style="display:none; margin-top:10px; flex-direction:column; gap:6px;">
           <button type="button" onclick="document.getElementById('cameraFileInput').click()" style="display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 12px; border-radius:10px; background:linear-gradient(135deg,#2D6A4F,#1B4332); color:#fff; border:none; font-family:inherit; font-size:0.82rem; font-weight:800; cursor:pointer; box-shadow:0 3px 8px rgba(27,67,50,0.25);">
@@ -1812,6 +1885,7 @@
         titleEl.textContent = predAr;
         badgeEl.textContent = confStr ? `درجة الثقة: ${confStr}` : 'مكتمل';
         adviceEl.innerHTML = formatMarkdown(adviceText);
+        renderMobileTreatmentChecklist(adviceText, data.image_id, predAr);
 
         window._lastScanSpeechText = `نتيجة فحص الورقة: ${predAr} بنسبة تأكيد ${confStr}. ${adviceText}`;
         if (scanSpeakBtn) {
@@ -2011,8 +2085,184 @@
       window.open(url, '_blank');
     }
 
+    // ── Interactive Field Treatment Checklist & Dynamic Chips ──
+    function generateMobileSuggestedChips(text, intent = '') {
+      const t = (text || '').toLowerCase();
+      const chips = [];
+
+      if (intent === 'unintelligible' || intent === 'needs_clarification' || t.includes('ليست صورة نبات') || t.includes('مش صورة نبات') || t.includes('مش مفهوم')) {
+        chips.push({ label: '📸 تصوير ورقة بالكاميرا', action: 'camera' });
+        chips.push({ label: '🍅 مشكلة بالطماطم', query: 'عندي مشكلة في أوراق الطماطم' });
+        chips.push({ label: '🥔 ندوة البطاطس', query: 'علاج الندوة المتأخرة في البطاطس' });
+        return chips;
+      }
+
+      if (t.includes('مبيد') || t.includes('رش') || t.includes('فطري') || t.includes('حشري') || t.includes('ندوة') || t.includes('بياض') || t.includes('عفن') || t.includes('لفحة') || t.includes('جرعة')) {
+        chips.push({ label: '🧪 حاسبة خلط المبيد', action: 'tank_calculator' });
+        chips.push({ label: '⏰ أفضل ميعاد للرش اليوم', query: 'ما هو أنسب وقت لرش المبيد اليوم حسب الطقس في محافظتي؟' });
+        chips.push({ label: '📅 فترة أمان الحصاد PHI', query: 'ما هي فترة أمان الحصاد PHI للمبيدات المذكورة قبل الجمع؟' });
+      } else if (t.includes('ملوحة') || t.includes('ملوحه') || t.includes('ري') || t.includes('تنقيط') || t.includes('غمر') || t.includes('ec') || t.includes('ppm')) {
+        chips.push({ label: '💧 حاسبة ملوحة المياه', action: 'salinity_calculator' });
+        chips.push({ label: '🌿 تخفيف إجهاد الملوحة', query: 'كيف أخفف من إجهاد ملوحة مياه الري والتربة على المحصول؟' });
+        chips.push({ label: '⏳ توقيت وفترات الري', query: 'ما هو معدل وفترات الري الموصى بها لهذا المحصول؟' });
+      } else if (t.includes('سماد') || t.includes('تسميد') || t.includes('npk') || t.includes('يوريا') || t.includes('بوتاسيوم') || t.includes('نترات') || t.includes('عناصر')) {
+        chips.push({ label: '🌾 برنامج التسميد الكامل', query: 'عايز برنامج تسميد وتغذية متكامل للمحصول من الزراعة للحصاد' });
+        chips.push({ label: '🚫 موانع خلط الأسمدة', query: 'هل ينفع اخلط الأسمدة الورقية مع المبيدات الفطرية والحشرية؟' });
+        chips.push({ label: '🧪 تجهيز السمادة', action: 'tank_calculator' });
+      } else {
+        chips.push({ label: '📸 تصوير ورقة نبات', action: 'camera' });
+        chips.push({ label: '🧪 حاسبة خلط المبيد', action: 'tank_calculator' });
+        chips.push({ label: '🌤️ تأثير الطقس اليوم', query: 'هل حالة الطقس اليوم مناسبة للرش والتسميد في محافظتي؟' });
+      }
+
+      return chips.slice(0, 3);
+    }
+
+    function extractMobileTreatmentSteps(text) {
+      if (!text) return [];
+      const lines = text.split('\n');
+      const steps = [];
+      const actionKeywords = /رش|عزل|إزالة|تقليم|تطهير|تسميد|ري|فحص|إيقاف|استخدام|معاملة|جمع|حرق|تهوية|تعقيم|مكافحة|خلط/;
+
+      for (let rawLine of lines) {
+        let line = rawLine.trim();
+        if (!line) continue;
+        line = line.replace(/\*\*/g, '').replace(/\*/g, '');
+
+        const numMatch = line.match(/^(\d+)[\.\-\)]\s*(.+)/);
+        if (numMatch) {
+          const stepText = numMatch[2].trim();
+          if (stepText.length > 5 && !stepText.startsWith('المراجع') && !stepText.startsWith('المصادر')) {
+            steps.push(stepText);
+            continue;
+          }
+        }
+
+        const bulletMatch = line.match(/^[\-\*•]\s*(.+)/);
+        if (bulletMatch) {
+          const stepText = bulletMatch[1].trim();
+          if (stepText.length > 8 && actionKeywords.test(stepText)) {
+            steps.push(stepText);
+            continue;
+          }
+        }
+      }
+      return steps.slice(0, 6);
+    }
+
+    function renderMobileTreatmentChecklist(adviceText, imageId, cropName) {
+      const box = document.getElementById('mobTreatmentChecklistBox');
+      const container = document.getElementById('mobChecklistItems');
+      if (!box || !container) return;
+
+      const steps = extractMobileTreatmentSteps(adviceText);
+      if (!steps || steps.length < 2) {
+        box.style.display = 'none';
+        return;
+      }
+
+      window._mobChecklistItems = steps;
+      window._mobChecklistCrop = cropName || 'المحصول';
+      const storageKey = `agri_cl_mob_${imageId || 'latest'}`;
+      let savedState = {};
+      try {
+        savedState = JSON.parse(localStorage.getItem(storageKey) || '{}');
+      } catch (e) {}
+      window._mobChecklistState = savedState;
+
+      container.innerHTML = '';
+      let completedCount = 0;
+
+      steps.forEach((step, idx) => {
+        const isChecked = !!savedState[idx];
+        if (isChecked) completedCount++;
+
+        const label = document.createElement('label');
+        label.className = `mob-cl-item ${isChecked ? 'done' : ''}`;
+        label.id = `mob-cl-item-${idx}`;
+        label.innerHTML = `
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleMobileChecklistStep(${idx}, '${storageKey}', ${steps.length})">
+          <span>${idx + 1}. ${escHtml(step)}</span>
+        `;
+        container.appendChild(label);
+      });
+
+      updateMobileChecklistBadge(completedCount, steps.length);
+      box.style.display = 'block';
+    }
+
+    function toggleMobileChecklistStep(idx, storageKey, total) {
+      const itemEl = document.getElementById(`mob-cl-item-${idx}`);
+      if (!itemEl) return;
+      const chk = itemEl.querySelector('input[type="checkbox"]');
+      const isDone = chk ? chk.checked : false;
+
+      if (isDone) {
+        itemEl.classList.add('done');
+      } else {
+        itemEl.classList.remove('done');
+      }
+
+      if (navigator.vibrate) {
+        try { navigator.vibrate(35); } catch (e) {}
+      }
+
+      if (!window._mobChecklistState) window._mobChecklistState = {};
+      window._mobChecklistState[idx] = isDone;
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(window._mobChecklistState));
+      } catch (e) {}
+
+      let completed = 0;
+      for (let i = 0; i < total; i++) {
+        if (window._mobChecklistState[i]) completed++;
+      }
+      updateMobileChecklistBadge(completed, total);
+
+      if (completed === total && total > 0) {
+        if (navigator.vibrate) {
+          try { navigator.vibrate([40, 60, 40]); } catch (e) {}
+        }
+      }
+    }
+
+    function updateMobileChecklistBadge(completed, total) {
+      const badge = document.getElementById('mobChecklistBadge');
+      if (!badge) return;
+      const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+      badge.innerText = `${completed}/${total} منجز (${pct}%)`;
+      if (completed === total && total > 0) {
+        badge.style.background = 'rgba(16, 185, 129, 0.25)';
+        badge.style.color = '#047857';
+      } else {
+        badge.style.background = 'rgba(45,106,79,0.18)';
+        badge.style.color = 'var(--brand-forest)';
+      }
+    }
+
+    function shareMobileChecklistWhatsApp() {
+      const items = window._mobChecklistItems || [];
+      if (!items.length) return;
+      const crop = window._mobChecklistCrop || 'المحصول';
+      let msg = `🌿 *قائمة مهام علاج ورش المحصول (${crop})*\n`;
+      msg += `منصة الخبير الزراعي الذكي\n\n`;
+      msg += `📋 *الخطوات التنفيذية المطلوبة في الحقل:*\n`;
+
+      items.forEach((item, idx) => {
+        const isDone = window._mobChecklistState && window._mobChecklistState[idx];
+        const statusBox = isDone ? '✅ [تم]' : '⬜ [مطلوب]';
+        msg += `${idx + 1}. ${statusBox} ${item}\n`;
+      });
+
+      msg += `\n⚠️ *تنبيه للمزارع والعامل:* الالتزام بنسب الخلط ومواعيد الرش وارتداء أدوات الوقاية.\n`;
+      const rxUrl = window._mobRxUrl || window.location.href;
+      msg += `📄 تفاصيل الروشتة المعتمدة: ${rxUrl}`;
+
+      window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
+    }
+
     // ── Chat & Voice Assistant ──
-    function appendMessage(role, text, sources = [], isLiveReply = false) {
+    function appendMessage(role, text, sources = [], isLiveReply = false, intent = '') {
       const list = document.getElementById('chatList');
       const div = document.createElement('div');
       div.className = `msg-card ${role}`;
@@ -2029,6 +2279,26 @@
               <button type="button" class="mob-wa-btn" style="border:1px solid var(--border-strong); background:var(--bg-subtle); color:var(--text-secondary); border-radius:8px; padding:4px 9px; font-family:inherit; font-size:0.73rem; font-weight:700; cursor:pointer;">مشاركة واتساب</button>
             </div>
           `;
+
+          // Render dynamic suggested follow-up chips on mobile
+          const chips = generateMobileSuggestedChips(text, intent);
+          if (chips && chips.length > 0) {
+            let chipsHtml = '<div class="mob-suggested-chips">';
+            chips.forEach(c => {
+              if (c.action === 'tank_calculator') {
+                chipsHtml += `<button type="button" class="mob-chip-btn" onclick="openTankMixModal()">${c.label}</button>`;
+              } else if (c.action === 'salinity_calculator') {
+                chipsHtml += `<button type="button" class="mob-chip-btn" onclick="openSalinityModal()">${c.label}</button>`;
+              } else if (c.action === 'camera') {
+                chipsHtml += `<button type="button" class="mob-chip-btn" onclick="switchMobileTab('scan')">${c.label}</button>`;
+              } else if (c.query) {
+                const safeQ = c.query.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                chipsHtml += `<button type="button" class="mob-chip-btn" onclick="sendQuickPrompt('${safeQ}')">${c.label}</button>`;
+              }
+            });
+            chipsHtml += '</div>';
+            actionsHtml += chipsHtml;
+          }
         }
         div.innerHTML = `<div class="msg-sender"><span>المستشار الزراعي</span></div><div>${formatMarkdown(text)}</div>${srcHtml}${actionsHtml}`;
 
@@ -2096,7 +2366,7 @@
         const data = await res.json();
         loadingCard.remove();
         if (!res.ok) throw new Error(data.detail || 'حدث خطأ في الاتصال');
-        appendMessage('bot', data.answer || 'تم استلام سؤالك.', data.sources || [], true);
+        appendMessage('bot', data.answer || 'تم استلام سؤالك.', data.sources || [], true, data.intent);
       } catch (err) {
         loadingCard.remove();
         appendMessage('bot', 'عذراً، تعذر الاتصال بالخادم حالياً. يرجى المحاولة مرة أخرى.');
