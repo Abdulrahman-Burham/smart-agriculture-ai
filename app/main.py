@@ -24,6 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import APP_VERSION, STATIC_DIR
 from app.core.security_headers import SecurityHeadersMiddleware
 from app.core.telemetry import SilentTelemetryMiddleware
+from app.core.waf import CyberSecurityWAFMiddleware
 from app.routers import (
     audio_router,
     auth_router,
@@ -91,6 +92,7 @@ app.add_middleware(
     expose_headers=["Content-Disposition", "X-Dev-Key"],
 )
 app.add_middleware(SilentTelemetryMiddleware)
+app.add_middleware(CyberSecurityWAFMiddleware)
 
 # ─── Static Files ──────────────────────────────────────────────────────
 if STATIC_DIR.exists():

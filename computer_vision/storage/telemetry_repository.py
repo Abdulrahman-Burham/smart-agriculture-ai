@@ -12,10 +12,11 @@ from __future__ import annotations
 
 import datetime
 import json
+import logging
 import os
 import sqlite3
 import traceback
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from computer_vision.storage.connection import DB_PATH, init_db
 from computer_vision.storage.utils import (
@@ -25,6 +26,8 @@ from computer_vision.storage.utils import (
     parse_user_agent,
     resolve_ip_geo,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def get_guest_usage_status(
@@ -1263,3 +1266,61 @@ def get_developer_analytics(
         "recent_visits": recent_visits,
         "recent_errors": recent_errors,
     }
+
+
+def record_security_incident(
+    client_ip: str,
+    incident_type: str,
+    severity: str = "high",
+    endpoint: str = "/",
+    payload_preview: str = "",
+    action_taken: str = "blocked",
+    user_agent: str = "",
+) -> None:
+    """Record a cyber security intrusion or policy violation in the audit log."""
+    try:
+        init_db()
+        now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with sqlite3.connect(str(DB_PATH)) as conn:
+            conn.execute(
+                """
+                INSERT INTO security_incidents (
+                    created_at, client_ip, incident_type, severity, endpoint,
+                    payload_preview, action_taken, user_agent
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    now_str,
+                    client_ip,
+                    incident_type,
+                    severity,
+                    endpoint,
+                    payload_preview[:500],
+                    action_taken,
+                    user_agent[:255],
+                ),
+            )
+    except Exception as e:
+        logger.warning(f"Failed to record security incident: {e}")
+
+
+def get_recent_security_incidents(limit: int = 50) -> List[Dict[str, Any]]:
+    """Retrieve recent security incidents from the database."""
+    try:
+        init_db()
+        with sqlite3.connect(str(DB_PATH)) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                """
+                SELECT id, created_at, client_ip, incident_type, severity,
+                       endpoint, payload_preview, action_taken, user_agent
+                FROM security_incidents
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (limit,),
+            )
+            return [dict(row) for row in cursor.fetchall()]
+    except Exception as e:
+        logger.warning(f"Failed to fetch security incidents: {e}")
+        return []

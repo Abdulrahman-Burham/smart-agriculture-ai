@@ -352,7 +352,24 @@ def init_db(force: bool = False) -> None:
             """
         )
 
-        # 9. Performance B-Tree Indexes
+        # 9. Real-Time Cyber Security Incidents & Intrusion Detection Table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS security_incidents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TEXT NOT NULL,
+                client_ip TEXT NOT NULL,
+                incident_type TEXT NOT NULL,
+                severity TEXT NOT NULL,
+                endpoint TEXT NOT NULL,
+                payload_preview TEXT DEFAULT '',
+                action_taken TEXT NOT NULL,
+                user_agent TEXT DEFAULT ''
+            )
+            """
+        )
+
+        # 10. Performance B-Tree Indexes
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_chat_logs_user_id ON chat_logs(user_id);"
         )
@@ -389,6 +406,12 @@ def init_db(force: bool = False) -> None:
         conn.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_security_incidents_client_ip ON security_incidents(client_ip);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_security_incidents_created_at ON security_incidents(created_at);"
+        )
 
         # Seed default Admin Developer account if none exists
         admin_exists = conn.execute(

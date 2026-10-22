@@ -851,3 +851,44 @@ async def test_telegram_alert_endpoint(
         "status": "success",
         "message": "تم إرسال رسالة الاختبار بنجاح إلى التليجرام! تفقد المحادثة الآن.",
     }
+
+
+@router.get("/api/dev/security-incidents", tags=["Developer Admin"])
+async def get_security_incidents_endpoint(
+    request: Request, key: str = Query(""), limit: int = Query(50, ge=1, le=200)
+) -> Dict[str, Any]:
+    """Retrieve real-time cyber security incidents, blocked intrusions, and active IP bans."""
+    verify_dev_key(key, request)
+    from app.core.ip_banlist import get_all_banned_ips
+    from computer_vision.storage.telemetry_repository import (
+        get_recent_security_incidents,
+    )
+
+    incidents = await asyncio.to_thread(get_recent_security_incidents, limit=limit)
+    banned_ips = get_all_banned_ips()
+    return {
+        "status": "success",
+        "total_incidents": len(incidents),
+        "active_banned_ips_count": len(banned_ips),
+        "banned_ips": banned_ips,
+        "recent_incidents": incidents,
+    }
+
+
+@router.post("/api/dev/unban-ip", tags=["Developer Admin"])
+async def unban_ip_endpoint(
+    request: Request, ip: str = Query(...), key: str = Query("")
+) -> Dict[str, Any]:
+    """Unban an IP address from the active cyber defense jail."""
+    verify_dev_key(key, request)
+    from app.core.ip_banlist import unban_ip
+
+    was_banned = unban_ip(ip)
+    return {
+        "status": "success",
+        "ip": ip,
+        "unbanned": was_banned,
+        "message": f"تم بنجاح رفع الحظر عن الـ IP {ip}"
+        if was_banned
+        else f"الـ IP {ip} لم يكن محظوراً في القائمة النشطة.",
+    }

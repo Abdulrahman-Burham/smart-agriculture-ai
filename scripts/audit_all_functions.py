@@ -585,6 +585,35 @@ def audit_security_postures():
     ok_file_guard = (not ok_fake) and ("صيغ" in err_fake or "غير مدعوم" in err_fake)
     record("Security", "file_guard_magic_bytes_enforcement", "Security", ok_file_guard, f"MaliciousPayloadBlocked={not ok_fake}, Reason={err_fake}")
 
+    # 8.5 Web Application Firewall (WAF) Threat Detection & Honeypot Trap
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from app.core.ip_banlist import is_ip_banned, unban_ip, reset_banlist_for_testing
+
+    reset_banlist_for_testing()
+    c_waf = TestClient(app)
+    bad_scanner_ip = "198.51.100.77"
+
+    # Scanner blocking
+    r_scan = c_waf.get("/health", headers={"User-Agent": "sqlmap/1.5", "X-Forwarded-For": bad_scanner_ip})
+    banned_scan, _, _ = is_ip_banned(bad_scanner_ip)
+    ok_scan = r_scan.status_code == 403 and banned_scan is True
+    unban_ip(bad_scanner_ip)
+
+    # Honeypot trap
+    honeypot_ip = "198.51.100.88"
+    r_honey = c_waf.get("/.env", headers={"X-Forwarded-For": honeypot_ip})
+    banned_honey, _, _ = is_ip_banned(honeypot_ip)
+    ok_honey = r_honey.status_code == 403 and banned_honey is True
+    unban_ip(honeypot_ip)
+
+    # SQLi in query string
+    r_sqli = c_waf.get("/health?search=1%27%20UNION%20SELECT%20null--")
+    ok_sqli = r_sqli.status_code == 403
+
+    ok_waf = ok_scan and ok_honey and ok_sqli
+    record("Security", "waf_active_cyber_intrusion_defense", "Security", ok_waf, f"ScannerBlocked={ok_scan}, HoneypotTrapped={ok_honey}, SQLiBlocked={ok_sqli}")
+
 
 def run_full_audit():
     print("\n" + "=" * 80)
