@@ -233,6 +233,73 @@
             background: rgba(16, 185, 129, 0.05);
         }
 
+        /* Photo Guide for simple.html */
+        .photo-guide-card {
+            background: rgba(45, 106, 79, 0.05);
+            border: 1px solid rgba(45, 106, 79, 0.18);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+        .photo-guide-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 0.9rem;
+            cursor: pointer;
+            background: rgba(45, 106, 79, 0.08);
+            font-size: 0.84rem;
+            font-weight: 800;
+            color: var(--primary-green);
+        }
+        .guide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.5rem;
+            padding: 0.75rem;
+        }
+        .guide-item {
+            padding: 0.65rem 0.75rem;
+            border-radius: 10px;
+            font-size: 0.76rem;
+            line-height: 1.4;
+        }
+        .guide-do {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #166534;
+        }
+        .guide-dont {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #991b1b;
+        }
+        .image-quality-pill {
+            padding: 5px 12px;
+            border-radius: 18px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 0.5rem;
+        }
+        .quality-good {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #047857;
+        }
+        .quality-warn {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            color: #b45309;
+        }
+        .quality-bad {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #dc2626;
+        }
+
         .upload-zone input {
             display: none;
         }
@@ -525,8 +592,36 @@
                 <span class="s-crop-pill" onclick="selectSimpleCrop('فلفل', this)" style="cursor:pointer; font-size: 0.76rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 8px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(45, 106, 79, 0.25);">🫑 فلفل</span>
                 <span class="s-crop-pill" onclick="selectSimpleCrop('موالح', this)" style="cursor:pointer; font-size: 0.76rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 8px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(45, 106, 79, 0.25);">🍊 موالح</span>
             </div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.4;">
+            <div id="simple-crop-active-badge" style="display:none; align-items:center; justify-content:space-between; margin-top:0.35rem; padding:0.35rem 0.65rem; background:rgba(45,106,79,0.12); border:1px solid rgba(45,106,79,0.25); border-radius:8px; font-size:0.75rem; font-weight:800; color:var(--primary-green);">
+                <span>🎯 فحص مخصص لمحصول: <strong id="simple-active-crop-name">-</strong></span>
+                <button type="button" onclick="clearSimpleCrop()" style="background:none; border:none; color:#dc2626; cursor:pointer; font-size:0.75rem; font-weight:800;">إلغاء التحديد ✕</button>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; margin-top:0.3rem;">
                 💡 <em>اضغط على المحصول لتوجيه الفحص المتخصص بدقة أو اتركه تلقائياً للفحص المفتوح لكافة المحاصيل.</em>
+            </div>
+        </div>
+
+        <!-- Photo Guide in simple.html -->
+        <div class="photo-guide-card" id="simplePhotoGuide">
+            <div class="photo-guide-header" onclick="toggleSimpleGuide()">
+                <span>📸 إرشادات تصوير الورقة صح للحصول على أدق نتيجة</span>
+                <span id="simpleGuideArrow" style="font-size:0.72rem; background:rgba(45,106,79,0.12); padding:2px 7px; border-radius:6px;">شاهد الإرشادات ▾</span>
+            </div>
+            <div id="simpleGuideBody" style="display:none;">
+                <div class="guide-grid">
+                    <div class="guide-item guide-do">
+                        <strong>✅ صوّر الورقة عن قرب:</strong> اجعل الورقة المصابة تملأ 50-70% من الكادر لتظهر تفاصيل الإصابة.
+                    </div>
+                    <div class="guide-item guide-do">
+                        <strong>✅ إضاءة نهار واضحة:</strong> صوّر في ضوء طبيعي وتجنب لمعان الفلاش المباشر.
+                    </div>
+                    <div class="guide-item guide-dont">
+                        <strong>❌ لا تصوّر من بعيد:</strong> لا تصوّر الشجرة كاملة أو الحقل من مسافة بعيدة.
+                    </div>
+                    <div class="guide-item guide-dont">
+                        <strong>❌ لا تغطي الورقة بيدك:</strong> تجنب حجب مكان الإصابة بأصابعك، ولا ترفع صوراً غير نباتية.
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -534,6 +629,7 @@
             <input type="file" id="file-input" accept="image/*">
             <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;">
             <img id="image-preview" src="" alt="معاينة الصورة">
+            <div id="simple-quality-pill" class="image-quality-pill" style="display:none;"></div>
             <div id="upload-placeholder">
                 <div class="upload-icon">🌿</div>
                 <div class="upload-text">اضغط هنا لاختيار صورة ورقة النبات أو تصويرها بالكاميرا</div>
@@ -692,7 +788,33 @@
             btnDiagnose.disabled = false;
         }
 
+        function toggleSimpleGuide(forceOpen = null) {
+            const body = document.getElementById('simpleGuideBody');
+            const arr = document.getElementById('simpleGuideArrow');
+            if (!body) return;
+            const shouldOpen = forceOpen !== null ? forceOpen : (body.style.display === 'none');
+            if (shouldOpen) {
+                body.style.display = 'block';
+                if (arr) arr.textContent = 'إخفاء الإرشادات ▴';
+            } else {
+                body.style.display = 'none';
+                if (arr) arr.textContent = 'شاهد الإرشادات ▾';
+            }
+        }
+
         let selectedCropHint = '';
+        function clearSimpleCrop() {
+            selectedCropHint = '';
+            document.querySelectorAll('.s-crop-pill').forEach(p => {
+                p.classList.remove('active');
+                p.style.background = 'rgba(255, 255, 255, 0.15)';
+                p.style.color = '';
+                p.style.borderColor = 'rgba(45, 106, 79, 0.25)';
+            });
+            const badge = document.getElementById('simple-crop-active-badge');
+            if (badge) badge.style.display = 'none';
+        }
+
         function selectSimpleCrop(cropVal, el) {
             const wasActive = el && el.classList.contains('active');
             document.querySelectorAll('.s-crop-pill').forEach(p => {
@@ -701,8 +823,11 @@
                 p.style.color = '';
                 p.style.borderColor = 'rgba(45, 106, 79, 0.25)';
             });
+            const badge = document.getElementById('simple-crop-active-badge');
+            const nameEl = document.getElementById('simple-active-crop-name');
             if (wasActive) {
                 selectedCropHint = '';
+                if (badge) badge.style.display = 'none';
             } else {
                 selectedCropHint = cropVal;
                 if (el) {
@@ -710,6 +835,10 @@
                     el.style.background = '#2D6A4F';
                     el.style.color = '#ffffff';
                     el.style.borderColor = '#1B4332';
+                }
+                if (badge && nameEl) {
+                    nameEl.textContent = cropVal;
+                    badge.style.display = 'flex';
                 }
             }
         }
@@ -765,10 +894,21 @@
                 cropEl.innerText = 'هذا النظام مخصص لفحص أوراق النباتات والمحاصيل الزراعية فقط';
                 cropEl.style.color = '#dc2626';
                 container.innerHTML = `
-                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 12px; padding: 0.9rem; color: var(--text-light); font-size: 0.9rem; line-height: 1.65;">
-                        <strong>تم استبعاد الصورة لأنها لا تحتوي على نبات:</strong><br>
+                    <div style="background: rgba(239, 68, 68, 0.08); border: 1.5px solid rgba(239, 68, 68, 0.35); border-radius: 12px; padding: 1rem; color: var(--text-light); font-size: 0.9rem; line-height: 1.65;">
+                        <strong style="color:#dc2626;">⚠️ تم استبعاد الصورة لعدم وجود ورقة نبات واضحة:</strong><br>
                         تم رصد: <strong>${detectedObj}</strong>.<br>
-                        الرجاء رفع أو تصوير <strong>ورقة نبات واضحة</strong> عن قرب للحصول على التشخيص والعلاج.
+                        لكي يحدد الذكاء الاصطناعي المرض والعلاج الصحيح، يجب تصوير <strong>ورقة نبات عن قرب</strong>.<br>
+                        <div style="display:flex; gap:0.5rem; margin-top:0.75rem; flex-wrap:wrap;">
+                            <button type="button" onclick="document.getElementById('camera-input').click()" style="flex:1; padding:0.65rem; border-radius:8px; background:#2D6A4F; color:#fff; border:none; font-weight:700; cursor:pointer;">
+                                📸 إعادة الالتقاط بالكاميرا
+                            </button>
+                            <button type="button" onclick="document.getElementById('file-input').click()" style="flex:1; padding:0.65rem; border-radius:8px; background:rgba(45,106,79,0.1); color:#2D6A4F; border:1px solid rgba(45,106,79,0.3); font-weight:700; cursor:pointer;">
+                                📁 من المعرض
+                            </button>
+                            <button type="button" onclick="toggleSimpleGuide(true)" style="padding:0.65rem 0.85rem; border-radius:8px; background:rgba(245,158,11,0.1); color:#b45309; border:1px solid rgba(245,158,11,0.3); font-weight:700; cursor:pointer;">
+                                💡 الإرشادات
+                            </button>
+                        </div>
                     </div>
                 `;
                 if (data.advice) {

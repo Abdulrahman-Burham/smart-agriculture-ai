@@ -604,6 +604,280 @@
             display: none;
         }
 
+        /* HCI Photo Guide Component (Do's & Don'ts) */
+        .photo-guide-card {
+            background: rgba(45, 106, 79, 0.05);
+            border: 1px solid rgba(45, 106, 79, 0.18);
+            border-radius: 14px;
+            margin-bottom: 0.85rem;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        [data-theme="dark"] .photo-guide-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        .photo-guide-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.65rem 0.95rem;
+            cursor: pointer;
+            background: rgba(45, 106, 79, 0.06);
+            user-select: none;
+            transition: background 0.2s ease;
+        }
+        .photo-guide-header:hover {
+            background: rgba(45, 106, 79, 0.1);
+        }
+        .photo-guide-title {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.86rem;
+            font-weight: 800;
+            color: var(--primary-green);
+        }
+        [data-theme="dark"] .photo-guide-title {
+            color: #A7F3D0;
+        }
+        .photo-guide-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(45, 106, 79, 0.12);
+            border: 1px solid rgba(45, 106, 79, 0.28);
+            color: var(--primary-green);
+            border-radius: 8px;
+            padding: 3px 9px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        [data-theme="dark"] .photo-guide-toggle-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.18);
+            color: #E2E8F0;
+        }
+        .photo-guide-body {
+            padding: 0.85rem;
+            animation: fadeIn 0.25s ease;
+        }
+        .guide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.65rem;
+        }
+        .guide-item {
+            position: relative;
+            padding: 0.75rem 0.8rem;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .guide-do {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .guide-dont {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.28);
+        }
+        .guide-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 800;
+        }
+        .do-badge {
+            background: #10B981;
+            color: #FFFFFF;
+        }
+        .dont-badge {
+            background: #EF4444;
+            color: #FFFFFF;
+        }
+        .guide-icon-large {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+        .guide-text-title {
+            font-size: 0.84rem;
+            font-weight: 800;
+            color: var(--text-light);
+            margin-top: 0.15rem;
+        }
+        .guide-text-desc {
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+        }
+        .guide-footer-note {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 0.65rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed rgba(45, 106, 79, 0.2);
+            line-height: 1.4;
+        }
+
+        /* Real-Time Preview Quality Pill */
+        .image-quality-pill {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 10;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            transition: all 0.3s ease;
+        }
+        .quality-good {
+            background: rgba(16, 185, 129, 0.92);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .quality-warn {
+            background: rgba(245, 158, 11, 0.92);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .quality-bad {
+            background: rgba(239, 68, 68, 0.92);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        /* Actionable Error Recovery Card */
+        .hci-error-recovery-card {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1.5px solid rgba(239, 68, 68, 0.4);
+            border-radius: 14px;
+            padding: 1.1rem;
+            margin-top: 0.6rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+        .recovery-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .recovery-icon {
+            font-size: 1.7rem;
+            line-height: 1;
+        }
+        .recovery-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #DC2626;
+            margin-bottom: 0.2rem;
+        }
+        .recovery-desc {
+            font-size: 0.86rem;
+            color: var(--text-light);
+            line-height: 1.5;
+        }
+        .recovery-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-recovery-camera {
+            flex: 1.2;
+            min-width: 150px;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, #2D6A4F, #1B4332);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            box-shadow: 0 4px 12px rgba(27, 67, 50, 0.25);
+            font-family: inherit;
+        }
+        .btn-recovery-gallery {
+            flex: 1;
+            min-width: 130px;
+            padding: 0.75rem 0.85rem;
+            background: rgba(45, 106, 79, 0.12);
+            border: 1px solid rgba(45, 106, 79, 0.35);
+            color: var(--primary-green);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            font-family: inherit;
+        }
+        .btn-recovery-guide {
+            padding: 0.75rem 0.85rem;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #B45309;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .recovery-presets {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            padding-top: 0.65rem;
+            border-top: 1px dashed rgba(239, 68, 68, 0.25);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+        .btn-recovery-preset {
+            background: #FFFFFF;
+            border: 1px solid rgba(45, 106, 79, 0.25);
+            color: var(--primary-green);
+            border-radius: 8px;
+            padding: 3px 9px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        [data-theme="dark"] .btn-recovery-preset {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #A7F3D0;
+        }
+
+        .speaking-wave {
+            animation: pulse-border 1.2s infinite ease-in-out;
+        }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(45, 106, 79, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(45, 106, 79, 0); }
+        }
+
         /* CV Results */
         .cv-results {
             display: none;
@@ -1619,8 +1893,63 @@
                     <span class="crop-pill-tag clickable" data-crop="فلفل حلو" onclick="selectCropFromPill('فلفل حلو', this)">🫑 فلفل</span>
                     <span class="crop-pill-tag clickable" data-crop="برتقال" onclick="selectCropFromPill('برتقال', this)">🍊 موالح وبرتقال</span>
                 </div>
-                <div style="font-size: 0.73rem; color: var(--text-muted); line-height: 1.45;">
+                <div id="crop-active-badge" style="display:none; align-items:center; justify-content:space-between; margin-top:0.4rem; padding:0.45rem 0.75rem; background:rgba(45,106,79,0.12); border:1px solid rgba(45,106,79,0.3); border-radius:10px; font-size:0.8rem; font-weight:700; color:var(--primary-green);">
+                    <span style="display:flex; align-items:center; gap:0.4rem;">
+                        <span>🎯</span>
+                        <span>فحص متخصص مخصص لمحصول: <strong id="crop-active-name" style="color:var(--primary-dark); text-decoration:underline;">-</strong></span>
+                    </span>
+                    <button type="button" onclick="clearCropFilter()" style="background:rgba(220,38,38,0.1); border:1px solid rgba(220,38,38,0.25); color:#dc2626; border-radius:6px; padding:2px 8px; cursor:pointer; font-size:0.75rem; font-weight:700;">
+                        إلغاء التحديد (فحص شامل) ✕
+                    </button>
+                </div>
+                <div style="font-size: 0.73rem; color: var(--text-muted); line-height: 1.45; margin-top:0.35rem;">
                     💡 <em>اضغط على المحصول لتوجيه الفحص المتخصص وعزل النتائج بدقة، أو اتركها تلقائياً للفحص المفتوح لكافة المحاصيل.</em>
+                </div>
+            </div>
+
+            <!-- HCI Visual Photo Shooting Guide (Do's & Don'ts) -->
+            <div class="photo-guide-card" id="photo-guide-card">
+                <div class="photo-guide-header" onclick="togglePhotoGuide()">
+                    <div class="photo-guide-title">
+                        <span class="guide-icon">📸</span>
+                        <span>دليل تصوير الورقة للحصول على أدق فحص</span>
+                    </div>
+                    <button type="button" class="photo-guide-toggle-btn" id="photo-guide-toggle-btn" aria-expanded="false">
+                        <span id="photo-guide-toggle-text">شاهد الإرشادات (صح وغلط)</span>
+                        <span id="photo-guide-toggle-arrow">▾</span>
+                    </button>
+                </div>
+                
+                <div class="photo-guide-body" id="photo-guide-body" style="display: none;">
+                    <div class="guide-grid">
+                        <div class="guide-item guide-do">
+                            <div class="guide-badge do-badge">✅ صح</div>
+                            <div class="guide-icon-large">🔍</div>
+                            <div class="guide-text-title">صوّر الورقة عن قرب</div>
+                            <div class="guide-text-desc">قرب الكاميرا بحيث تملأ الورقة المصابة 50% إلى 70% من الكادر لتظهر تفاصيل البقع والعروق.</div>
+                        </div>
+                        <div class="guide-item guide-do">
+                            <div class="guide-badge do-badge">✅ صح</div>
+                            <div class="guide-icon-large">☀️</div>
+                            <div class="guide-text-title">إضاءة نهارية واضحة</div>
+                            <div class="guide-text-desc">صوّر في ضوء النهار الطبيعي بدون فلاش قوي مباشر يسبب لمعاناً أو انعكاسات تعمي العدسة.</div>
+                        </div>
+                        <div class="guide-item guide-dont">
+                            <div class="guide-badge dont-badge">❌ غلط</div>
+                            <div class="guide-icon-large">🌳</div>
+                            <div class="guide-text-title">لا تصوّر الشجرة كاملة</div>
+                            <div class="guide-text-desc">التصوير من مسافة بعيدة للحقل أو الشجرة كاملة يجعل الذكاء الاصطناعي عاجزاً عن تشخيص المرض.</div>
+                        </div>
+                        <div class="guide-item guide-dont">
+                            <div class="guide-badge dont-badge">❌ غلط</div>
+                            <div class="guide-icon-large">✋</div>
+                            <div class="guide-text-title">لا تحجب الورقة بيدك</div>
+                            <div class="guide-text-desc">تجنب تغطية مكان الإصابة بالأصابع، ولا ترفع صوراً لجرارات أو عبوات أسمدة أو صور غير نباتية.</div>
+                        </div>
+                    </div>
+                    <div class="guide-footer-note">
+                        💡 <em>ملحوظة: النظام مدرب على تشخيص 50+ مرض وحالة في محاصيل الطماطم، البطاطس، المانجو، القمح، الذرة، العنب، الزيتون، الأرز، البصل، التفاح، الفراولة، الفلفل والموالح.</em>
+                    </div>
                 </div>
             </div>
 
@@ -1641,6 +1970,7 @@
                 <input type="file" id="file-input" accept="image/*">
                 <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;">
                 <img id="image-preview" src="" alt="Preview">
+                <div id="image-quality-pill" class="image-quality-pill" style="display:none;"></div>
                 <div class="preview-overlay" id="preview-overlay">
                     <div class="upload-icon">🔄</div>
                     <div class="upload-text">تغيير الصورة</div>
@@ -2315,26 +2645,87 @@
             const cropSelect = document.getElementById('crop-select');
             const wasActive = el && el.classList.contains('active');
             document.querySelectorAll('.crop-pill-tag').forEach(p => p.classList.remove('active'));
+            const activeBadge = document.getElementById('crop-active-badge');
+            const activeName = document.getElementById('crop-active-name');
             if (wasActive) {
                 if (cropSelect) cropSelect.value = '';
+                if (activeBadge) activeBadge.style.display = 'none';
+                showToast('🌾 تم إلغاء التحديد - الفحص الآن شامل لجميع المحاصيل');
             } else {
                 if (el) el.classList.add('active');
                 if (cropSelect) cropSelect.value = cropVal;
+                if (activeBadge && activeName) {
+                    activeName.textContent = cropVal;
+                    activeBadge.style.display = 'flex';
+                }
+                showToast(`🎯 تم تفعيل فحص متخصص لمحصول: ${cropVal}`);
             }
+            saveFarmPrefs();
+        }
+
+        function clearCropFilter() {
+            const cropSelect = document.getElementById('crop-select');
+            if (cropSelect) cropSelect.value = '';
+            document.querySelectorAll('.crop-pill-tag').forEach(p => p.classList.remove('active'));
+            const activeBadge = document.getElementById('crop-active-badge');
+            if (activeBadge) activeBadge.style.display = 'none';
+            showToast('🌾 تم إلغاء التحديد - الفحص الآن شامل لجميع المحاصيل');
             saveFarmPrefs();
         }
 
         function syncCropPillsWithSelect() {
             const cropSelect = document.getElementById('crop-select');
             const val = cropSelect ? cropSelect.value : '';
+            const activeBadge = document.getElementById('crop-active-badge');
+            const activeName = document.getElementById('crop-active-name');
+            let found = false;
             document.querySelectorAll('.crop-pill-tag').forEach(p => {
                 const pCrop = p.getAttribute('data-crop') || '';
                 if (val && (pCrop === val || val.includes(pCrop) || pCrop.includes(val))) {
                     p.classList.add('active');
+                    found = true;
                 } else {
                     p.classList.remove('active');
                 }
             });
+            if (activeBadge && activeName) {
+                if (val && found) {
+                    activeName.textContent = val;
+                    activeBadge.style.display = 'flex';
+                } else {
+                    activeBadge.style.display = 'none';
+                }
+            }
+        }
+
+        function togglePhotoGuide(forceOpen = null) {
+            const body = document.getElementById('photo-guide-body');
+            const btn = document.getElementById('photo-guide-toggle-btn');
+            const txt = document.getElementById('photo-guide-toggle-text');
+            const arrow = document.getElementById('photo-guide-toggle-arrow');
+            if (!body) return;
+            const shouldOpen = forceOpen !== null ? forceOpen : (body.style.display === 'none');
+            if (shouldOpen) {
+                body.style.display = 'block';
+                if (txt) txt.textContent = 'إخفاء الإرشادات';
+                if (arrow) arrow.textContent = '▴';
+                if (btn) btn.setAttribute('aria-expanded', 'true');
+            } else {
+                body.style.display = 'none';
+                if (txt) txt.textContent = 'شاهد الإرشادات (صح وغلط)';
+                if (arrow) arrow.textContent = '▾';
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        function triggerCameraRetake() {
+            const cam = document.getElementById('camera-input');
+            if (cam) cam.click();
+        }
+
+        function triggerGalleryRetake() {
+            const fileInp = document.getElementById('file-input');
+            if (fileInp) fileInp.click();
         }
 
         function onManualGovChange() {
@@ -2586,6 +2977,7 @@
                     currentAudioPlayer = null;
                 }
                 btnEl.innerHTML = '🔊 اسمع بالمصري';
+                btnEl.classList.remove('speaking-wave');
                 currentAudioBtn = null;
                 if ('speechSynthesis' in window) window.speechSynthesis.cancel();
                 return;
@@ -2628,7 +3020,10 @@
                     chunkPromises[i] = fetchTtsChunkBlob(chunks[i], chosenVoice).catch(() => null);
                 }
 
-                if (btnEl) btnEl.innerHTML = '⏹️ إيقاف الصوت المصري';
+                if (btnEl) {
+                    btnEl.innerHTML = '⏹️ إيقاف الصوت المصري';
+                    btnEl.classList.add('speaking-wave');
+                }
 
                 for (let i = 0; i < chunks.length; i++) {
                     if (myRunId !== currentSpeechRunId) break;
@@ -2650,13 +3045,19 @@
                 }
 
                 if (myRunId === currentSpeechRunId) {
-                    if (btnEl) btnEl.innerHTML = '🔊 اسمع بالمصري';
+                    if (btnEl) {
+                        btnEl.innerHTML = '🔊 اسمع بالمصري';
+                        btnEl.classList.remove('speaking-wave');
+                    }
                     currentAudioPlayer = null;
                     currentAudioBtn = null;
                 }
             } catch (e) {
                 if (myRunId !== currentSpeechRunId) return;
-                if (btnEl) btnEl.innerHTML = '🔊 اسمع بالمصري';
+                if (btnEl) {
+                    btnEl.innerHTML = '🔊 اسمع بالمصري';
+                    btnEl.classList.remove('speaking-wave');
+                }
                 currentAudioBtn = null;
                 if ('speechSynthesis' in window) {
                     const utter = new SpeechSynthesisUtterance(chunks.join(' '));
@@ -2984,22 +3385,46 @@
             const inlineText = document.getElementById('cv-inline-advice-text');
             const inlineSpeakBtn = document.getElementById('cv-inline-speak-btn');
 
-            // Check if the Plant-Only Filter rejected the image as a non-plant
+            // Check if the Plant-Only Filter rejected the image as a non-plant (HCI Nielsen #9 Error Recovery)
             if (cvData.is_plant === false || cvData.rejected === true || cvData.predicted_class === 'Not_A_Plant') {
                 const detectedObj = cvData.detected_object_ar || 'صورة غير نباتية';
-                diseaseEl.innerText = `تنبيه: الصورة ليست نباتاً (${detectedObj})`;
+                diseaseEl.innerText = `تنبيه: الصورة ليست ورقة نبات (${detectedObj})`;
                 diseaseEl.classList.remove('healthy');
                 diseaseEl.style.color = '#dc2626';
-                cropEl.innerText = 'هذا النظام مخصص لفحص أوراق النباتات والمحاصيل الزراعية فقط';
+                cropEl.innerText = 'هذا النظام مخصص فقط لفحص أوراق المحاصيل الزراعية بدقة';
                 cropEl.style.color = '#dc2626';
                 cvResults.style.borderColor = 'rgba(239, 68, 68, 0.45)';
                 cvResults.style.background = 'rgba(239, 68, 68, 0.08)';
 
                 container.innerHTML = `
-                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 12px; padding: 0.9rem; color: var(--text-light); font-size: 0.9rem; line-height: 1.65; margin-top: 0.5rem;">
-                        <strong>تم استبعاد الصورة لأنها لا تحتوي على نبات:</strong><br>
-                        تم رصد: <strong>${detectedObj}</strong>.<br>
-                        الرجاء رفع أو تصوير <strong>ورقة نبات واضحة</strong> عن قرب للحصول على التشخيص والعلاج.
+                    <div class="hci-error-recovery-card">
+                        <div class="recovery-header">
+                            <span class="recovery-icon">⚠️</span>
+                            <div>
+                                <div class="recovery-title">تم استبعاد الصورة لعدم وجود ورقة نبات واضحة</div>
+                                <div class="recovery-desc">
+                                    تم رصد: <strong>${detectedObj}</strong>.<br>
+                                    لكي يحدد الذكاء الاصطناعي المرض والعلاج الصحيح، يجب تصوير <strong>ورقة نبات عن قرب</strong> تملأ معظم الكادر بدون حجب.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="recovery-actions">
+                            <button type="button" class="btn-recovery-camera" onclick="triggerCameraRetake()">
+                                📸 إعادة الالتقاط بالكاميرا عن قرب
+                            </button>
+                            <button type="button" class="btn-recovery-gallery" onclick="triggerGalleryRetake()">
+                                📁 اختيار صورة من المعرض
+                            </button>
+                            <button type="button" class="btn-recovery-guide" onclick="togglePhotoGuide(true)">
+                                💡 طريقة التصوير الصحيحة
+                            </button>
+                        </div>
+                        <div class="recovery-presets">
+                            <span style="font-weight:700;">أو جرب عينة جاهزة ناجحة الآن:</span>
+                            <button type="button" class="btn-recovery-preset" onclick="runDemoDaySample('tomato')">🍅 طماطم</button>
+                            <button type="button" class="btn-recovery-preset" onclick="runDemoDaySample('potato')">🥔 بطاطس</button>
+                            <button type="button" class="btn-recovery-preset" onclick="runDemoDaySample('mango')">🥭 مانجو</button>
+                        </div>
                     </div>
                 `;
 
@@ -3010,14 +3435,14 @@
                     if (inlineSpeakBtn) {
                         inlineSpeakBtn.innerHTML = '🔊 اسمع التنبيه بالمصري';
                         inlineSpeakBtn.onclick = function() {
-                            speakArabic(`يا هندسة خلي بالك، الصورة اللي رفعتها مش صورة نبات، دي ${detectedObj}. النظام هنا بيقبل بس صور ورق النباتات والزراعات عشان يشخصها صح.`, inlineSpeakBtn);
+                            speakArabic(`يا هندسة خلي بالك، الصورة دي مش صورة نبات، دي ${detectedObj}. النظام هنا بيقبل بس صور ورق النباتات والزراعات عن قرب عشان يقدر يشخص المرض والعلاج صح.`, inlineSpeakBtn);
                         };
                     }
                 }
                 cvResults.style.display = 'block';
                 updateVisionStepper(2);
                 if (btnDiagnoseImage) btnDiagnoseImage.classList.remove('pulse-ready');
-                showToast('⚠️ تنبيه: الصورة المرفوعة ليست نباتاً! النظام يقبل فقط صور النباتات');
+                showToast('⚠️ تنبيه: الصورة المرفوعة ليست لنبات! يمكنك إعادة الالتقاط بضغطة زر واحدة');
                 setTimeout(() => {
                     cvResults.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }, 100);
@@ -3197,6 +3622,12 @@
             if (cameraInput) cameraInput.value = '';
             imagePreview.src = '';
             imagePreview.style.display = 'none';
+            const qualityPill = document.getElementById('image-quality-pill');
+            if (qualityPill) {
+                qualityPill.style.display = 'none';
+                qualityPill.className = 'image-quality-pill';
+                qualityPill.innerHTML = '';
+            }
             uploadPlaceholder.style.display = 'block';
             if (btnClearImage) btnClearImage.style.display = 'none';
             if (btnDiagnoseImage) {
@@ -3268,23 +3699,44 @@
                         const d = ctx.getImageData(0, 0, 96, 96).data;
                         let greenCount = 0;
                         let exgCount = 0;
+                        let totalLum = 0;
                         const total = 96 * 96;
                         for (let i = 0; i < d.length; i += 4) {
                             const r = d[i], g = d[i + 1], b = d[i + 2];
+                            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                            totalLum += lum;
                             if (g > 32 && g > r + 4 && g >= b + 3) greenCount++;
                             if ((2 * g - r - b) > 18 && g > 35) exgCount++;
                         }
                         const greenPct = (greenCount / total) * 100;
                         const exgPct = (exgCount / total) * 100;
-                        resolve({ looksLikePlant: (greenPct >= 1.5 || exgPct >= 2.0), greenPct });
+                        const avgLum = totalLum / total;
+                        const foliageScore = Math.max(greenPct, exgPct);
+                        const isTooDark = avgLum < 32;
+                        const isTooBright = avgLum > 235;
+                        const looksLikePlant = foliageScore >= 18.0;
+                        const quality = (looksLikePlant && !isTooDark && !isTooBright)
+                            ? 'excellent'
+                            : (foliageScore >= 12.0 ? 'fair' : 'poor');
+
+                        resolve({
+                            looksLikePlant,
+                            foliageScore,
+                            greenPct,
+                            exgPct,
+                            avgLum,
+                            isTooDark,
+                            isTooBright,
+                            quality
+                        });
                     };
                     img.onerror = () => {
                         URL.revokeObjectURL(objUrl);
-                        resolve({ looksLikePlant: true, greenPct: 50 });
+                        resolve({ looksLikePlant: true, quality: 'unknown', foliageScore: 50 });
                     };
                     img.src = objUrl;
                 } catch (e) {
-                    resolve({ looksLikePlant: true, greenPct: 50 });
+                    resolve({ looksLikePlant: true, quality: 'unknown', foliageScore: 50 });
                 }
             });
         }
@@ -3320,10 +3772,34 @@
                 btnDiagnoseImage.classList.add('pulse-ready');
             }
             updateVisionStepper(2);
-            if (!preCheck.looksLikePlant) {
-                showToast('⚠️ تنبيه: يبدو أن الصورة لا تحتوي على نبات! النظام يقبل فقط صور النباتات');
+            // Real-Time Pre-Flight Quality Feedback (HCI Nielsen #1 Visibility of System Status)
+            const qualityPill = document.getElementById('image-quality-pill');
+            if (qualityPill) {
+                qualityPill.style.display = 'flex';
+                if (preCheck.quality === 'excellent') {
+                    qualityPill.className = 'image-quality-pill quality-good';
+                    qualityPill.innerHTML = `🟢 جودة ممتازة (${Math.round(preCheck.foliageScore)}% ورقة واضحة)`;
+                    showToast('📸 جودة ممتازة! الورقة واضحة ومستوفية للشروط');
+                } else if (preCheck.isTooDark) {
+                    qualityPill.className = 'image-quality-pill quality-warn';
+                    qualityPill.innerHTML = `🟡 إضاءة خافتة - يفضل ضوء نهار`;
+                    showToast('🟡 تنبيه: إضاءة الصورة خافتة، يُفضل التصوير في ضوء نهار واضح');
+                } else if (preCheck.isTooBright) {
+                    qualityPill.className = 'image-quality-pill quality-warn';
+                    qualityPill.innerHTML = `🟡 إضاءة ساطعة أو فلاش عاكس`;
+                    showToast('🟡 تنبيه: لمعان أو فلاش عاكس على الورقة');
+                } else {
+                    qualityPill.className = 'image-quality-pill quality-bad';
+                    qualityPill.innerHTML = `🔴 الورقة بعيدة (${Math.round(preCheck.foliageScore)}% فقط) - قرب الكاميرا`;
+                    showToast('⚠️ تنبيه: الورقة بعيدة أو غير واضحة! قرب الكاميرا أو راجع الإرشادات');
+                    togglePhotoGuide(true);
+                }
             } else {
-                showToast('📸 تم تجهيز الصورة! اضغط على زر «فحص وإظهار العلاج»');
+                if (!preCheck.looksLikePlant) {
+                    showToast('⚠️ تنبيه: يبدو أن الصورة لا تحتوي على نبات كافي! النظام يقبل فقط أوراق النباتات');
+                } else {
+                    showToast('📸 تم تجهيز الصورة! اضغط على زر «فحص وإظهار العلاج»');
+                }
             }
         }
 
