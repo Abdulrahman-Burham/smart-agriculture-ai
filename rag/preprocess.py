@@ -75,44 +75,49 @@ def load_lexicon(path: str | Path) -> Dict[str, Any]:
 
 
 def canonicalize_terms(text: str, lexicon: Dict[str, Any]) -> str:
-    """Substitute dialect and code-switched terms with canonical agricultural Arabic terms."""
+    """Substitute dialect and code-switched terms with canonical agricultural Arabic terms in a single pass."""
     if not text or not lexicon:
         return text
 
     normalized = normalize_arabic_text(text)
 
-    # Build substitution map (term -> canonical term)
-    substitutions: list[tuple[str, str]] = []
+    # Build unique alias-to-canonical mapping
+    alias_map: Dict[str, str] = {}
 
-    # Dialect aliases: canonical_name -> list of alias terms
     for canonical, aliases in lexicon.get("dialect_aliases", {}).items():
         for alias in aliases:
-            norm_alias = normalize_arabic_text(alias)
-            substitutions.append((norm_alias, canonical))
+            norm_alias = normalize_arabic_text(alias).strip()
+            if norm_alias and norm_alias != canonical:
+                alias_map[norm_alias.lower()] = canonical
 
-    # Product aliases: canonical_name -> list of alias terms (including English NPK, Urea, etc.)
     for canonical, aliases in lexicon.get("product_aliases", {}).items():
         for alias in aliases:
-            substitutions.append((alias.lower(), canonical))
-            substitutions.append((normalize_arabic_text(alias), canonical))
+            norm_alias = normalize_arabic_text(alias).strip()
+            if norm_alias and norm_alias != canonical:
+                alias_map[norm_alias.lower()] = canonical
 
-    # Sort substitutions by descending length to prevent partial substring collisions
-    substitutions.sort(key=lambda item: len(item[0]), reverse=True)
+    if not alias_map:
+        return normalized
 
-    result = normalized
-    for alias_pattern, canonical_replacement in substitutions:
-        if not alias_pattern:
-            continue
-        # Case insensitive boundary matching for English/Code-switched, simple replace for Arabic
-        if re.search(r"[a-zA-Z]", alias_pattern):
-            pattern = re.compile(
-                r"\b" + re.escape(alias_pattern) + r"\b", re.IGNORECASE
-            )
-            result = pattern.sub(canonical_replacement, result)
+    # Sort aliases by descending length so longer phrases match first (e.g. 'الـ npk' before 'npk')
+    sorted_aliases = sorted(alias_map.keys(), key=len, reverse=True)
+
+    # Build single-pass regex pattern
+    pattern_parts = []
+    for alias in sorted_aliases:
+        escaped = re.escape(alias)
+        if re.search(r"[a-zA-Z0-9]", alias):
+            pattern_parts.append(r"(?<![a-zA-Z0-9])" + escaped + r"(?![a-zA-Z0-9])")
         else:
-            pattern = re.compile(re.escape(alias_pattern))
-            result = pattern.sub(canonical_replacement, result)
+            pattern_parts.append(escaped)
 
+    master_pattern = re.compile("|".join(pattern_parts), re.IGNORECASE)
+
+    def _replace_match(match: re.Match) -> str:
+        key = match.group(0).lower()
+        return alias_map.get(key, alias_map.get(normalize_arabic_text(key).lower(), match.group(0)))
+
+    result = master_pattern.sub(_replace_match, normalized)
     return result.strip()
 
 

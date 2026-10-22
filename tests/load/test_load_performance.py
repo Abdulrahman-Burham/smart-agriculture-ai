@@ -79,6 +79,14 @@ def run_load_stress_test(num_requests: int = 50) -> Dict[str, Any]:
     }
 
 
+def test_load_performance_smoke():
+    """Verify load performance benchmark runs cleanly under test execution."""
+    res = run_load_stress_test(num_requests=4)
+    assert res["num_requests"] == 4
+    assert res["successes"] + res["failures"] == 4
+    assert res["p50_latency_sec"] >= 0
+
+
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
