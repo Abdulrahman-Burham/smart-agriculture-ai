@@ -13,7 +13,14 @@ import yaml
 from rag.generate import MockLLMProvider, generate_grounded_answer
 from rag.ingest import ingest_text_documents
 from rag.pdf_ingest import load_pdfs_to_documents
-from rag.preprocess import fallback_llm_rewrite, load_lexicon, log_fallback_query, preprocess_query
+from rag.preprocess import (
+    AMBIGUOUS_CLARIFICATION_RESPONSE,
+    UNINTELLIGIBLE_RESPONSE,
+    fallback_llm_rewrite,
+    load_lexicon,
+    log_fallback_query,
+    preprocess_query,
+)
 from rag.rerank import apply_metadata_filters, rerank_candidates
 from rag.retrieve import ChromaVectorStore, QdrantVectorStore, hybrid_retrieval
 
@@ -148,6 +155,36 @@ class RAGPipeline:
         prep_data = preprocess_query(user_query, self.lexicon, vision_context=vision_context)
         query_text = prep_data["canonical_query"]
         intent = prep_data["intent"]
+
+        # Fast path for Unintelligible inputs (gibberish / symbols / keymash)
+        if intent == "unintelligible":
+            return {
+                "query": user_query,
+                "processed_query": query_text,
+                "intent": intent,
+                "answer": UNINTELLIGIBLE_RESPONSE,
+                "citations": [],
+                "retrieval_confidence": 1.0,
+                "needs_agronomist_review": False,
+                "vision_context_used": vision_context,
+                "latency_seconds": round(time.time() - start_time, 4),
+                "sources": [],
+            }
+
+        # Fast path for Ambiguous Clarification (vague queries without context)
+        if intent == "needs_clarification":
+            return {
+                "query": user_query,
+                "processed_query": query_text,
+                "intent": intent,
+                "answer": AMBIGUOUS_CLARIFICATION_RESPONSE,
+                "citations": [],
+                "retrieval_confidence": 1.0,
+                "needs_agronomist_review": False,
+                "vision_context_used": vision_context,
+                "latency_seconds": round(time.time() - start_time, 4),
+                "sources": [],
+            }
 
         # Fast path for Chit-Chat
         if intent == "chit_chat":

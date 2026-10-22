@@ -20,6 +20,7 @@ class ChatResponse(BaseModel):
     sources: list[dict]
     cited_ids: list[int]
     timings: dict
+    intent: str = "standard_agricultural"
 
 
 class AlertsRequest(BaseModel):

@@ -205,7 +205,7 @@ async def chat_endpoint(
             sources=sources,
             confidence=top_conf,
             latency=latency,
-            intent="agri_rag",
+            intent=agri_data.get("intent") or "agri_rag",
             session_id=sess_id,
             model_used="Agri-RAG (e5 + BM25 + Gemini)",
         )

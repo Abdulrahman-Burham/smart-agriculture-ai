@@ -13,7 +13,7 @@ from .domain.farm import LOW_CONFIDENCE, FarmContext
 from .domain.weather import WeatherService
 from .generation.llm import LLMClient
 from .generation.prompts import FALLBACK_ANSWER, SYSTEM_PROMPT, build_user_message
-from .nlp.arabic import tokenize
+from .nlp.arabic import classify_user_query, tokenize
 from .retrieval.hybrid import HybridRetriever, RetrievalResult
 from .sessions import InMemorySessionStore
 
@@ -35,6 +35,7 @@ class ChatResult:
     session_id: str
     timings: dict = field(default_factory=dict)
     cited_ids: list[int] = field(default_factory=list)
+    intent: str = "standard_agricultural"
 
 
 class RagPipeline:
@@ -106,6 +107,32 @@ class RagPipeline:
 
         crop = crop or farm.crop
 
+        # ── HCI Intelligent Query Understanding & Dynamic Conciseness ──
+        has_context = bool(history or farm.diagnoses or farm.crop)
+        q_analysis = classify_user_query(question, has_context=has_context)
+
+        # Fast path for non-retrieval intents: Gibberish, Chit-chat, Extreme Ambiguity
+        if not q_analysis.requires_retrieval and q_analysis.suggested_fast_response:
+            fast_answer = q_analysis.suggested_fast_response
+            yield {"type": "sources", "sources": [], "session_id": session_id, "glossary_matches": []}
+            yield {"type": "token", "text": fast_answer}
+            self.sessions.append(session_id, question, fast_answer)
+            total = time.perf_counter() - t0
+            yield {
+                "type": "done",
+                "grounded": False,
+                "cited_ids": [],
+                "weather_source": None,
+                "intent": q_analysis.intent,
+                "timings": {
+                    "retrieval_ms": 0,
+                    "ttft_ms": round(total * 1000),
+                    "total_ms": round(total * 1000),
+                    "within_budget": True,
+                },
+            }
+            return
+
         # Weather lookup runs concurrently with retrieval so it adds (almost) no latency.
         weather_task = asyncio.create_task(self.weather.enrich(farm)) if self.weather else None
         result = await asyncio.to_thread(self.retriever.retrieve, self._retrieval_query(question, history, farm), crop)
@@ -155,10 +182,15 @@ class RagPipeline:
                 result.chunks,
                 self.s.context_max_chars,
                 history=history,
+                dynamic_instruction=q_analysis.dynamic_instruction,
             )
-            # Pass recent multi-turn dialogue history + current grounded prompt
+            # Pass recent multi-turn dialogue history + current grounded prompt + dynamic token budget
             recent_history = history[-20:]
-            async for piece in self.llm.stream(SYSTEM_PROMPT, [*recent_history, {"role": "user", "content": user_msg}]):
+            async for piece in self.llm.stream(
+                SYSTEM_PROMPT,
+                [*recent_history, {"role": "user", "content": user_msg}],
+                max_tokens=q_analysis.suggested_max_tokens,
+            ):
                 if ttft is None:
                     ttft = time.perf_counter() - t0
                 answer_parts.append(piece)
@@ -170,6 +202,7 @@ class RagPipeline:
         cited = extract_cited_ids(answer, len(sources))
         yield {"type": "done", "grounded": grounded, "cited_ids": cited,
                "weather_source": farm.weather.source if farm and farm.weather else None,
+               "intent": q_analysis.intent,
                "timings": {"retrieval_ms": round(t_retrieval * 1000), "ttft_ms": round((ttft or total) * 1000),
                            "total_ms": round(total * 1000),
                            "within_budget": (ttft or total) <= self.s.latency_budget_s}}
@@ -184,5 +217,12 @@ class RagPipeline:
                 answer.append(ev["text"])
             else:
                 done = ev
-        return ChatResult("".join(answer).strip(), done["grounded"], sources, sid, done["timings"], done["cited_ids"])
-
+        return ChatResult(
+            "".join(answer).strip(),
+            done.get("grounded", False),
+            sources,
+            sid,
+            done.get("timings", {}),
+            done.get("cited_ids", []),
+            done.get("intent", "standard_agricultural"),
+        )

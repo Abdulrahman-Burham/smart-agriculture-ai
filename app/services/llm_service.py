@@ -243,6 +243,7 @@ async def query_agri_rag(
                 "sources": res.sources,
                 "cited_ids": res.cited_ids,
                 "timings": res.timings,
+                "intent": getattr(res, "intent", "standard_agricultural"),
             }
             out["_llm_telemetry"] = build_rag_llm_telemetry(question, out)
             return out
@@ -263,6 +264,7 @@ async def query_agri_rag(
         "sources": sources_list,
         "cited_ids": [c.get("citation_tag", "") for c in citations],
         "timings": {"total": rag_res.get("latency_seconds", 0.0)},
+        "intent": rag_res.get("intent", "agri_rag"),
     }
     out["_llm_telemetry"] = build_rag_llm_telemetry(question, out)
     return out

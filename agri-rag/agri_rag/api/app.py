@@ -39,7 +39,8 @@ def create_app(container: Container | None = None) -> FastAPI:
     async def chat(req: ChatRequest) -> ChatResponse:
         res = await c.pipeline.ask(req.question, req.session_id, req.farm, req.crop)
         return ChatResponse(answer=res.answer, grounded=res.grounded, session_id=res.session_id,
-                            sources=res.sources, cited_ids=res.cited_ids, timings=res.timings)
+                            sources=res.sources, cited_ids=res.cited_ids, timings=res.timings,
+                            intent=res.intent)
 
     @app.post("/v1/chat/stream", dependencies=[Depends(auth)])
     async def chat_stream(req: ChatRequest, request: Request) -> StreamingResponse:
