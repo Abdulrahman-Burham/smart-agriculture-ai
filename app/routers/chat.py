@@ -15,6 +15,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.core.guest_policy import enforce_guest_gate_or_401
+from app.core.prompt_shield import validate_prompt_safety
 from app.core.rate_limiter import ai_chat_limiter
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.llm_service import (
@@ -72,6 +73,23 @@ async def chat_endpoint(
     u_ident = auth_user.get("identifier", "") if auth_user else ""
 
     await enforce_guest_gate_or_401(client_info, u_id, "/api/chat")
+
+    # AI Prompt Shield & Injection Firewall (OWASP LLM Top 10)
+    is_safe, threat, refusal_msg = validate_prompt_safety(request.query)
+    if not is_safe:
+        logger.warning(
+            f"[Security] AI Prompt Shield triggered: threat={threat}, client_ip={client_info['client_ip']}, query={request.query[:80]}"
+        )
+        return ChatResponse(
+            answer=refusal_msg,
+            weather="",
+            sources=["[⚠️] سياسة الأمان وحماية النظم الزراعية"],
+            confidence=1.0,
+            latency=round(time.time() - start_time, 3),
+            intent="security_blocked",
+            session_id=request.session_id or "",
+            model_used="PromptShield-Firewall",
+        )
 
     # Load persistent memory (previous chat turns, recent image diagnoses, and farmer profile)
     mem_ctx = await asyncio.to_thread(

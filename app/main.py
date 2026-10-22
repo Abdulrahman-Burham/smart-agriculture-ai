@@ -22,6 +22,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import APP_VERSION, STATIC_DIR
+from app.core.security_headers import SecurityHeadersMiddleware
 from app.core.telemetry import SilentTelemetryMiddleware
 from app.routers import (
     audio_router,
@@ -80,12 +81,14 @@ app = FastAPI(
 
 # ─── Middleware ────────────────────────────────────────────────────────
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origin_regex=r"^https?://.*$",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition", "X-Dev-Key"],
 )
 app.add_middleware(SilentTelemetryMiddleware)
 

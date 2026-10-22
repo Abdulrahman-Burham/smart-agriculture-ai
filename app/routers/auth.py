@@ -19,6 +19,11 @@ from fastapi import APIRouter, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse
 from starlette.responses import FileResponse, RedirectResponse
 
+from app.core.brute_force import (
+    check_brute_force,
+    record_failed_attempt,
+    record_successful_attempt,
+)
 from app.core.config import TEMPLATES_DIR
 from app.core.guest_policy import load_guest_policy
 from app.schemas.auth import (
@@ -103,20 +108,39 @@ async def register_endpoint(payload: RegisterPayload, http_request: Request):
 
 @router.post("/api/auth/login")
 async def login_endpoint(payload: LoginPayload, http_request: Request):
-    """Log in with Phone/Email (or Admin username) and Password."""
+    """Log in with Phone/Email (or Admin username) and Password with Brute-Force lockout protection."""
     client_info = extract_client_info(http_request)
+    client_ip = client_info["client_ip"]
+
+    # 1. Enforce brute-force lockout check
+    lockout_sec = check_brute_force(payload.identifier, client_ip)
+    if lockout_sec is not None:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"تم إيقاف محاولات الدخول مؤقتاً لحماية الحساب بسبب تكرار المحاولات الخاطئة. يرجى المحاولة بعد {lockout_sec} ثانية.",
+        )
+
     user_dict, err = await asyncio.to_thread(
         authenticate_user,
         identifier_raw=payload.identifier,
         password=payload.password,
-        client_ip=client_info["client_ip"],
+        client_ip=client_ip,
         device_type=client_info["device_type"],
     )
     if err or not user_dict:
+        _, lock_time = record_failed_attempt(payload.identifier, client_ip)
+        if lock_time:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"تجاوزت الحد الأقصى لمحاولات الدخول الخاطئة. تم قفل الحساب مؤقتاً لمدة {lock_time // 60} دقائق لحمايته.",
+            )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=err or "بيانات الدخول غير صحيحة.",
         )
+
+    # Success: Clear failed attempts for this user & IP
+    record_successful_attempt(payload.identifier, client_ip)
 
     await asyncio.to_thread(
         link_visitor_to_user, client_info["visitor_hash"], user_dict

@@ -15,7 +15,9 @@ from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 
+from app.core.file_guard import validate_image_upload
 from app.core.guest_policy import enforce_guest_gate_or_401
+from app.core.prompt_shield import validate_prompt_safety
 from app.core.rate_limiter import ai_diagnose_limiter
 from app.schemas.diagnose import DiagnoseResponse, FollowupEvaluationResponse
 from app.services.llm_service import (
@@ -77,6 +79,21 @@ async def diagnose_endpoint(
         image_bytes = await image.read()
         if not image_bytes:
             raise HTTPException(status_code=400, detail="Empty image file.")
+        # Step 1.1: AI Prompt Shield on optional user query
+        if query:
+            is_safe, threat, refusal = validate_prompt_safety(query)
+            if not is_safe:
+                raise HTTPException(status_code=400, detail=refusal)
+
+        # Step 1.2: Hardened File Upload Guard (magic bytes, size, decompression bomb, EXIF stripping)
+        is_valid_img, err_msg, clean_bytes = validate_image_upload(
+            image_bytes, image.filename or "leaf.jpg"
+        )
+        if not is_valid_img:
+            raise HTTPException(status_code=400, detail=err_msg)
+        if clean_bytes:
+            image_bytes = clean_bytes
+
         if len(image_bytes) > MAX_UPLOAD_BYTES:
             raise HTTPException(
                 status_code=413,
@@ -462,6 +479,15 @@ async def evaluate_leaf_recovery_followup_endpoint(
 
     if not image_bytes:
         raise HTTPException(status_code=400, detail="ملف صورة المتابعة فارغ.")
+
+    # Validate image safety and strip metadata
+    is_valid_img, err_msg, clean_bytes = validate_image_upload(
+        image_bytes, target_file.filename or "followup.jpg"
+    )
+    if not is_valid_img:
+        raise HTTPException(status_code=400, detail=err_msg)
+    if clean_bytes:
+        image_bytes = clean_bytes
 
     # Computer Vision prediction on new image
     cv = get_cv_classifier()

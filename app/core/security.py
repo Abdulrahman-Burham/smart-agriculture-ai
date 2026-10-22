@@ -7,6 +7,7 @@ Provides:
 
 from __future__ import annotations
 
+import secrets
 from typing import Any, Dict, Optional
 
 from fastapi import HTTPException, Request, status
@@ -16,12 +17,15 @@ from computer_vision.storage.utils import extract_user_from_request
 
 
 def verify_dev_key(key: str = "", request: Optional[Request] = None) -> None:
-    """Validate that the caller is an authenticated Admin or provides a valid DEV_SECRET_KEY.
+    """Validate that the caller is an authenticated Admin or provides a valid DEV_SECRET_KEY with timing-attack resistance.
 
     Raises HTTP 404 to avoid disclosing developer telemetry endpoints.
     """
     clean_key = (key or "").strip()
-    if clean_key and clean_key in (DEV_SECRET_KEY, DEV_PANEL_KEY):
+    if clean_key and any(
+        secrets.compare_digest(clean_key, valid_key)
+        for valid_key in (DEV_SECRET_KEY, DEV_PANEL_KEY)
+    ):
         return
 
     if request is not None:
