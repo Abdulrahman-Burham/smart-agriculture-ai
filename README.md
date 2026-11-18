@@ -127,6 +127,7 @@ same Chroma/BM25 pipeline:
 python scripts/ingest_knowledge_base.py \
   --pdf التوصيات_المعتمدة_لمكافحة_الآفات_الزراعية.pdf \
   --output-jsonl data/extracted_documents.jsonl
+
 ```
 
 Additional PDFs can be supplied after `--pdf`. Use `python -m rag.pdf_ingest`
